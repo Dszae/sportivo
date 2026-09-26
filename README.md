@@ -1,16 +1,26 @@
-# React + Vite
+# Sportivo ⚽🏏
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A high-performance live sports streaming web application built with React and Tailwind CSS. Sportivo aggregates live fixtures, team logos, and multi-server video streams into a clean, lightning-fast interface.
 
-Currently, two official plugins are available:
+![Sportivo Banner](public/sportivo-preview.jpg)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## ✨ Features
 
-## React Compiler
+- **Real-Time Match Schedules:** Fetches live and upcoming fixtures across Football, Cricket, and Basketball.
+- **Direct Match Sharing:** Uses dynamic URL query parameters (`?match=...`) to support clean, shareable deep-links for specific games on WhatsApp, Messenger, and social media.
+- **Multi-Server Stream Switching:** Allows users to toggle between different video stream sources and HD qualities on the fly.
+- **Dynamic Team Logos:** Automatically maps team badges or generates custom avatars for matches.
+- **Responsive Dark UI:** Designed with a sleek, distraction-free dark theme optimized for both desktop and mobile screens.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🛠️ Tech Stack
 
-## Expanding the Oxlint configuration
+- **Frontend:** React.js, Tailwind CSS
+- **Routing/State:** React Hooks, HTML5 History API (`pushState`, `URLSearchParams`)
+- **Deployment:** Vercel
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## 🚀 Getting Started
+
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/dszae/sportivo.git](https://github.com/dszae/sportivo.git)
+   cd sportivo
