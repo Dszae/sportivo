@@ -1,7 +1,6 @@
 # Sportivo ⚽🏏
 
 A high-performance live sports streaming web application built with React and Tailwind CSS. Sportivo aggregates live fixtures, team logos, and multi-server video streams into a clean, lightning-fast interface.
-
 ![Sportivo Banner](public/sportivo-preview.jpg)
 
 ## ✨ Features
@@ -18,9 +17,3 @@ A high-performance live sports streaming web application built with React and Ta
 - **Routing/State:** React Hooks, HTML5 History API (`pushState`, `URLSearchParams`)
 - **Deployment:** Vercel
 
-## 🚀 Getting Started
-
-1. **Clone the repository:**
-   ```bash
-   git clone [https://github.com/dszae/sportivo.git](https://github.com/dszae/sportivo.git)
-   cd sportivo
