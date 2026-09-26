@@ -16,19 +16,21 @@ export default function SportsStreamer() {
     fetchMatches(activeCategory);
   }, [activeCategory]);
 
-  // Handle URL hash changes for direct match sharing links
+  // Handle URL query parameters on initial load & browser navigation
   useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace('#match-', '');
-      if (hash && matches.length > 0) {
+    const handleUrlChange = () => {
+      const params = new URLSearchParams(window.location.search);
+      const matchSlug = params.get('match');
+      
+      if (matchSlug && matches.length > 0) {
         const found = matches.find(m => {
           const slug = (m.title || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
-          return slug === hash;
+          return slug === matchSlug;
         });
         if (found && (!selectedMatch || selectedMatch.title !== found.title)) {
-          loadStream(found, false); // false prevents double-updating the hash loop
+          loadStream(found, false);
         }
-      } else if (!hash && selectedMatch) {
+      } else if (!matchSlug && selectedMatch) {
         setSelectedMatch(null);
         setStreams([]);
         setActiveStream(null);
@@ -36,10 +38,10 @@ export default function SportsStreamer() {
     };
 
     if (matches.length > 0) {
-      handleHashChange();
+      handleUrlChange();
     }
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handleUrlChange);
+    return () => window.removeEventListener('popstate', handleUrlChange);
   }, [matches]);
 
   useEffect(() => {
@@ -74,16 +76,17 @@ export default function SportsStreamer() {
     }
   };
 
-  const loadStream = async (match, updateHash = true) => {
+  const loadStream = async (match, updateUrl = true) => {
     setSelectedMatch(match);
     setStreams([]);
     setActiveStream(null);
     setError(null);
 
-    // Update URL hash so users can copy/share the direct link
-    if (updateHash && match.title) {
+    // Update URL search parameters (e.g., ?match=team-a-vs-team-b) for direct sharing
+    if (updateUrl && match.title) {
       const slug = match.title.toLowerCase().replace(/[^a-z0-9]/g, '-');
-      window.location.hash = `match-${slug}`;
+      const newUrl = `${window.location.pathname}?match=${slug}`;
+      window.history.pushState({ path: newUrl }, '', newUrl);
     }
 
     if (!match.sources || match.sources.length === 0) {
@@ -155,7 +158,7 @@ export default function SportsStreamer() {
                   onClick={() => {
                     setActiveCategory(cat);
                     setSelectedMatch(null);
-                    window.location.hash = ''; // Clear hash when switching categories
+                    window.history.pushState({}, '', window.location.pathname);
                     setSearchQuery('');
                   }}
                   className={`px-5 py-2 rounded-full text-xs font-bold capitalize transition-all ${
@@ -184,7 +187,7 @@ export default function SportsStreamer() {
                 <button
                   onClick={() => {
                     setSelectedMatch(null);
-                    window.location.hash = '';
+                    window.history.pushState({}, '', window.location.pathname);
                   }}
                   className="text-slate-400 hover:text-white px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-800 hover:bg-slate-700 transition"
                 >
