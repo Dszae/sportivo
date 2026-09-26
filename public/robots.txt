@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sportivo.dipeshsapkota7.com.np/sitemap.xml
