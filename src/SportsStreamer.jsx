@@ -11,9 +11,36 @@ export default function SportsStreamer() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Fetch matches when category changes
   useEffect(() => {
     fetchMatches(activeCategory);
   }, [activeCategory]);
+
+  // Handle URL hash changes for direct match sharing links
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#match-', '');
+      if (hash && matches.length > 0) {
+        const found = matches.find(m => {
+          const slug = (m.title || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
+          return slug === hash;
+        });
+        if (found && (!selectedMatch || selectedMatch.title !== found.title)) {
+          loadStream(found, false); // false prevents double-updating the hash loop
+        }
+      } else if (!hash && selectedMatch) {
+        setSelectedMatch(null);
+        setStreams([]);
+        setActiveStream(null);
+      }
+    };
+
+    if (matches.length > 0) {
+      handleHashChange();
+    }
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [matches]);
 
   useEffect(() => {
     if (!searchQuery) {
@@ -47,11 +74,17 @@ export default function SportsStreamer() {
     }
   };
 
-  const loadStream = async (match) => {
+  const loadStream = async (match, updateHash = true) => {
     setSelectedMatch(match);
     setStreams([]);
     setActiveStream(null);
     setError(null);
+
+    // Update URL hash so users can copy/share the direct link
+    if (updateHash && match.title) {
+      const slug = match.title.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      window.location.hash = `match-${slug}`;
+    }
 
     if (!match.sources || match.sources.length === 0) {
       setError('No stream sources available for this match.');
@@ -121,7 +154,8 @@ export default function SportsStreamer() {
                   key={cat}
                   onClick={() => {
                     setActiveCategory(cat);
-                    setSelectedMatch(null); // Closes active video player and returns to grid
+                    setSelectedMatch(null);
+                    window.location.hash = ''; // Clear hash when switching categories
                     setSearchQuery('');
                   }}
                   className={`px-5 py-2 rounded-full text-xs font-bold capitalize transition-all ${
@@ -148,7 +182,10 @@ export default function SportsStreamer() {
                   </h2>
                 </div>
                 <button
-                  onClick={() => setSelectedMatch(null)}
+                  onClick={() => {
+                    setSelectedMatch(null);
+                    window.location.hash = '';
+                  }}
                   className="text-slate-400 hover:text-white px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-800 hover:bg-slate-700 transition"
                 >
                   Close Player ✕
@@ -245,7 +282,7 @@ export default function SportsStreamer() {
                   return (
                     <div
                       key={idx}
-                      onClick={() => loadStream(match)}
+                      onClick={() => loadStream(match, true)}
                       className="bg-[#12161f] rounded-xl overflow-hidden cursor-pointer hover:ring-2 ring-blue-500 transition-all group"
                     >
                       <div className="relative h-32 w-full bg-slate-800 flex overflow-hidden">
