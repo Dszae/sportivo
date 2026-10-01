@@ -11,12 +11,10 @@ export default function SportsStreamer() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch matches when category changes
   useEffect(() => {
     fetchMatches(activeCategory);
   }, [activeCategory]);
 
-  // Handle URL query parameters on initial load & browser navigation
   useEffect(() => {
     const handleUrlChange = () => {
       const params = new URLSearchParams(window.location.search);
@@ -82,7 +80,6 @@ export default function SportsStreamer() {
     setActiveStream(null);
     setError(null);
 
-    // Update URL search parameters (e.g., ?match=team-a-vs-team-b) for direct sharing
     if (updateUrl && match.title) {
       const slug = match.title.toLowerCase().replace(/[^a-z0-9]/g, '-');
       const newUrl = `${window.location.pathname}?match=${slug}`;
@@ -136,7 +133,7 @@ export default function SportsStreamer() {
         <header className="border-b border-slate-800/80 bg-[#12161f] sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             
-            <a href="/" className="flex flex-col group cursor-pointer hover:opacity-80 transition-opacity">
+            <a href="https://www.dipeshsapkota7.com.np/" className="flex flex-col group cursor-pointer hover:opacity-80 transition-opacity">
               <div className="flex items-center gap-3">
                 <span className="relative flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -349,11 +346,12 @@ export default function SportsStreamer() {
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="text-xs text-slate-500 font-medium">Built by</span>
-            <span className="text-xs font-black text-slate-300">Dipesh Sapkota</span>
+            <a href="https://www.dipeshsapkota7.com.np/" className="text-xs font-black text-slate-300 hover:text-blue-400 transition-colors">
+              Dipesh Sapkota
+            </a>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* GitHub Icon Link */}
             <a 
               href="https://github.com/dszae" 
               target="_blank" 
@@ -366,7 +364,6 @@ export default function SportsStreamer() {
               </svg>
             </a>
 
-            {/* LinkedIn Icon Link */}
             <a 
               href="https://linkedin.com/in/dszae" 
               target="_blank" 
@@ -379,7 +376,6 @@ export default function SportsStreamer() {
               </svg>
             </a>
 
-            {/* Facebook Icon Link */}
             <a 
               href="https://facebook.com/dsz.ae" 
               target="_blank" 
@@ -392,7 +388,6 @@ export default function SportsStreamer() {
               </svg>
             </a>
 
-            {/* Portfolio Link */}
             <a 
               href="https://www.dipeshsapkota7.com.np/" 
               target="_blank" 
