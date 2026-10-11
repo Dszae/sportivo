@@ -4,9 +4,9 @@
 
 @layer base {
 	:root {
-		font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+		font-family: "Manrope", "Trebuchet MS", "Segoe UI", sans-serif;
 		color: #f6f7f9;
-		background: #090d12;
+		background: #080a0b;
 		font-synthesis: none;
 		text-rendering: optimizeLegibility;
 	}
@@ -14,7 +14,9 @@
 	body {
 		min-width: 320px;
 		margin: 0;
-		background: radial-gradient(circle at 8% 0%, rgba(30, 105, 88, 0.18), transparent 34rem), linear-gradient(145deg, #090d12 0%, #0e1418 52%, #10191a 100%);
+		background: #080a0b;
+		background-image: linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+		background-size: 42px 42px;
 	}
 
 	button,
@@ -23,7 +25,51 @@
 	}
 
 	::selection {
-		background: #e5b94f;
+		background: #c9f36b;
 		color: #10130f;
+	}
+}
+
+@layer components {
+	.site-shell {
+		background: linear-gradient(180deg, rgba(8, 10, 11, 0.96), rgba(8, 10, 11, 0.78));
+	}
+
+	.site-header {
+		border-color: rgba(255, 255, 255, 0.1);
+		background: rgba(8, 10, 11, 0.88);
+		backdrop-filter: blur(18px);
+	}
+
+	.site-logo-dot {
+		background: #c9f36b;
+		box-shadow: 0 0 0 5px rgba(201, 243, 107, 0.08), 0 0 24px rgba(201, 243, 107, 0.35);
+	}
+
+	.site-accent {
+		color: #c9f36b;
+	}
+
+	.site-button-active {
+		background: #c9f36b;
+		color: #11150d;
+		box-shadow: 0 10px 30px rgba(201, 243, 107, 0.12);
+	}
+
+	.site-focus:focus-visible,
+	button:focus-visible,
+	a:focus-visible,
+	input:focus-visible {
+		outline: 2px solid #c9f36b;
+		outline-offset: 3px;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		*, *::before, *::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			scroll-behavior: auto !important;
+			transition-duration: 0.01ms !important;
+		}
 	}
 }
