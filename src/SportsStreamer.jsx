@@ -270,7 +270,7 @@ export default function SportsStreamer() {
                     src={currentUrl}
                     className="w-full h-full border-0"
                     allowFullScreen
-                    sandbox="allow-forms allow-modals allow-orientation-lock allow-presentation allow-same-origin allow-scripts"
+                    allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
                     referrerPolicy="no-referrer"
                     title="Live Stream"
                   ></iframe>
