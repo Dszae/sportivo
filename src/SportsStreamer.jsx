@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from 'react';
 
+const isSafeExternalUrl = (value) => {
+  if (!value || typeof value !== 'string') return false;
+  try {
+    const url = new URL(value, window.location.origin);
+    return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+};
+
+const toMatchSlug = (title) => (title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
 export default function SportsStreamer() {
   const [matches, setMatches] = useState([]);
   const [filteredMatches, setFilteredMatches] = useState([]);
@@ -22,7 +34,7 @@ export default function SportsStreamer() {
       
       if (matchSlug && matches.length > 0) {
         const found = matches.find(m => {
-          const slug = (m.title || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
+          const slug = toMatchSlug(m.title);
           return slug === matchSlug;
         });
         if (found && (!selectedMatch || selectedMatch.title !== found.title)) {
@@ -60,7 +72,7 @@ export default function SportsStreamer() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/matches/${category}`);
+      const response = await fetch(`/api/matches/${encodeURIComponent(category)}`);
       if (!response.ok) throw new Error('Failed to fetch matches');
       const data = await response.json();
       setMatches(data || []);
@@ -81,7 +93,7 @@ export default function SportsStreamer() {
     setError(null);
 
     if (updateUrl && match.title) {
-      const slug = match.title.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      const slug = toMatchSlug(match.title);
       const newUrl = `${window.location.pathname}?match=${slug}`;
       window.history.pushState({ path: newUrl }, '', newUrl);
     }
@@ -93,12 +105,21 @@ export default function SportsStreamer() {
 
     try {
       const source = match.sources[0];
-      const response = await fetch(`/api/stream/${source.source}/${source.id}`);
+      if (!source?.source || !source?.id) throw new Error('Invalid stream source');
+      const response = await fetch(`/api/stream/${encodeURIComponent(source.source)}/${encodeURIComponent(source.id)}`);
       if (!response.ok) throw new Error('Failed to fetch stream details');
       
       const streamData = await response.json();
-      const actualData = streamData.contents ? JSON.parse(streamData.contents) : streamData;
-      const parsedStreams = Array.isArray(actualData) ? actualData : [actualData];
+      let actualData = streamData;
+      if (typeof streamData.contents === 'string') {
+        try {
+          actualData = JSON.parse(streamData.contents);
+        } catch {
+          throw new Error('Invalid stream response');
+        }
+      }
+      const parsedStreams = (Array.isArray(actualData) ? actualData : [actualData])
+        .filter((stream) => isSafeExternalUrl(getStreamUrl(stream)));
       setStreams(parsedStreams);
       
       if (parsedStreams.length > 0) {
@@ -128,22 +149,22 @@ export default function SportsStreamer() {
   const currentUrl = getStreamUrl(activeStream);
 
   return (
-    <div className="min-h-screen bg-[#0b0e14] text-slate-100 font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen text-slate-100 flex flex-col justify-between">
       <div>
-        <header className="border-b border-slate-800/80 bg-[#12161f] sticky top-0 z-50">
+        <header className="border-b border-white/10 bg-[#101716]/95 backdrop-blur sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             
-            <a href="https://www.dipeshsapkota7.com.np/" className="flex flex-col group cursor-pointer hover:opacity-80 transition-opacity">
+            <a href="/" className="flex flex-col group cursor-pointer hover:opacity-80 transition-opacity" aria-label="Sportivo home">
               <div className="flex items-center gap-3">
                 <span className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#e5b94f] opacity-50"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-[#e5b94f]"></span>
                 </span>
                 <h1 className="text-2xl font-black tracking-tight text-white leading-none">
-                  Sportivo<span className="text-blue-500">.</span>
+                  Sportivo<span className="text-[#e5b94f]">.</span>
                 </h1>
               </div>
-              <span className="text-[10px] font-bold text-slate-500 ml-6 mt-1 uppercase tracking-widest group-hover:text-blue-400 transition-colors">
+              <span className="text-[10px] font-bold text-slate-500 ml-6 mt-1 uppercase tracking-widest group-hover:text-[#e5b94f] transition-colors">
                 by Dipesh Sapkota
               </span>
             </a>
@@ -160,8 +181,8 @@ export default function SportsStreamer() {
                   }}
                   className={`px-5 py-2 rounded-full text-xs font-bold capitalize transition-all ${
                     activeCategory === cat && !selectedMatch
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                      : 'text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-700'
+                      ? 'bg-[#e5b94f] text-[#121510] shadow-lg shadow-[#e5b94f]/10'
+                      : 'text-slate-400 hover:text-white bg-white/5 hover:bg-white/10'
                   }`}
                 >
                   {cat}
@@ -172,6 +193,29 @@ export default function SportsStreamer() {
         </header>
 
         <main className="max-w-7xl mx-auto px-6 py-8">
+          {!selectedMatch && (
+            <section className="relative mb-12 overflow-hidden rounded-2xl border border-white/10 bg-[#111c1a] px-6 py-10 sm:px-10 sm:py-14">
+              <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full border-[36px] border-[#e5b94f]/10" />
+              <div className="pointer-events-none absolute bottom-[-100px] right-20 h-64 w-64 rounded-full border border-[#3c9b7e]/20" />
+              <div className="relative max-w-2xl">
+                <div className="mb-5 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.28em] text-[#e5b94f]">
+                  <span className="h-px w-8 bg-[#e5b94f]" />
+                  The live fixture desk
+                </div>
+                <h2 className="max-w-xl text-4xl font-black leading-[0.98] tracking-tight text-white sm:text-6xl">
+                  Stay close to the <span className="text-[#e5b94f]">moment.</span>
+                </h2>
+                <p className="mt-5 max-w-lg text-sm leading-6 text-slate-400 sm:text-base">
+                  A focused home for the games you care about. Browse the schedule, find your fixture, and switch to the best available stream.
+                </p>
+                <div className="mt-8 flex flex-wrap items-center gap-3 text-xs font-bold text-slate-400">
+                  <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2">{filteredMatches.length || 0} fixtures on deck</span>
+                  <span className="rounded-full border border-[#3c9b7e]/30 bg-[#3c9b7e]/10 px-4 py-2 text-[#83d7bd]">Football · Cricket · Basketball</span>
+                </div>
+              </div>
+            </section>
+          )}
+
           {selectedMatch && (
             <section className="mb-12 bg-[#12161f] border border-slate-800 rounded-xl overflow-hidden shadow-2xl shadow-black/80">
               <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-[#0b0e14]">
@@ -208,6 +252,8 @@ export default function SportsStreamer() {
                     src={currentUrl}
                     className="w-full h-full border-0"
                     allowFullScreen
+                    sandbox="allow-forms allow-modals allow-orientation-lock allow-presentation allow-same-origin allow-scripts"
+                    referrerPolicy="no-referrer"
                     title="Live Stream"
                   ></iframe>
                 )}
@@ -237,7 +283,7 @@ export default function SportsStreamer() {
           <section>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
               <div>
-                <span className="text-[10px] font-bold tracking-widest uppercase text-blue-500">
+                  <span className="text-[10px] font-bold tracking-widest uppercase text-[#e5b94f]">
                   Real-time Schedule
                 </span>
                 <h3 className="text-2xl font-black text-white">Live & Upcoming Matches</h3>
@@ -249,7 +295,8 @@ export default function SportsStreamer() {
                   placeholder="Search matches or teams..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full md:w-72 bg-[#12161f] border border-slate-800 text-sm rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  aria-label="Search matches or teams"
+                  className="w-full md:w-72 bg-[#111a19] border border-white/10 text-sm rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-[#e5b94f] transition-colors"
                 />
               </div>
             </div>
@@ -275,6 +322,7 @@ export default function SportsStreamer() {
                   if (matchPoster && matchPoster.startsWith('/')) {
                     matchPoster = `https://streamed.pk${matchPoster}`;
                   }
+                  if (!isSafeExternalUrl(matchPoster)) matchPoster = null;
 
                   const teamALogo = match?.teams?.[0]?.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(teamA)}&background=1e293b&color=3b82f6&bold=true`;
                   const teamBLogo = match?.teams?.[1]?.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(teamB)}&background=1e293b&color=ef4444&bold=true`;
@@ -283,9 +331,9 @@ export default function SportsStreamer() {
                     <div
                       key={idx}
                       onClick={() => loadStream(match, true)}
-                      className="bg-[#12161f] rounded-xl overflow-hidden cursor-pointer hover:ring-2 ring-blue-500 transition-all group"
+                      className="bg-[#111a19] border border-white/10 rounded-2xl overflow-hidden cursor-pointer hover:-translate-y-1 hover:border-[#e5b94f]/50 hover:ring-2 ring-[#e5b94f]/20 transition-all duration-300 group shadow-xl shadow-black/10"
                     >
-                      <div className="relative h-32 w-full bg-slate-800 flex overflow-hidden">
+                      <div className="relative h-36 w-full bg-gradient-to-br from-[#182b2a] via-[#18212b] to-[#111a19] flex overflow-hidden">
                         
                         <div className="absolute top-2 left-2 z-20">
                           {isLive ? (
@@ -302,7 +350,7 @@ export default function SportsStreamer() {
                         </div>
 
                         {matchPoster ? (
-                          <img src={matchPoster} alt={match.title} className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300" />
+                          <img src={matchPoster} alt={match.title} className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500" />
                         ) : isMatch ? (
                           <>
                             <div className="w-[55%] h-full absolute left-0 bg-slate-700/50 flex items-center justify-center border-r-2 border-[#12161f] transition-transform group-hover:scale-105 duration-300" style={{ clipPath: 'polygon(0 0, 100% 0, 80% 100%, 0% 100%)' }}>
@@ -320,7 +368,7 @@ export default function SportsStreamer() {
                       </div>
 
                       <div className="p-3">
-                        <h4 className="font-bold text-sm text-slate-100 group-hover:text-blue-400 transition-colors line-clamp-1">
+                        <h4 className="font-bold text-sm text-slate-100 group-hover:text-[#e5b94f] transition-colors line-clamp-1">
                           {match.title}
                         </h4>
                         <div className="flex items-center gap-1 mt-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
@@ -342,11 +390,11 @@ export default function SportsStreamer() {
         </main>
       </div>
 
-      <footer className="border-t border-slate-800/80 bg-[#12161f] mt-16 py-6">
+      <footer className="border-t border-white/10 bg-[#101716]/80 mt-16 py-6">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="text-xs text-slate-500 font-medium">Built by</span>
-            <a href="https://www.dipeshsapkota7.com.np/" className="text-xs font-black text-slate-300 hover:text-blue-400 transition-colors">
+            <a href="https://www.dipeshsapkota7.com.np/" className="text-xs font-black text-slate-300 hover:text-[#e5b94f] transition-colors">
               Dipesh Sapkota
             </a>
           </div>
@@ -355,7 +403,7 @@ export default function SportsStreamer() {
             <a 
               href="https://github.com/dszae" 
               target="_blank" 
-              rel="noreferrer" 
+              rel="noopener noreferrer"
               className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition"
               title="GitHub"
             >
@@ -367,7 +415,7 @@ export default function SportsStreamer() {
             <a 
               href="https://linkedin.com/in/dszae" 
               target="_blank" 
-              rel="noreferrer" 
+              rel="noopener noreferrer"
               className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-blue-400 hover:bg-slate-700 transition"
               title="LinkedIn"
             >
@@ -379,7 +427,7 @@ export default function SportsStreamer() {
             <a 
               href="https://facebook.com/dsz.ae" 
               target="_blank" 
-              rel="noreferrer" 
+              rel="noopener noreferrer"
               className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-blue-500 hover:bg-slate-700 transition"
               title="Facebook"
             >

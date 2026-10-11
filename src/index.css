@@ -1,3 +1,29 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+	:root {
+		font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+		color: #f6f7f9;
+		background: #090d12;
+		font-synthesis: none;
+		text-rendering: optimizeLegibility;
+	}
+
+	body {
+		min-width: 320px;
+		margin: 0;
+		background: radial-gradient(circle at 8% 0%, rgba(30, 105, 88, 0.18), transparent 34rem), linear-gradient(145deg, #090d12 0%, #0e1418 52%, #10191a 100%);
+	}
+
+	button,
+	input {
+		font: inherit;
+	}
+
+	::selection {
+		background: #e5b94f;
+		color: #10130f;
+	}
+}
