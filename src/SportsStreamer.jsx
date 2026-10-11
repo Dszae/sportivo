@@ -40,13 +40,18 @@ const getMatchTime = (match) => {
 
 const getMatchTitle = (match) => match?.title || match?.name || 'Untitled fixture';
 
+const getCategoryFromPath = () => {
+  const category = window.location.pathname.split('/').filter(Boolean)[0];
+  return ['football', 'cricket', 'basketball'].includes(category) ? category : 'football';
+};
+
 export default function SportsStreamer() {
   const [matches, setMatches] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [streams, setStreams] = useState([]);
   const [activeStream, setActiveStream] = useState(null);
-  const [activeCategory, setActiveCategory] = useState('football');
+  const [activeCategory] = useState(getCategoryFromPath);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -55,6 +60,22 @@ export default function SportsStreamer() {
     const controller = new AbortController();
     fetchMatches(activeCategory, controller.signal);
     return () => controller.abort();
+  }, [activeCategory]);
+
+  useEffect(() => {
+    const categoryLabel = activeCategory[0].toUpperCase() + activeCategory.slice(1);
+    const isHome = window.location.pathname === '/';
+    const title = isHome
+      ? 'Sportivo — Live Scores, Fixtures & Sports News'
+      : `${categoryLabel} Fixtures & Live Scores | Sportivo`;
+    const description = isHome
+      ? 'Follow football, cricket, and basketball fixtures with local kickoff times and verified stream availability on Sportivo.'
+      : `Follow ${activeCategory} fixtures, results, local kickoff times, and verified stream availability on Sportivo.`;
+    const canonical = `https://sportivo.dipeshsapkota7.com.np${isHome ? '/' : `/${activeCategory}/`}`;
+
+    document.title = title;
+    document.querySelector('meta[name="description"]')?.setAttribute('content', description);
+    document.querySelector('link[rel="canonical"]')?.setAttribute('href', canonical);
   }, [activeCategory]);
 
   useEffect(() => {
@@ -190,14 +211,10 @@ export default function SportsStreamer() {
 
             <nav className="flex gap-2">
               {['football', 'cricket', 'basketball'].map((cat) => (
-                <button
+                <a
                   key={cat}
-                  onClick={() => {
-                    setActiveCategory(cat);
-                    setSelectedMatch(null);
-                    window.history.pushState({}, '', window.location.pathname);
-                    setSearchQuery('');
-                  }}
+                  href={`/${cat}/`}
+                  aria-current={activeCategory === cat && !selectedMatch ? 'page' : undefined}
                   className={`px-5 py-2 rounded-full text-xs font-bold capitalize transition-all ${
                     activeCategory === cat && !selectedMatch
                       ? 'site-button-active'
@@ -205,7 +222,7 @@ export default function SportsStreamer() {
                   }`}
                 >
                   {cat}
-                </button>
+                </a>
               ))}
             </nav>
           </div>
