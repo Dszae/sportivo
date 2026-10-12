@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080a0b;color:#f6f7f9;font-family:sans-serif}.stage{position:absolute;inset:0;background:#080a0b;overflow:hidden}.grid{position:absolute;inset:0;opacity:.16;background-image:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);background-size:72px 72px}.glow{position:absolute;width:760px;height:760px;right:-190px;top:-250px;border-radius:50%;background:radial-gradient(circle,rgba(201,243,107,.18),transparent 68%);filter:blur(12px)}.glow2{position:absolute;width:540px;height:540px;left:-260px;bottom:-330px;border-radius:50%;background:radial-gradient(circle,rgba(229,185,79,.12),transparent 70%);filter:blur(18px)}.topline{position:absolute;left:92px;right:92px;top:68px;height:2px;background:rgba(201,243,107,.7);transform-origin:left}.kicker{position:absolute;left:92px;top:92px;color:#e5b94f;font-size:22px;letter-spacing:5px;text-transform:uppercase;font-weight:800}.title{position:absolute;left:92px;top:154px;font-size:104px;line-height:.9;font-weight:900;letter-spacing:-3px}.title em{font-style:normal;color:#c9f36b}.sub{position:absolute;left:98px;top:390px;width:620px;color:#aab3b0;font-size:30px;line-height:1.3}.logo{position:absolute;right:100px;top:82px;width:82px;height:82px}.ui-frame{position:absolute;left:110px;top:95px;width:1700px;height:890px;border:3px solid rgba(201,243,107,.5);border-radius:28px;overflow:hidden;box-shadow:0 34px 120px rgba(0,0,0,.75),0 0 0 12px rgba(201,243,107,.05);background:#111716}.ui-frame img{width:100%;height:100%;object-fit:cover;object-position:center top}.ui-frame:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,10,11,.02) 50%,rgba(8,10,11,.55));pointer-events:none}.panel{position:absolute;left:92px;bottom:230px;padding:28px 38px;border-left:5px solid #c9f36b;background:rgba(8,10,11,.86);backdrop-filter:blur(12px);font-size:36px;font-weight:800;line-height:1.1}.panel small{display:block;margin-bottom:10px;color:#e5b94f;font-size:18px;letter-spacing:4px;text-transform:uppercase}.caption{position:absolute;left:120px;right:120px;bottom:92px;z-index:20;text-align:center;font-size:42px;font-weight:800;line-height:1.08;text-shadow:0 4px 20px #000}.caption span{display:inline-block;padding:12px 24px;background:rgba(8,10,11,.84);border-bottom:4px solid #c9f36b}.endbrand{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#080a0b}.endbrand img{width:116px;height:116px;margin-bottom:26px}.endbrand h2{margin:0;font-size:110px;line-height:1;font-weight:900;letter-spacing:-4px}.endbrand h2 i{color:#c9f36b;font-style:normal}.endbrand p{margin:28px 0 0;color:#c9f36b;font-size:28px;letter-spacing:2px}.endbrand .rule{width:260px;height:3px;background:#e5b94f;margin-top:34px}.clip{position:absolute;inset:0}.hide{opacity:0}.audio{display:none}
+</style>
+</head>
+<body>
+<div data-composition-id="sportivo-landscape" data-width="1920" data-height="1080" data-fps="30" data-duration="27">
+  <div class="stage"><div class="grid"></div><div class="glow"></div><div class="glow2"></div></div>
+  <div class="clip" data-start="0" data-duration="3.2"><div class="topline"></div><div class="kicker">The live fixture desk</div><div class="title">Stay close<br>to the <em>moment.</em></div><div class="sub">Every match brings a moment.</div><img class="logo" src="assets/sportivo-logo.svg" alt="Sportivo logo"></div>
+  <div class="clip" data-start="3.2" data-duration="5.3"><div class="ui-frame"><img src="assets/live-desktop.png" alt="Live Sportivo schedule page"></div><div class="panel"><small>Sportivo</small>The fixture desk, closer.</div></div>
+  <div class="clip" data-start="8.5" data-duration="7"><div class="ui-frame"><img src="assets/live-desktop.png" alt="Sportivo football fixture schedule"></div><div class="panel"><small>Football · Cricket · Basketball</small>Browse. Search. Find.</div></div>
+  <div class="clip" data-start="15.5" data-duration="6"><div class="ui-frame"><img src="assets/live-desktop.png" alt="Sportivo live and upcoming matches"></div><div class="panel"><small>Real-time schedule</small>Open a fixture.<br>Check the available stream.</div></div>
+  <div class="clip" data-start="21.5" data-duration="5.5"><div class="endbrand"><img src="assets/sportivo-logo.svg" alt="Sportivo logo"><h2>Sportivo<i>.</i></h2><p>sportivo.dipeshsapkota7.com.np</p><div class="rule"></div></div></div>
+  <div class="clip" data-start="0" data-duration="3.2"><div class="caption"><span>Every match brings a moment.</span></div></div>
+  <div class="clip" data-start="3.2" data-duration="5.3"><div class="caption"><span>Sportivo brings the fixture desk closer.</span></div></div>
+  <div class="clip" data-start="8.5" data-duration="7"><div class="caption"><span>Browse real-time schedules.</span></div></div>
+  <div class="clip" data-start="15.5" data-duration="6"><div class="caption"><span>Find your fixture. See available stream sources.</span></div></div>
+  <div class="clip" data-start="21.5" data-duration="5.5"><div class="caption"><span>Stay close to the moment.</span></div></div>
+  <audio id="voiceover" class="audio" data-start="0" data-duration="27" data-track-index="4" data-volume="1" src="assets/sportivo-voiceover.wav"></audio>
+  <audio id="music" class="audio" data-start="0" data-duration="27" data-track-index="5" data-volume="0.12" src="assets/music.mp3"></audio>
+</div>
+<script>
+const id='sportivo-landscape'; const root=document.querySelector('[data-composition-id="'+id+'"]'); const all=root.querySelectorAll('.clip');
+window.__timelines=window.__timelines||{};
+const tl=gsap.timeline({paused:true});
+all.forEach((clip,index)=>{const inner=clip.firstElementChild; if(inner&&inner.classList.contains('caption')){tl.fromTo(inner,{y:26,opacity:0},{y:0,opacity:1,duration:.42,ease:'power3.out'},Number(clip.dataset.start)+.12).to(inner,{opacity:0,duration:.28,ease:'power2.in'},Number(clip.dataset.start)+Number(clip.dataset.duration)-.35)} });
+tl.fromTo('.topline',{scaleX:0},{scaleX:1,duration:.7,ease:'power3.out'},.12).fromTo('.kicker',{x:-30,opacity:0},{x:0,opacity:1,duration:.6,ease:'power3.out'},.3).fromTo('.title',{y:34,opacity:0},{y:0,opacity:1,duration:.8,ease:'power4.out'},.48).fromTo('.sub',{y:22,opacity:0},{y:0,opacity:1,duration:.6,ease:'power3.out'},1.25).fromTo('.logo',{scale:.7,opacity:0},{scale:1,opacity:1,duration:.7,ease:'back.out(1.7)'},.55);
+['.ui-frame','.panel'].forEach((selector)=>tl.fromTo(selector,{y:40,opacity:0,scale:.97},{y:0,opacity:1,scale:1,duration:.7,ease:'power3.out'},3.35));
+tl.fromTo('.endbrand',{opacity:0},{opacity:1,duration:.6,ease:'power2.out'},21.5).fromTo('.endbrand img',{scale:.75,opacity:0},{scale:1,opacity:1,duration:.65,ease:'back.out(1.6)'},21.75).fromTo('.endbrand h2',{y:30,opacity:0},{y:0,opacity:1,duration:.6,ease:'power3.out'},22.1).fromTo('.endbrand p',{y:18,opacity:0},{y:0,opacity:1,duration:.5,ease:'power3.out'},22.7);
+window.__timelines[id]=tl;
+</script>
+</body>
+</html>
