@@ -10,16 +10,11 @@ Sportivo is a focused sports fixture desk for discovering football, cricket, and
 	<a href="https://sportivo.dipeshsapkota7.com.np/cricket/">Browse cricket</a>
 </p>
 
-![Sportivo interface preview](public/sportivo-preview.png)
-
 ## Product Demo
 
-<video controls muted playsinline poster="https://raw.githubusercontent.com/Dszae/sportivo/main/public/sportivo-video-thumbnail.png" width="100%">
+<video controls playsinline preload="metadata" width="100%" src="https://raw.githubusercontent.com/Dszae/sportivo/main/public/sportivo-launch.mp4">
 	<source src="https://raw.githubusercontent.com/Dszae/sportivo/main/public/sportivo-launch.mp4" type="video/mp4">
-	Your browser does not support inline video. [Watch the Sportivo launch video](https://raw.githubusercontent.com/Dszae/sportivo/main/public/sportivo-launch.mp4).
 </video>
-
-The repository also includes a dedicated vertical social version at [`public/sportivo-reel.mp4`](public/sportivo-reel.mp4).
 
 ## Features
 
