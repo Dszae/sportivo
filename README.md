@@ -12,9 +12,7 @@ Sportivo is a focused sports fixture desk for discovering football, cricket, and
 
 ## Product Demo
 
-<video controls playsinline preload="metadata" width="100%" src="https://raw.githubusercontent.com/Dszae/sportivo/main/public/sportivo-launch.mp4">
-	<source src="https://raw.githubusercontent.com/Dszae/sportivo/main/public/sportivo-launch.mp4" type="video/mp4">
-</video>
+![Sportivo launch demo](public/sportivo-demo.gif)
 
 ## Features
 
@@ -72,7 +70,7 @@ src/
 	index.css            Tailwind layers and Sportivo visual tokens
 public/
 	favicon.svg          Sportivo brand mark
-	sportivo-launch.mp4 Product demo used in this README
+	sportivo-demo.gif    Animated 16:9 demo used in this README
 ```
 
 ## Notes
