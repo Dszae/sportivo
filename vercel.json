@@ -17,6 +17,10 @@
       "destination": "https://streamed.pk/api/:path*"
     },
     {
+      "source": "/favicon.ico",
+      "destination": "/favicon.svg?v=2"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
