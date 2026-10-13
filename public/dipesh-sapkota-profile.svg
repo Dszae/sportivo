@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-labelledby="title desc">
+  <title id="title">Dipesh Sapkota profile mark</title>
+  <desc id="desc">A branded DS profile mark for Dipesh Sapkota, creator of Sportivo.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b302c" />
+      <stop offset="1" stop-color="#0b0e14" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c9f36b" />
+      <stop offset="1" stop-color="#e5b94f" />
+    </linearGradient>
+  </defs>
+  <rect width="640" height="640" rx="88" fill="url(#background)" />
+  <circle cx="510" cy="126" r="86" fill="#c9f36b" opacity=".12" />
+  <circle cx="112" cy="542" r="116" fill="#e5b94f" opacity=".08" />
+  <path d="M80 420c80-72 146-104 240-104s160 32 240 104" fill="none" stroke="#c9f36b" stroke-linecap="round" stroke-width="18" opacity=".85" />
+  <path d="M132 454c52 54 116 82 188 82s136-28 188-82" fill="none" stroke="#8da94c" stroke-linecap="round" stroke-width="11" />
+  <circle cx="320" cy="224" r="108" fill="url(#accent)" />
+  <text x="320" y="271" fill="#0b0e14" font-family="Georgia, serif" font-size="126" font-weight="700" text-anchor="middle">DS</text>
+  <text x="320" y="596" fill="#d8e0df" font-family="system-ui, sans-serif" font-size="22" font-weight="700" letter-spacing="6" text-anchor="middle">DIPESH SAPKOTA</text>
+</svg>
