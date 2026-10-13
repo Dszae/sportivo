@@ -66,7 +66,7 @@ export default function SportsStreamer() {
     const categoryLabel = activeCategory[0].toUpperCase() + activeCategory.slice(1);
     const isHome = window.location.pathname === '/';
     const title = isHome
-      ? 'Sportivo — Live Scores, Fixtures & Sports News'
+      ? 'Sportivo by Dipesh Sapkota | Live Scores & Sports Fixtures'
       : `${categoryLabel} Fixtures & Live Scores | Sportivo`;
     const description = isHome
       ? 'Follow football, cricket, and basketball fixtures with local kickoff times and verified stream availability on Sportivo.'
@@ -205,7 +205,7 @@ export default function SportsStreamer() {
                 </h1>
               </div>
               <span className="text-[10px] font-bold text-slate-500 ml-6 mt-1 uppercase tracking-widest group-hover:text-[#c9f36b] transition-colors">
-                by Dipesh Sapkota
+                Sports fixtures by Dipesh Sapkota
               </span>
             </a>
 
