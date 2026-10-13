@@ -462,7 +462,7 @@ export default function SportsStreamer() {
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="text-xs text-slate-500 font-medium">Built by</span>
-            <a href="https://www.dipeshsapkota7.com.np/" className="text-xs font-black text-slate-300 hover:text-[#e5b94f] transition-colors">
+            <a rel="author" href="/about-dipesh-sapkota/" className="text-xs font-black text-slate-300 hover:text-[#e5b94f] transition-colors">
               Dipesh Sapkota
             </a>
           </div>

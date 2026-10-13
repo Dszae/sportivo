@@ -97,7 +97,7 @@ function fixtureList(category, matches) {
 
 function categoryBlock(category, matches) {
   const label = category[0].toUpperCase() + category.slice(1);
-  return `<section id="${category}-fixtures"><h2>${label} fixtures</h2><p>Browse ${label.toLowerCase()} schedules, statuses, and kickoff times in Nepal Standard Time.</p>${fixtureList(category, matches)}</section>`;
+  return `<section id="${category}-fixtures"><p><a href="${siteUrl}/">Sportivo home</a> / ${label} fixtures</p><h2>${label} fixtures and live scores</h2><p>Browse ${label.toLowerCase()} schedules, statuses, and kickoff times in Nepal Standard Time.</p>${fixtureList(category, matches)}</section>`;
 }
 
 function inject(html, content) {
@@ -129,7 +129,15 @@ for (const category of categories) {
     description: `Browse ${category} fixtures, live scores, results, and Nepal Standard Time schedules on Sportivo by Dipesh Sapkota.`,
     canonical,
   });
-  await writePage(category, inject(html, `<p><strong>Pre-rendered ${escapeHtml(category)} fixture page.</strong> Updated ${escapeHtml(generatedAt)}.</p>${categoryBlock(category, data[category])}`));
+  const categoryBreadcrumbs = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Sportivo', item: `${siteUrl}/` },
+      { '@type': 'ListItem', position: 2, name: label, item: canonical },
+    ],
+  };
+  await writePage(category, inject(html, `<p><strong>Pre-rendered ${escapeHtml(category)} fixture page.</strong> Updated ${escapeHtml(generatedAt)}.</p>${categoryBlock(category, data[category])}<script type="application/ld+json">${JSON.stringify(categoryBreadcrumbs)}</script>`));
 
   for (const match of data[category]) {
     const matchCanonical = `${siteUrl}/${category}/match/${encodeURIComponent(match.slug)}/`;
@@ -154,7 +162,16 @@ for (const category of categories) {
       ...(startDate ? { startDate } : {}),
       organizer: { '@type': 'Organization', name: 'Sportivo by Dipesh Sapkota', url: siteUrl },
     };
-    const body = `<article><nav aria-label="Breadcrumb"><a href="/">Sportivo</a> / <a href="/${category}/">${label} fixtures</a> / Match details</nav><h2>${escapeHtml(match.title)}</h2><p><strong>Status:</strong> ${escapeHtml(match.status)}</p><p><strong>Scheduled time:</strong> <time>${escapeHtml(match.displayTime)}</time> Nepal Standard Time</p><p><strong>Sport:</strong> ${escapeHtml(match.category)}</p><p>Sportivo by Dipesh Sapkota presents this fixture with current information supplied by its upstream sports data provider. Stream availability is requested separately and is not guaranteed.</p></article><script type="application/ld+json">${JSON.stringify(sportsEvent)}</script>`;
+    const matchBreadcrumbs = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Sportivo', item: `${siteUrl}/` },
+        { '@type': 'ListItem', position: 2, name: label, item: `${siteUrl}/${category}/` },
+        { '@type': 'ListItem', position: 3, name: match.title, item: matchCanonical },
+      ],
+    };
+    const body = `<article><nav aria-label="Breadcrumb"><a href="/">Sportivo</a> / <a href="/${category}/">${label} fixtures</a> / Match details</nav><h2>${escapeHtml(match.title)}</h2><p><strong>Status:</strong> ${escapeHtml(match.status)}</p><p><strong>Scheduled time:</strong> <time>${escapeHtml(match.displayTime)}</time> Nepal Standard Time</p><p><strong>Sport:</strong> ${escapeHtml(match.category)}</p><p>Sportivo by Dipesh Sapkota presents this fixture with current information supplied by its upstream sports data provider. Stream availability is requested separately and is not guaranteed.</p></article><script type="application/ld+json">${JSON.stringify(sportsEvent)}</script><script type="application/ld+json">${JSON.stringify(matchBreadcrumbs)}</script>`;
     await writePage(join(category, 'match', match.slug), inject(matchHtml, body));
   }
 }
