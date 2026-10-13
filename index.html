@@ -159,10 +159,39 @@
   </head>
   <body class="bg-[#0b0e14]">
     <div id="root"></div>
-    <main class="mx-auto max-w-7xl px-6 pb-16 pt-8 text-slate-300" aria-labelledby="sportivo-information-title">
-      <article class="max-w-4xl space-y-5 border-t border-white/10 pt-8">
-        <p class="text-xs font-bold uppercase tracking-[0.24em] text-[#e5b94f]">About Sportivo</p>
-        <h2 id="sportivo-information-title" class="text-2xl font-black text-white">Sportivo sports fixtures by Dipesh Sapkota</h2>
+    <main class="mx-auto max-w-7xl px-6 pb-20 pt-10 text-slate-300" aria-labelledby="sportivo-information-title">
+      <article class="overflow-hidden rounded-3xl border border-white/10 bg-[#101716] shadow-2xl shadow-black/20">
+        <div class="border-b border-white/10 bg-gradient-to-br from-[#172421] via-[#101716] to-[#101716] px-6 py-10 sm:px-10 sm:py-12">
+          <div class="grid gap-10 lg:grid-cols-[1fr_280px] lg:items-end">
+            <div class="max-w-3xl">
+              <p class="mb-4 text-xs font-bold uppercase tracking-[0.24em] text-[#e5b94f]">The Sportivo journal</p>
+              <h2 id="sportivo-information-title" class="text-3xl font-black tracking-tight text-white sm:text-5xl">A clearer way to follow the next game.</h2>
+              <p class="mt-5 max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">
+                Product notes, sport coverage, and the story behind Sportivo, an independent fixture desk created by Dipesh Sapkota.
+              </p>
+            </div>
+            <div class="border-l border-[#c9f36b]/40 pl-5">
+              <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#c9f36b]">Created by</p>
+              <p class="mt-2 text-xl font-bold text-white">Dipesh Sapkota</p>
+              <a class="mt-2 inline-block text-sm text-slate-400 underline decoration-[#e5b94f]/60 underline-offset-4 hover:text-[#c9f36b]" href="https://www.dipeshsapkota7.com.np/">Visit portfolio</a>
+            </div>
+          </div>
+          <div class="mt-10 grid gap-3 sm:grid-cols-3">
+            <div class="border-t border-white/15 pt-3">
+              <p class="text-sm font-bold text-white">01 / Browse</p>
+              <p class="mt-1 text-xs leading-5 text-slate-500">Find fixtures across football, cricket, and basketball.</p>
+            </div>
+            <div class="border-t border-white/15 pt-3">
+              <p class="text-sm font-bold text-white">02 / Understand</p>
+              <p class="mt-1 text-xs leading-5 text-slate-500">See local Nepal times and clear match status.</p>
+            </div>
+            <div class="border-t border-white/15 pt-3">
+              <p class="text-sm font-bold text-white">03 / Follow</p>
+              <p class="mt-1 text-xs leading-5 text-slate-500">Open a fixture and check its available sources.</p>
+            </div>
+          </div>
+        </div>
+        <div class="max-w-5xl space-y-5 px-6 py-10 sm:px-10">
         <p>
           Sportivo is a focused web application for discovering sports fixtures, checking match timing, and finding available stream sources. It brings football, cricket, and basketball schedules into one responsive fixture desk. The application is designed for people who want a clear view of what is happening next without navigating through a crowded sports news site. Sportivo presents the match title, sport category, local start time, current status, team information, poster or team imagery when available, and the stream options returned for that event.
         </p>
@@ -226,25 +255,53 @@
           The application uses ordinary semantic page elements such as headings, paragraphs, navigation links, lists, article regions, labels, and accessible names for interactive fixture cards. It supports keyboard activation for fixture cards and uses descriptive image alternative text when images are available. These details help people using assistive technology and help automated systems identify the difference between the site identity, sport navigation, product explanation, fixture schedule, and creator information.
         </p>
 
-        <h3 class="pt-3 text-lg font-bold text-white">Frequently asked questions</h3>
-        <dl class="space-y-4">
-          <div>
+        <section class="mt-12 border-t border-white/10 pt-8" aria-labelledby="sportivo-faq-title">
+          <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#e5b94f]">Quick answers</p>
+          <h3 id="sportivo-faq-title" class="mt-2 text-2xl font-black text-white">Frequently asked questions</h3>
+          <dl class="mt-6 grid gap-x-8 gap-y-6 md:grid-cols-2">
+          <div class="border-l border-[#c9f36b]/50 pl-4">
             <dt class="font-bold text-white">What is Sportivo?</dt>
             <dd class="mt-1">Sportivo is a sports fixture and schedule application for football, cricket, and basketball, created by Dipesh Sapkota.</dd>
           </div>
-          <div>
+          <div class="border-l border-[#c9f36b]/50 pl-4">
             <dt class="font-bold text-white">What can I find on Sportivo?</dt>
             <dd class="mt-1">You can find match titles, sport categories, upcoming times, live or completed status, team details when supplied, search results, and available stream sources.</dd>
           </div>
-          <div>
+          <div class="border-l border-[#c9f36b]/50 pl-4">
             <dt class="font-bold text-white">Are the fixture times shown in Nepal time?</dt>
             <dd class="mt-1">Yes. Event timestamps are formatted for Asia/Kathmandu when a valid date is supplied by the fixture data.</dd>
           </div>
-          <div>
+          <div class="border-l border-[#c9f36b]/50 pl-4">
             <dt class="font-bold text-white">Is Sportivo an official broadcaster?</dt>
             <dd class="mt-1">No. Sportivo is an independent fixture interface. Stream availability depends on external providers, and visitors should use lawful official sources where applicable.</dd>
           </div>
-        </dl>
+          <div class="border-l border-[#c9f36b]/50 pl-4">
+            <dt class="font-bold text-white">Who is Dipesh Sapkota?</dt>
+            <dd class="mt-1">Dipesh Sapkota is the creator, author, and publisher identified with Sportivo and its public project profiles.</dd>
+          </div>
+          <div class="border-l border-[#c9f36b]/50 pl-4">
+            <dt class="font-bold text-white">Can I search for a team?</dt>
+            <dd class="mt-1">Yes. Use the fixture desk search field to look for a team, competition, tournament, or match title in the loaded schedule.</dd>
+          </div>
+          <div class="border-l border-[#c9f36b]/50 pl-4">
+            <dt class="font-bold text-white">Why might a fixture have no stream?</dt>
+            <dd class="mt-1">A source may not be supplied, may be offline, or may no longer be available from the upstream provider.</dd>
+          </div>
+          <div class="border-l border-[#c9f36b]/50 pl-4">
+            <dt class="font-bold text-white">Does Sportivo show official final scores?</dt>
+            <dd class="mt-1">Sportivo presents the status and details returned by its data provider. Confirm important results with the official competition or broadcaster.</dd>
+          </div>
+          <div class="border-l border-[#c9f36b]/50 pl-4">
+            <dt class="font-bold text-white">What devices support Sportivo?</dt>
+            <dd class="mt-1">The responsive web interface is designed for modern desktop, tablet, and mobile browsers with JavaScript enabled.</dd>
+          </div>
+          <div class="border-l border-[#c9f36b]/50 pl-4">
+            <dt class="font-bold text-white">Where can I learn more about the creator?</dt>
+            <dd class="mt-1">Visit Dipesh Sapkota&apos;s <a class="text-[#c9f36b] underline underline-offset-4" href="https://www.dipeshsapkota7.com.np/">portfolio</a> or public profiles linked from Sportivo.</dd>
+          </div>
+          </dl>
+        </section>
+        </div>
       </article>
     </main>
     <script type="module" src="/src/main.jsx"></script>
