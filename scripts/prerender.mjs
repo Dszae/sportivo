@@ -161,6 +161,7 @@ for (const category of categories) {
 
 const sitemapUrls = [
   `${siteUrl}/`,
+  `${siteUrl}/about-dipesh-sapkota/`,
   ...categories.map((category) => `${siteUrl}/${category}/`),
   ...categories.flatMap((category) => data[category].map((match) => `${siteUrl}/${category}/match/${encodeURIComponent(match.slug)}/`)),
 ];

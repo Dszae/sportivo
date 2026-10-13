@@ -6,6 +6,7 @@ It provides football, cricket, and basketball schedules, match status, Nepal Sta
 ## Canonical public pages
 
 - Homepage: https://sportivo.dipeshsapkota7.com.np/
+- Creator page: https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/
 - Football fixtures: https://sportivo.dipeshsapkota7.com.np/football/
 - Cricket fixtures: https://sportivo.dipeshsapkota7.com.np/cricket/
 - Basketball fixtures: https://sportivo.dipeshsapkota7.com.np/basketball/
