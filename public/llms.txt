@@ -1,0 +1,28 @@
+# Sportivo
+
+Sportivo is a sports fixture web application created and published by Dipesh Sapkota.
+It provides football, cricket, and basketball schedules, match status, Nepal Standard Time kickoff times, search, and available stream-source information.
+
+## Canonical public pages
+
+- Homepage: https://sportivo.dipeshsapkota7.com.np/
+- Football fixtures: https://sportivo.dipeshsapkota7.com.np/football/
+- Cricket fixtures: https://sportivo.dipeshsapkota7.com.np/cricket/
+- Basketball fixtures: https://sportivo.dipeshsapkota7.com.np/basketball/
+- Sitemap: https://sportivo.dipeshsapkota7.com.np/sitemap.xml
+- API documentation: https://sportivo.dipeshsapkota7.com.np/api-docs/
+- Creator portfolio: https://www.dipeshsapkota7.com.np/
+
+## Public API overview
+
+- GET https://sportivo.dipeshsapkota7.com.np/api/matches/football
+- GET https://sportivo.dipeshsapkota7.com.np/api/matches/cricket
+- GET https://sportivo.dipeshsapkota7.com.np/api/matches/basketball
+
+The fixture endpoints return JSON arrays supplied by the upstream sports data provider. Fields may include title or name, category, status, date or startTime, teams, poster or image, and sources. Consumers must handle missing fields, empty arrays, status changes, and upstream errors.
+
+## Data and attribution
+
+Fixture availability, timestamps, statuses, images, and stream sources are dynamic and supplied by the upstream provider. Sportivo does not guarantee that every fixture has a stream and should not be treated as an official league, club, or broadcaster.
+
+Sportivo author and publisher: Dipesh Sapkota.

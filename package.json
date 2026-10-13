@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/prerender.mjs",
     "lint": "oxlint",
+    "monitor": "node scripts/monitor.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

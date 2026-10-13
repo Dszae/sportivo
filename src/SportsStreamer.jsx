@@ -45,6 +45,11 @@ const getCategoryFromPath = () => {
   return ['football', 'cricket', 'basketball'].includes(category) ? category : 'football';
 };
 
+const getMatchSlugFromPath = () => {
+  const parts = window.location.pathname.split('/').filter(Boolean);
+  return parts[1] === 'match' ? parts[2] : null;
+};
+
 export default function SportsStreamer() {
   const [matches, setMatches] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -81,7 +86,7 @@ export default function SportsStreamer() {
   useEffect(() => {
     const handleUrlChange = () => {
       const params = new URLSearchParams(window.location.search);
-      const matchSlug = params.get('match');
+      const matchSlug = params.get('match') || getMatchSlugFromPath();
       
       if (matchSlug && matches.length > 0) {
         const found = matches.find(m => {
