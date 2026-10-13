@@ -18,7 +18,10 @@
     <meta name="author" content="Dipesh Sapkota" />
     <meta name="creator" content="Dipesh Sapkota" />
     <meta name="publisher" content="Dipesh Sapkota" />
+    <meta name="subject" content="Football, cricket, and basketball fixtures, schedules, and live stream availability" />
+    <meta name="classification" content="Sports fixtures and live sports schedule web application" />
     <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <link rel="canonical" href="https://sportivo.dipeshsapkota7.com.np/" />
     <link rel="alternate" hreflang="en-NP" href="https://sportivo.dipeshsapkota7.com.np/" />
     <link rel="alternate" hreflang="x-default" href="https://sportivo.dipeshsapkota7.com.np/" />
@@ -68,6 +71,58 @@
             "creator": { "@id": "https://www.dipeshsapkota7.com.np/#person" }
           },
           {
+            "@type": "AboutPage",
+            "@id": "https://sportivo.dipeshsapkota7.com.np/#about",
+            "url": "https://sportivo.dipeshsapkota7.com.np/",
+            "name": "About Sportivo and Dipesh Sapkota",
+            "description": "Direct information about Sportivo, its football, cricket, and basketball fixture features, and its creator Dipesh Sapkota.",
+            "isPartOf": { "@id": "https://sportivo.dipeshsapkota7.com.np/#website" },
+            "about": [
+              { "@id": "https://sportivo.dipeshsapkota7.com.np/#application" },
+              { "@id": "https://www.dipeshsapkota7.com.np/#person" }
+            ],
+            "author": { "@id": "https://www.dipeshsapkota7.com.np/#person" },
+            "inLanguage": "en-NP"
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://sportivo.dipeshsapkota7.com.np/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What is Sportivo?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Sportivo is a web application by Dipesh Sapkota for browsing football, cricket, and basketball fixtures, local Nepal kickoff times, match statuses, and available stream sources."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Which sports does Sportivo cover?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Sportivo currently provides fixture views for football, cricket, and basketball, with separate routes for each sport."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Who created Sportivo?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Sportivo is created and published by Dipesh Sapkota."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Does Sportivo guarantee a stream for every fixture?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. Stream availability depends on the upstream data and source provider. Sportivo displays available sources and reports when a source is unavailable."
+                }
+              }
+            ]
+          },
+          {
             "@type": "WebApplication",
             "@id": "https://sportivo.dipeshsapkota7.com.np/#application",
             "name": "Sportivo",
@@ -104,6 +159,94 @@
   </head>
   <body class="bg-[#0b0e14]">
     <div id="root"></div>
+    <main class="mx-auto max-w-7xl px-6 pb-16 pt-8 text-slate-300" aria-labelledby="sportivo-information-title">
+      <article class="max-w-4xl space-y-5 border-t border-white/10 pt-8">
+        <p class="text-xs font-bold uppercase tracking-[0.24em] text-[#e5b94f]">About Sportivo</p>
+        <h2 id="sportivo-information-title" class="text-2xl font-black text-white">Sportivo sports fixtures by Dipesh Sapkota</h2>
+        <p>
+          Sportivo is a focused web application for discovering sports fixtures, checking match timing, and finding available stream sources. It brings football, cricket, and basketball schedules into one responsive fixture desk. The application is designed for people who want a clear view of what is happening next without navigating through a crowded sports news site. Sportivo presents the match title, sport category, local start time, current status, team information, poster or team imagery when available, and the stream options returned for that event.
+        </p>
+        <p>
+          The product is created and maintained by Dipesh Sapkota. Sportivo is an independent web project published at sportivo.dipeshsapkota7.com.np and connected to Dipesh Sapkota&apos;s portfolio and professional profiles. The project demonstrates a practical sports interface built with React and Vite, with deployment configuration for Vercel and a remote fixture data source. The interface is intended to be quick to scan on a desktop computer, tablet, or mobile phone while keeping the most important match information close to the user.
+        </p>
+
+        <h3 class="pt-3 text-lg font-bold text-white">Football fixtures and match discovery</h3>
+        <p>
+          The football view is available at <a class="text-[#c9f36b] underline decoration-[#c9f36b]/40 underline-offset-4" href="/football/">Sportivo football fixtures</a>. It lists available football events and helps visitors search for a club, national team, competition, or match title. A fixture can represent a scheduled game, an event in progress, or a completed result, depending on the status supplied by the data provider. Common football matchups are displayed with the participating teams, the available time in Nepal, and a clear indication when an event is live or finished.
+        </p>
+
+        <h3 class="pt-3 text-lg font-bold text-white">Cricket fixtures and event schedules</h3>
+        <p>
+          The cricket view is available at <a class="text-[#c9f36b] underline decoration-[#c9f36b]/40 underline-offset-4" href="/cricket/">Sportivo cricket fixtures</a>. Cricket events can have different naming formats from football matches, so Sportivo preserves the supplied event title and category while presenting it in the same easy-to-scan schedule. Visitors can use the search field to find a tournament, country, team, or event. The schedule can change as new fixtures become available and as existing events move from upcoming to live and then to completed.
+        </p>
+
+        <h3 class="pt-3 text-lg font-bold text-white">Basketball fixtures and local kickoff times</h3>
+        <p>
+          The basketball view is available at <a class="text-[#c9f36b] underline decoration-[#c9f36b]/40 underline-offset-4" href="/basketball/">Sportivo basketball fixtures</a>. Basketball visitors can browse upcoming events, search by team or event name, and open a fixture to inspect the available stream sources. Sportivo formats timestamps for the Nepal time zone, Asia/Kathmandu, so visitors in Nepal can understand when a match begins without manually converting an international schedule.
+        </p>
+
+        <h3 class="pt-3 text-lg font-bold text-white">How the Sportivo fixture desk works</h3>
+        <ol class="list-decimal space-y-2 pl-5">
+          <li>Choose football, cricket, basketball, or the main Sportivo schedule.</li>
+          <li>Browse the returned fixture cards or search for a team and match.</li>
+          <li>Review the event title, sport, local Nepal time, and live or completed status.</li>
+          <li>Open a fixture to request its available stream details.</li>
+          <li>Select a valid available source when the event provider supplies one.</li>
+        </ol>
+        <p>
+          Sportivo does not claim that every scheduled event will have a stream. Availability depends on the upstream event data and source provider. If an event has no source, if a source is offline, or if a remote response cannot be parsed, the application communicates that state instead of presenting a misleading link. The site also validates external stream URLs before using them and opens external destinations with browser security protections.
+        </p>
+
+        <h3 class="pt-3 text-lg font-bold text-white">About Dipesh Sapkota</h3>
+        <p>
+          Dipesh Sapkota is the creator and publisher identified with Sportivo. The application credits Dipesh Sapkota as its author, creator, and publisher and links the project to the creator&apos;s portfolio at dipeshsapkota7.com.np. Public project profiles include GitHub at github.com/dszae, LinkedIn at linkedin.com/in/dszae, and Facebook at facebook.com/dsz.ae. These links provide context about the person responsible for the project and distinguish Sportivo from unrelated sports websites using similar terms.
+        </p>
+        <p>
+          This page is written as direct HTML so search engines, accessibility tools, link previews, and other clients can understand what Sportivo is before the interactive React application loads. The live fixture list is dynamic and is requested after the page opens; the descriptive information above is stable product information delivered in the initial document. Sportivo is a web application, not a replacement for an official league, club, broadcaster, or rights holder. Visitors should use official sources and follow the laws and terms applicable in their location when watching sports content.
+        </p>
+
+        <h3 class="pt-3 text-lg font-bold text-white">Sports schedule information for visitors in Nepal</h3>
+        <p>
+          Sportivo is especially useful for visitors who follow international sports from Nepal. Match times are formatted with the Asia/Kathmandu time zone and the en-NP locale, giving the schedule a familiar local reference. This helps reduce confusion when a football match, cricket fixture, or basketball game is announced by an international provider in a different time zone. The displayed time is a presentation of the supplied event date and should be checked against the official competition or broadcaster for last-minute changes, postponements, venue changes, and cancellations.
+        </p>
+        <p>
+          The schedule is designed for repeated daily use. A visitor can open the home page for the main fixture desk, choose a sport from the navigation, scan the current list, and search within the loaded fixtures. Event cards distinguish upcoming fixtures from live events and completed results. When the upstream data contains team logos, posters, or other artwork, Sportivo uses that information to make the fixture easier to recognize. When artwork is unavailable, the interface keeps the event title and schedule usable instead of treating an image as required information.
+        </p>
+
+        <h3 class="pt-3 text-lg font-bold text-white">Search, sharing, and fixture URLs</h3>
+        <p>
+          Sportivo supports team and match discovery through its search field. Search is intended for practical terms such as a club name, national team, tournament, league, or event title. Opening a fixture updates the browser URL with a readable match identifier, which makes the current selection easier to share and return to. A shared fixture URL can load the same application route and attempt to find the matching event in the current schedule. Because fixtures are live data, an old shared event may no longer be returned by the provider after the match has finished or the schedule has changed.
+        </p>
+
+        <h3 class="pt-3 text-lg font-bold text-white">Technology behind the application</h3>
+        <p>
+          The Sportivo interface is built with React and Vite. React controls the interactive schedule, category navigation, search state, fixture selection, stream-source state, loading messages, and error messages. Vite produces the browser bundle and the initial HTML document. Vercel hosts the deployed site and routes the application programming interface requests used to retrieve fixture and stream data. The direct information in this document is intentionally available before the React bundle executes, while the current match list remains dynamic and is loaded from the application data service.
+        </p>
+        <p>
+          The application uses ordinary semantic page elements such as headings, paragraphs, navigation links, lists, article regions, labels, and accessible names for interactive fixture cards. It supports keyboard activation for fixture cards and uses descriptive image alternative text when images are available. These details help people using assistive technology and help automated systems identify the difference between the site identity, sport navigation, product explanation, fixture schedule, and creator information.
+        </p>
+
+        <h3 class="pt-3 text-lg font-bold text-white">Frequently asked questions</h3>
+        <dl class="space-y-4">
+          <div>
+            <dt class="font-bold text-white">What is Sportivo?</dt>
+            <dd class="mt-1">Sportivo is a sports fixture and schedule application for football, cricket, and basketball, created by Dipesh Sapkota.</dd>
+          </div>
+          <div>
+            <dt class="font-bold text-white">What can I find on Sportivo?</dt>
+            <dd class="mt-1">You can find match titles, sport categories, upcoming times, live or completed status, team details when supplied, search results, and available stream sources.</dd>
+          </div>
+          <div>
+            <dt class="font-bold text-white">Are the fixture times shown in Nepal time?</dt>
+            <dd class="mt-1">Yes. Event timestamps are formatted for Asia/Kathmandu when a valid date is supplied by the fixture data.</dd>
+          </div>
+          <div>
+            <dt class="font-bold text-white">Is Sportivo an official broadcaster?</dt>
+            <dd class="mt-1">No. Sportivo is an independent fixture interface. Stream availability depends on external providers, and visitors should use lawful official sources where applicable.</dd>
+          </div>
+        </dl>
+      </article>
+    </main>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
