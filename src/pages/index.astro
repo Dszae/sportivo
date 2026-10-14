@@ -16,8 +16,8 @@ const data = await Promise.all(
 );
 const byCategory = Object.fromEntries(data) as Record<string, Match[]>;
 
-const title = 'Dipesh Sapkota - Sportivo | Live Sports Fixtures & Scores Nepal';
-const description = 'Follow live football, cricket, and basketball fixtures with Nepal Standard Time kickoff schedules and verified stream sources on Sportivo, created and published by Dipesh Sapkota.';
+const title = 'Sportivo | Live Football, Cricket & Basketball Scores & Streams Nepal';
+const description = 'Follow live football, cricket, and basketball fixtures with Nepal Standard Time kickoff schedules and verified stream sources on Sportivo.';
 const canonical = 'https://sportivo.dipeshsapkota7.com.np/';
 
 const homepageJsonLd = {
@@ -29,8 +29,7 @@ const homepageJsonLd = {
       'url': canonical,
       'name': 'Sportivo',
       'alternateName': [
-        'Sportivo by Dipesh Sapkota',
-        'Dipesh Sapkota Sportivo',
+        'Sportivo Live Desk',
         'Sportivo Sports Fixture Desk',
         'Sportivo Nepal'
       ],
@@ -123,8 +122,8 @@ const homepageJsonLd = {
         {
           '@type': 'SiteNavigationElement',
           'position': 1,
-          'name': 'Dipesh Sapkota (Creator)',
-          'description': 'Official profile and biography of Dipesh Sapkota, creator and publisher of Sportivo',
+          'name': 'About the Creator',
+          'description': 'Official profile and biography of the creator and publisher of Sportivo',
           'url': 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/'
         },
         {
@@ -164,7 +163,7 @@ const homepageJsonLd = {
   title={title}
   description={description}
   canonical={canonical}
-  keywords="Dipesh Sapkota, Sportivo, Sportivo by Dipesh Sapkota, dszae, sports fixtures Nepal, live scores Nepal, football fixtures Dipesh Sapkota, creator Dipesh Sapkota, Nepal sports streaming"
+  keywords="Sportivo, live sports fixtures, Nepal Standard Time kickoff, football fixtures, cricket schedules, basketball scores, Nepal sports streaming"
 >
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(homepageJsonLd)} />
@@ -173,23 +172,23 @@ const homepageJsonLd = {
   <SiteHeader />
 
   <main class="site-shell min-h-screen text-slate-100">
-    <!-- Hero Section with Prominent Dipesh Sapkota Citation -->
+    <!-- Hero Section -->
     <section class="mx-auto max-w-7xl px-6 pb-10 pt-12 sm:pt-16">
       <div class="mb-5 flex flex-wrap items-center gap-3">
         <a
           href="/about-dipesh-sapkota/"
-          class="inline-flex items-center gap-2 rounded-full border border-[#c9f36b]/40 bg-[#c9f36b]/10 px-3.5 py-1.5 text-xs font-bold text-[#c9f36b] hover:bg-[#c9f36b]/20 hover:text-white transition-all shadow-sm"
-          title="Learn more about Dipesh Sapkota, creator of Sportivo"
+          class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-300 hover:border-[#c9f36b]/40 hover:text-[#c9f36b] transition-all shadow-sm"
+          title="Learn more about the creator of Sportivo"
         >
           <img
             src="/dipesh-sapkota-profile.webp"
-            alt="Dipesh Sapkota profile"
-            class="h-5 w-5 rounded-full object-cover border border-[#c9f36b]"
-            width="20"
-            height="20"
+            alt="Creator profile"
+            class="h-4 w-4 rounded-full object-cover border border-[#c9f36b]"
+            width="16"
+            height="16"
             loading="eager"
           />
-          <span>Created & Published by <strong class="underline decoration-[#c9f36b]/70 font-black">Dipesh Sapkota</strong></span>
+          <span>By Dipesh Sapkota</span>
         </a>
         <span class="text-[10px] font-black uppercase tracking-[0.25em] text-[#e5b94f]">Live Fixture Desk · Nepal</span>
       </div>
@@ -199,7 +198,7 @@ const homepageJsonLd = {
       </h1>
       
       <p class="mt-5 max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">
-        Browse live football, cricket, and basketball schedules in Nepal Standard Time (NST). Built by <a href="/about-dipesh-sapkota/" class="font-bold text-white hover:text-[#c9f36b] underline decoration-[#c9f36b]/50">Dipesh Sapkota</a> with multi-server stream fallbacks and real-time provider data.
+        Browse live football, cricket, and basketball schedules in Nepal Standard Time (NST) with multi-server stream fallbacks and real-time provider data.
       </p>
 
       <div class="mt-8 flex flex-wrap items-center gap-3 text-xs font-bold">
@@ -207,10 +206,10 @@ const homepageJsonLd = {
           Football, Cricket & Basketball
         </span>
         <a
-          class="rounded-full border border-[#c9f36b]/40 bg-[#c9f36b]/15 px-4 py-2 text-[#c9f36b] hover:bg-[#c9f36b]/25 hover:text-white transition-all"
+          class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-slate-300 hover:border-[#c9f36b]/40 hover:text-[#c9f36b] transition-all"
           href="/about-dipesh-sapkota/"
         >
-          About Creator: Dipesh Sapkota &rarr;
+          About the Creator &rarr;
         </a>
         <a
           class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-slate-400 hover:text-white transition-all"

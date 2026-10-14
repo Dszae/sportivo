@@ -10,16 +10,16 @@ const profileImageUrl = 'https://sportivo.dipeshsapkota7.com.np/dipesh-sapkota-p
 
 const faqs = [
   {
-    question: 'Who is Dipesh Sapkota?',
-    answer: 'Dipesh Sapkota is an engineering student, software developer, and AI/ML enthusiast from Nepal. He is the creator and publisher of Sportivo, a live sports fixtures desk providing real-time scores, schedules, and stream links.',
+    question: 'Who created Sportivo?',
+    answer: 'Sportivo was created and published by Dipesh Sapkota, a software developer and engineering student from Nepal.',
   },
   {
-    question: 'What is Sportivo created by Dipesh Sapkota?',
-    answer: 'Sportivo is an independent sports platform built by Dipesh Sapkota that aggregates football, cricket, and basketball fixtures, converts kickoff times to Nepal Standard Time (NST), and displays verified live stream availability from upstream sports providers.',
+    question: 'What is Sportivo?',
+    answer: 'Sportivo is an independent sports platform that aggregates football, cricket, and basketball fixtures, converts kickoff times to Nepal Standard Time (NST), and displays verified live stream availability from upstream sports providers.',
   },
   {
-    question: 'Where can I find Dipesh Sapkota’s code and public profiles?',
-    answer: 'You can explore Dipesh Sapkota’s personal portfolio at dipeshsapkota7.com.np, view his open-source software on GitHub (@dszae), and connect with him on LinkedIn and Facebook.',
+    question: 'Where can I find the developer profiles and code?',
+    answer: 'You can explore Dipesh’s personal portfolio at dipeshsapkota7.com.np, inspect open-source software on GitHub (@dszae), and connect on LinkedIn and Facebook.',
   },
   {
     question: 'How are kickoff times and streams provided on Sportivo?',
@@ -189,7 +189,7 @@ const jsonLd = {
       <nav aria-label="Breadcrumb" class="text-xs text-slate-500">
         <a href="/" class="hover:text-[#c9f36b] transition">Sportivo</a>
         <span class="mx-2">/</span>
-        <span class="text-slate-300">About the creator (Dipesh Sapkota)</span>
+        <span class="text-slate-300">About the creator</span>
       </nav>
 
       <!-- Profile Header -->
@@ -242,7 +242,7 @@ const jsonLd = {
 
       <!-- Biography -->
       <section class="mt-12 space-y-4 text-base leading-8 text-slate-300" itemprop="description">
-        <h2 class="text-2xl font-black text-white">About Dipesh Sapkota</h2>
+        <h2 class="text-2xl font-black text-white">About the Creator</h2>
         <p>
           Dipesh Sapkota is the creator and publisher of Sportivo, an independent sports web platform built to give fans instantaneous access to football, cricket, and basketball schedules, kickoff times calibrated for Nepal Standard Time (UTC+5:45), and multi-server stream source availability.
         </p>
@@ -251,49 +251,64 @@ const jsonLd = {
         </p>
       </section>
 
-      <!-- Verified Links -->
+      <!-- Verified Links (Icons Only) -->
       <section class="mt-12">
-        <h2 class="text-2xl font-black text-white">Verified Profiles &amp; Web Presence</h2>
-        <nav aria-label="Dipesh Sapkota public profiles" class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-sm font-semibold">
+        <h2 class="text-2xl font-black text-white">Connect &amp; Social Links</h2>
+        <p class="mt-2 text-xs text-slate-400">Official developer profiles and repositories.</p>
+        <nav aria-label="Social media links" class="mt-4 flex flex-wrap items-center gap-3">
           <a
             href="https://www.dipeshsapkota7.com.np/"
             rel="me author external"
             target="_blank"
-            class="flex items-center justify-between rounded-xl border border-white/10 bg-[#111a19] p-4 text-[#c9f36b] hover:bg-white/5 transition"
+            title="Personal Portfolio"
+            aria-label="Personal Portfolio"
+            class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-[#111a19] text-slate-300 hover:border-[#c9f36b]/50 hover:bg-[#c9f36b]/10 hover:text-[#c9f36b] hover:scale-105 transition-all shadow-sm"
             itemprop="sameAs"
           >
-            <span>Personal Portfolio</span>
-            <span class="text-xs text-slate-400">dipeshsapkota7.com.np ↗</span>
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
           </a>
           <a
             href="https://github.com/dszae"
             rel="me author external"
             target="_blank"
-            class="flex items-center justify-between rounded-xl border border-white/10 bg-[#111a19] p-4 text-white hover:text-[#c9f36b] hover:bg-white/5 transition"
+            title="GitHub (@dszae)"
+            aria-label="GitHub (@dszae)"
+            class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-[#111a19] text-slate-300 hover:border-[#c9f36b]/50 hover:bg-[#c9f36b]/10 hover:text-[#c9f36b] hover:scale-105 transition-all shadow-sm"
             itemprop="sameAs"
           >
-            <span>GitHub (@dszae)</span>
-            <span class="text-xs text-slate-400">Code repositories ↗</span>
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+            </svg>
           </a>
           <a
             href="https://linkedin.com/in/dszae"
             rel="me author external"
             target="_blank"
-            class="flex items-center justify-between rounded-xl border border-white/10 bg-[#111a19] p-4 text-white hover:text-[#c9f36b] hover:bg-white/5 transition"
+            title="LinkedIn (@dszae)"
+            aria-label="LinkedIn (@dszae)"
+            class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-[#111a19] text-slate-300 hover:border-[#c9f36b]/50 hover:bg-[#c9f36b]/10 hover:text-[#c9f36b] hover:scale-105 transition-all shadow-sm"
             itemprop="sameAs"
           >
-            <span>LinkedIn Profile</span>
-            <span class="text-xs text-slate-400">dszae ↗</span>
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76c-.97 0-1.75-.79-1.75-1.76s.78-1.75 1.75-1.75 1.75.78 1.75 1.75-.78 1.76-1.75 1.76m1.39 9.74v-8.37H5.07v8.37h2.78z"/>
+            </svg>
           </a>
           <a
             href="https://facebook.com/dsz.ae"
             rel="me author external"
             target="_blank"
-            class="flex items-center justify-between rounded-xl border border-white/10 bg-[#111a19] p-4 text-white hover:text-[#c9f36b] hover:bg-white/5 transition"
+            title="Facebook (@dsz.ae)"
+            aria-label="Facebook (@dsz.ae)"
+            class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-[#111a19] text-slate-300 hover:border-[#c9f36b]/50 hover:bg-[#c9f36b]/10 hover:text-[#c9f36b] hover:scale-105 transition-all shadow-sm"
             itemprop="sameAs"
           >
-            <span>Facebook Profile</span>
-            <span class="text-xs text-slate-400">dsz.ae ↗</span>
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
           </a>
         </nav>
       </section>
