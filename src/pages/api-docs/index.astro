@@ -1,7 +1,116 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+
+const title = 'Sportivo Public Fixture API Docs | Dipesh Sapkota';
+const description = 'Official public sports fixture API documentation for Sportivo by Dipesh Sapkota. Access real-time football, cricket, and basketball fixture endpoints.';
+const canonical = 'https://sportivo.dipeshsapkota7.com.np/api-docs/';
+
+const apiJsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'TechArticle',
+      '@id': `${canonical}#article`,
+      'url': canonical,
+      'headline': 'Sportivo Public Fixture API Documentation',
+      'description': description,
+      'author': {
+        '@type': 'Person',
+        '@id': 'https://www.dipeshsapkota7.com.np/#person',
+        'name': 'Dipesh Sapkota',
+        'url': 'https://www.dipeshsapkota7.com.np/'
+      },
+      'publisher': {
+        '@type': 'WebSite',
+        '@id': 'https://sportivo.dipeshsapkota7.com.np/#website',
+        'name': 'Sportivo'
+      },
+      'breadcrumb': {
+        '@type': 'BreadcrumbList',
+        'itemListElement': [
+          {
+            '@type': 'ListItem',
+            'position': 1,
+            'name': 'Sportivo',
+            'item': 'https://sportivo.dipeshsapkota7.com.np/'
+          },
+          {
+            '@type': 'ListItem',
+            'position': 2,
+            'name': 'API Documentation',
+            'item': canonical
+          }
+        ]
+      }
+    }
+  ]
+};
 ---
-<BaseLayout title="Sportivo Public Fixture API | Developer Documentation" description="Public fixture API documentation for Sportivo by Dipesh Sapkota." canonical="https://sportivo.dipeshsapkota7.com.np/api-docs/">
-  <SiteHeader /><main class="site-shell min-h-screen text-slate-100"><article class="mx-auto max-w-3xl px-6 pb-20 pt-12"><nav aria-label="Breadcrumb" class="text-xs text-slate-500"><a href="/">Sportivo</a><span class="mx-2">/</span><span>Developer documentation</span></nav><h1 class="mt-10 text-4xl font-black text-white sm:text-6xl">Sportivo Public Fixture API</h1><p class="mt-6 leading-8 text-slate-300">Sportivo provides public read-only fixture endpoints. Data is dynamic and supplied by the upstream provider.</p><h2 class="mt-12 text-2xl font-black text-white">Endpoints</h2><ul class="mt-4 list-disc space-y-3 pl-6 text-slate-300"><li><code>GET /api/matches/football</code></li><li><code>GET /api/matches/cricket</code></li><li><code>GET /api/matches/basketball</code></li></ul><h2 class="mt-12 text-2xl font-black text-white">Response contract</h2><p class="mt-4 leading-8 text-slate-300">Successful responses are JSON arrays. A fixture may contain title or name, category, status, time fields, teams, poster or image, and sources. Clients must tolerate missing fields, empty arrays, provider changes, and unavailable streams.</p><p class="mt-8 text-slate-400">Created and published by <a class="text-[#c9f36b]" href="https://www.dipeshsapkota7.com.np/">Dipesh Sapkota</a>.</p></article></main>
+<BaseLayout
+  title={title}
+  description={description}
+  canonical={canonical}
+  keywords="Sportivo API, sports fixture API, Dipesh Sapkota, football API, cricket API, basketball API, developer documentation"
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(apiJsonLd)} />
+  </Fragment>
+
+  <SiteHeader activeCategory="api-docs" />
+
+  <main class="site-shell min-h-screen text-slate-100">
+    <article class="mx-auto max-w-3xl px-6 pb-20 pt-12">
+      <nav aria-label="Breadcrumb" class="text-xs text-slate-500">
+        <a href="/" class="hover:text-[#c9f36b] transition">Sportivo</a>
+        <span class="mx-2">/</span>
+        <span class="text-slate-300">Developer documentation</span>
+      </nav>
+
+      <div class="mt-8 flex items-center gap-3">
+        <span class="rounded-full border border-[#c9f36b]/40 bg-[#c9f36b]/10 px-3 py-1 text-xs font-bold text-[#c9f36b]">
+          REST API · v1.0
+        </span>
+        <span class="text-xs text-slate-400">Created by <a href="/about-dipesh-sapkota/" class="text-white hover:text-[#c9f36b] underline">Dipesh Sapkota</a></span>
+      </div>
+
+      <h1 class="mt-4 text-4xl font-black text-white sm:text-6xl">Sportivo Public Fixture API</h1>
+      <p class="mt-6 leading-8 text-slate-300">
+        Sportivo provides public read-only fixture endpoints for developers building sports dashboards, widgets, and schedule trackers. Fixture data is refreshed dynamically from upstream providers.
+      </p>
+
+      <h2 class="mt-12 text-2xl font-black text-white">Available Endpoints</h2>
+      <ul class="mt-4 list-disc space-y-3 pl-6 text-slate-300">
+        <li><code>GET /api/matches/football</code> — Returns real-time and scheduled football matches.</li>
+        <li><code>GET /api/matches/cricket</code> — Returns cricket fixtures, tournament matches, and statuses.</li>
+        <li><code>GET /api/matches/basketball</code> — Returns basketball and league fixtures.</li>
+      </ul>
+
+      <h2 class="mt-12 text-2xl font-black text-white">Response Structure</h2>
+      <p class="mt-4 leading-8 text-slate-300">
+        Successful responses are JSON arrays. Each fixture object may include:
+      </p>
+      <pre class="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-[#111a19] p-4 text-xs text-slate-300"><code>{`[
+  {
+    "id": "match-uuid",
+    "title": "Arsenal vs Chelsea",
+    "category": "football",
+    "status": "live",
+    "date": 1728900000000,
+    "teams": { "home": { "name": "Arsenal" }, "away": { "name": "Chelsea" } },
+    "sources": [{ "source": "alpha", "id": "stream1" }]
+  }
+]`}</code></pre>
+
+      <div class="mt-12 rounded-2xl border border-white/10 bg-[#111a19] p-6">
+        <h3 class="text-lg font-bold text-white">Attribution &amp; Creator</h3>
+        <p class="mt-2 text-sm leading-relaxed text-slate-300">
+          This API and platform are created and maintained by <a href="/about-dipesh-sapkota/" class="font-bold text-[#c9f36b] underline">Dipesh Sapkota</a>. You can inspect project code on <a href="https://github.com/dszae" target="_blank" rel="noopener noreferrer" class="text-white underline">GitHub (@dszae)</a>.
+        </p>
+      </div>
+    </article>
+  </main>
+
+  <SiteFooter />
 </BaseLayout>

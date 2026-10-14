@@ -11,6 +11,7 @@ interface Props {
   imageWidth?: number;
   imageHeight?: number;
   imageType?: string;
+  keywords?: string;
 }
 
 const {
@@ -19,11 +20,13 @@ const {
   canonical,
   type = 'website',
   image = '/sportivo-preview.png',
-  imageAlt = 'Sportivo sports fixture desk',
+  imageAlt = 'Sportivo sports fixture desk by Dipesh Sapkota',
   imageWidth = 980,
   imageHeight = 568,
   imageType = 'image/png',
+  keywords = 'Dipesh Sapkota, Dipesh Sapkota Sportivo, dszae, Sportivo, Sportivo Nepal, live sports fixtures, football live stream Nepal, cricket schedules NST, basketball fixtures, Nepali software developer',
 } = Astro.props;
+
 const siteUrl = 'https://sportivo.dipeshsapkota7.com.np';
 const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
 ---
@@ -33,13 +36,34 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#080a0b" />
+    
+    <!-- Core Author & Creator Tags for Dipesh Sapkota -->
     <meta name="author" content="Dipesh Sapkota" />
-    <meta name="robots" content="index, follow" />
+    <meta name="creator" content="Dipesh Sapkota" />
+    <meta name="publisher" content="Dipesh Sapkota" />
+    <link rel="author" href="https://www.dipeshsapkota7.com.np/" />
+    
+    <!-- Search Engine Indexing Directives -->
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-    <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
+    <meta name="bingbot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    
+    <!-- Geo Meta Tags for Nepal Standard Time / Local Ranking -->
+    <meta name="geo.region" content="NP" />
+    <meta name="geo.placename" content="Nepal" />
+    
+    <!-- Keywords & Canonical -->
+    <meta name="keywords" content={keywords} />
     <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
+    
+    <!-- Primary Title & Description -->
     <title>{title}</title>
     <meta name="description" content={description} />
+    
+    <!-- Open Graph Protocol -->
+    <meta property="og:site_name" content="Sportivo" />
     <meta property="og:type" content={type} />
     <meta property="og:url" content={canonical} />
     <meta property="og:title" content={title} />
@@ -50,8 +74,9 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     <meta property="og:image:width" content={String(imageWidth)} />
     <meta property="og:image:height" content={String(imageHeight)} />
     <meta property="og:image:type" content={imageType} />
-    <meta property="og:site_name" content="Sportivo" />
     <meta property="og:locale" content="en_NP" />
+    <meta property="article:author" content="https://www.dipeshsapkota7.com.np/" />
+    <meta property="article:publisher" content="https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/" />
     {type === 'profile' && (
       <>
         <meta property="profile:first_name" content="Dipesh" />
@@ -59,12 +84,16 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
         <meta property="profile:username" content="dszae" />
       </>
     )}
+    
+    <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@dszae" />
+    <meta name="twitter:creator" content="@dszae" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={absoluteImage} />
     <meta name="twitter:image:alt" content={imageAlt} />
-    <meta name="twitter:creator" content="@dszae" />
+    
     <slot name="head" />
   </head>
   <body>

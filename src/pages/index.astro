@@ -1,24 +1,39 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
 import MatchExplorer from '../components/MatchExplorer';
 import { categories, fetchMatches, type Match } from '../lib/sportivo';
 
-const data = await Promise.all(categories.map(async (category) => {
-  try { return [category, await fetchMatches(category)] as const; } catch { return [category, [] as Match[]] as const; }
-}));
+const data = await Promise.all(
+  categories.map(async (category) => {
+    try {
+      return [category, await fetchMatches(category)] as const;
+    } catch {
+      return [category, [] as Match[]] as const;
+    }
+  })
+);
 const byCategory = Object.fromEntries(data) as Record<string, Match[]>;
-const description = 'Follow football, cricket, and basketball fixtures with local kickoff times and available stream sources on Sportivo by Dipesh Sapkota.';
+
+const title = 'Dipesh Sapkota - Sportivo | Live Sports Fixtures & Scores Nepal';
+const description = 'Follow live football, cricket, and basketball fixtures with Nepal Standard Time kickoff schedules and verified stream sources on Sportivo, created and published by Dipesh Sapkota.';
+const canonical = 'https://sportivo.dipeshsapkota7.com.np/';
 
 const homepageJsonLd = {
   '@context': 'https://schema.org',
   '@graph': [
     {
       '@type': 'WebSite',
-      '@id': 'https://sportivo.dipeshsapkota7.com.np/#website',
-      'url': 'https://sportivo.dipeshsapkota7.com.np/',
+      '@id': `${canonical}#website`,
+      'url': canonical,
       'name': 'Sportivo',
-      'alternateName': 'Sportivo by Dipesh Sapkota',
+      'alternateName': [
+        'Sportivo by Dipesh Sapkota',
+        'Dipesh Sapkota Sportivo',
+        'Sportivo Sports Fixture Desk',
+        'Sportivo Nepal'
+      ],
       'description': description,
       'inLanguage': 'en-NP',
       'publisher': {
@@ -28,33 +43,201 @@ const homepageJsonLd = {
         'url': 'https://www.dipeshsapkota7.com.np/',
         'image': 'https://sportivo.dipeshsapkota7.com.np/dipesh-sapkota-profile.webp',
         'sameAs': [
+          'https://www.dipeshsapkota7.com.np/',
           'https://github.com/dszae',
           'https://linkedin.com/in/dszae',
-          'https://facebook.com/dsz.ae',
-          'https://www.dipeshsapkota7.com.np/'
+          'https://facebook.com/dsz.ae'
         ]
       },
       'author': {
         '@id': 'https://www.dipeshsapkota7.com.np/#person'
-      }
+      },
+      'potentialAction': {
+        '@type': 'SearchAction',
+        'target': 'https://sportivo.dipeshsapkota7.com.np/?q={search_term_string}',
+        'query-input': 'required name=search_term_string'
+      },
+      'hasPart': [
+        {
+          '@type': 'WebPage',
+          '@id': 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/#webpage',
+          'url': 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/',
+          'name': 'About Dipesh Sapkota - Creator of Sportivo',
+          'description': 'Official profile of Dipesh Sapkota, engineering student, software developer, and the creator and publisher of Sportivo.'
+        },
+        {
+          '@type': 'WebPage',
+          '@id': 'https://sportivo.dipeshsapkota7.com.np/football/#webpage',
+          'url': 'https://sportivo.dipeshsapkota7.com.np/football/',
+          'name': 'Football Fixtures & Live Streams',
+          'description': 'Live football scores, matches, schedules, and stream links in Nepal Standard Time.'
+        },
+        {
+          '@type': 'WebPage',
+          '@id': 'https://sportivo.dipeshsapkota7.com.np/cricket/#webpage',
+          'url': 'https://sportivo.dipeshsapkota7.com.np/cricket/',
+          'name': 'Cricket Fixtures & Live Streams',
+          'description': 'Live cricket schedules, upcoming tournaments, and stream availability.'
+        },
+        {
+          '@type': 'WebPage',
+          '@id': 'https://sportivo.dipeshsapkota7.com.np/basketball/#webpage',
+          'url': 'https://sportivo.dipeshsapkota7.com.np/basketball/',
+          'name': 'Basketball Fixtures & Live Streams',
+          'description': 'Live basketball matches, NBA fixtures, and streaming server options.'
+        },
+        {
+          '@type': 'WebPage',
+          '@id': 'https://sportivo.dipeshsapkota7.com.np/api-docs/#webpage',
+          'url': 'https://sportivo.dipeshsapkota7.com.np/api-docs/',
+          'name': 'Sportivo Developer API',
+          'description': 'Public fixture endpoints documentation for developers by Dipesh Sapkota.'
+        }
+      ]
+    },
+    {
+      '@type': 'Person',
+      '@id': 'https://www.dipeshsapkota7.com.np/#person',
+      'name': 'Dipesh Sapkota',
+      'alternateName': ['Dipesh', 'dszae'],
+      'url': 'https://www.dipeshsapkota7.com.np/',
+      'jobTitle': 'Software Developer & Engineering Student',
+      'description': 'Dipesh Sapkota is an engineering student, software developer, and the creator and publisher of Sportivo from Nepal.',
+      'nationality': {
+        '@type': 'Country',
+        'name': 'Nepal'
+      },
+      'image': 'https://sportivo.dipeshsapkota7.com.np/dipesh-sapkota-profile.webp',
+      'sameAs': [
+        'https://www.dipeshsapkota7.com.np/',
+        'https://github.com/dszae',
+        'https://linkedin.com/in/dszae',
+        'https://facebook.com/dsz.ae'
+      ]
+    },
+    {
+      '@type': 'ItemList',
+      '@id': `${canonical}#sitelinks`,
+      'name': 'Sportivo Primary Sitelinks',
+      'itemListElement': [
+        {
+          '@type': 'SiteNavigationElement',
+          'position': 1,
+          'name': 'Dipesh Sapkota (Creator)',
+          'description': 'Official profile and biography of Dipesh Sapkota, creator and publisher of Sportivo',
+          'url': 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/'
+        },
+        {
+          '@type': 'SiteNavigationElement',
+          'position': 2,
+          'name': 'Football Fixtures',
+          'description': 'Live football match scores, NST kickoff times, and streaming servers',
+          'url': 'https://sportivo.dipeshsapkota7.com.np/football/'
+        },
+        {
+          '@type': 'SiteNavigationElement',
+          'position': 3,
+          'name': 'Cricket Fixtures',
+          'description': 'Cricket match schedules and streaming availability in Nepal time',
+          'url': 'https://sportivo.dipeshsapkota7.com.np/cricket/'
+        },
+        {
+          '@type': 'SiteNavigationElement',
+          'position': 4,
+          'name': 'Basketball Fixtures',
+          'description': 'Basketball game schedules, scores, and broadcast feeds',
+          'url': 'https://sportivo.dipeshsapkota7.com.np/basketball/'
+        },
+        {
+          '@type': 'SiteNavigationElement',
+          'position': 5,
+          'name': 'Developer API',
+          'description': 'Sportivo public fixture API documentation',
+          'url': 'https://sportivo.dipeshsapkota7.com.np/api-docs/'
+        }
+      ]
     }
   ]
 };
 ---
-<BaseLayout title="Sportivo by Dipesh Sapkota | Live Scores & Sports Fixtures" description={description} canonical="https://sportivo.dipeshsapkota7.com.np/">
+<BaseLayout
+  title={title}
+  description={description}
+  canonical={canonical}
+  keywords="Dipesh Sapkota, Sportivo, Sportivo by Dipesh Sapkota, dszae, sports fixtures Nepal, live scores Nepal, football fixtures Dipesh Sapkota, creator Dipesh Sapkota, Nepal sports streaming"
+>
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(homepageJsonLd)} />
   </Fragment>
+
   <SiteHeader />
+
   <main class="site-shell min-h-screen text-slate-100">
+    <!-- Hero Section with Prominent Dipesh Sapkota Citation -->
     <section class="mx-auto max-w-7xl px-6 pb-10 pt-12 sm:pt-16">
-      <p class="mb-5 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.28em] text-[#e5b94f]"><span class="h-px w-8 bg-[#c9f36b]"></span>The live fixture desk</p>
-      <h1 class="max-w-2xl text-4xl font-black leading-[0.98] tracking-tight text-white sm:text-6xl">Stay close to the <span class="text-[#c9f36b]">moment.</span></h1>
-      <p class="mt-5 max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">Browse schedules, check Nepal local times, and open a fixture to inspect the available stream sources returned by the upstream sports provider.</p>
-      <div class="mt-8 flex flex-wrap gap-3 text-xs font-bold text-slate-400"><span class="rounded-full border border-white/10 bg-white/5 px-4 py-2">Football, cricket, and basketball</span><a class="rounded-full border border-[#3c9b7e]/30 bg-[#3c9b7e]/10 px-4 py-2 text-[#83d7bd] hover:text-white" href="/about-dipesh-sapkota/">About the creator</a></div>
+      <div class="mb-5 flex flex-wrap items-center gap-3">
+        <a
+          href="/about-dipesh-sapkota/"
+          class="inline-flex items-center gap-2 rounded-full border border-[#c9f36b]/40 bg-[#c9f36b]/10 px-3.5 py-1.5 text-xs font-bold text-[#c9f36b] hover:bg-[#c9f36b]/20 hover:text-white transition-all shadow-sm"
+          title="Learn more about Dipesh Sapkota, creator of Sportivo"
+        >
+          <img
+            src="/dipesh-sapkota-profile.webp"
+            alt="Dipesh Sapkota profile"
+            class="h-5 w-5 rounded-full object-cover border border-[#c9f36b]"
+            width="20"
+            height="20"
+            loading="eager"
+          />
+          <span>Created & Published by <strong class="underline decoration-[#c9f36b]/70 font-black">Dipesh Sapkota</strong></span>
+        </a>
+        <span class="text-[10px] font-black uppercase tracking-[0.25em] text-[#e5b94f]">Live Fixture Desk · Nepal</span>
+      </div>
+
+      <h1 class="max-w-3xl text-4xl font-black leading-[0.98] tracking-tight text-white sm:text-6xl">
+        Stay close to every <span class="text-[#c9f36b]">kickoff.</span>
+      </h1>
+      
+      <p class="mt-5 max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">
+        Browse live football, cricket, and basketball schedules in Nepal Standard Time (NST). Built by <a href="/about-dipesh-sapkota/" class="font-bold text-white hover:text-[#c9f36b] underline decoration-[#c9f36b]/50">Dipesh Sapkota</a> with multi-server stream fallbacks and real-time provider data.
+      </p>
+
+      <div class="mt-8 flex flex-wrap items-center gap-3 text-xs font-bold">
+        <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-slate-300">
+          Football, Cricket & Basketball
+        </span>
+        <a
+          class="rounded-full border border-[#c9f36b]/40 bg-[#c9f36b]/15 px-4 py-2 text-[#c9f36b] hover:bg-[#c9f36b]/25 hover:text-white transition-all"
+          href="/about-dipesh-sapkota/"
+        >
+          About Creator: Dipesh Sapkota &rarr;
+        </a>
+        <a
+          class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-slate-400 hover:text-white transition-all"
+          href="/api-docs/"
+        >
+          Developer API
+        </a>
+      </div>
     </section>
-    <section class="mx-auto max-w-7xl space-y-14 px-6 pb-20" aria-label="Sports fixtures">
-      {categories.map((category) => <div><div class="mb-4 flex items-baseline justify-between gap-4"><h2 class="text-2xl font-black text-white">{category[0].toUpperCase() + category.slice(1)} fixtures</h2><a class="text-xs font-bold text-[#c9f36b] hover:text-white" href={`/${category}/`}>View all {category} fixtures</a></div><MatchExplorer client:load category={category} matches={byCategory[category] || []} /></div>)}
+
+    <!-- Fixture Explorers -->
+    <section class="mx-auto max-w-7xl space-y-14 px-6 pb-20" aria-label="Sports fixtures categories">
+      {categories.map((category) => (
+        <div>
+          <div class="mb-4 flex items-baseline justify-between gap-4">
+            <h2 class="text-2xl font-black text-white">
+              {category[0].toUpperCase() + category.slice(1)} fixtures
+            </h2>
+            <a class="text-xs font-bold text-[#c9f36b] hover:text-white transition" href={`/${category}/`}>
+              View all {category} fixtures &rarr;
+            </a>
+          </div>
+          <MatchExplorer client:load category={category} matches={byCategory[category] || []} />
+        </div>
+      ))}
     </section>
   </main>
+
+  <SiteFooter />
 </BaseLayout>

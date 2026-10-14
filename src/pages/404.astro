@@ -1,8 +1,26 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+
 Astro.response.status = 404;
 ---
-<BaseLayout title="Page not found | Sportivo" description="The requested Sportivo page was not found." canonical="https://sportivo.dipeshsapkota7.com.np/404/">
-  <SiteHeader /><main class="site-shell min-h-screen text-slate-100"><section class="mx-auto max-w-3xl px-6 py-24"><p class="text-xs font-bold uppercase tracking-widest text-[#e5b94f]">404</p><h1 class="mt-4 text-4xl font-black text-white">Page not found</h1><p class="mt-4 text-slate-400">The requested Sportivo page does not exist.</p><a href="/" class="mt-8 inline-block font-bold text-[#c9f36b]">Return to Sportivo</a></section></main>
+<BaseLayout
+  title="Page not found | Sportivo by Dipesh Sapkota"
+  description="The requested Sportivo page was not found."
+  canonical="https://sportivo.dipeshsapkota7.com.np/404/"
+>
+  <SiteHeader />
+  <main class="site-shell min-h-screen text-slate-100">
+    <section class="mx-auto max-w-3xl px-6 py-24 text-center">
+      <p class="text-xs font-bold uppercase tracking-widest text-[#e5b94f]">Error 404</p>
+      <h1 class="mt-4 text-4xl font-black text-white sm:text-5xl">Page not found</h1>
+      <p class="mt-4 text-slate-400">The requested Sportivo fixture or page does not exist.</p>
+      <div class="mt-8 flex justify-center gap-4 text-xs font-bold">
+        <a href="/" class="site-button-active rounded-full px-5 py-2.5">Return to Sportivo Desk</a>
+        <a href="/about-dipesh-sapkota/" class="rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-slate-300 hover:text-white">About Dipesh Sapkota</a>
+      </div>
+    </section>
+  </main>
+  <SiteFooter />
 </BaseLayout>

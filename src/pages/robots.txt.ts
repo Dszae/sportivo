@@ -1,7 +1,28 @@
 export const prerender = true;
 
 export function GET() {
-  return new Response('User-agent: *\nAllow: /\n\nUser-agent: Googlebot\nAllow: /\n\nUser-agent: OAI-SearchBot\nAllow: /\n\nUser-agent: GPTBot\nDisallow: /api/\n\nSitemap: https://sportivo.dipeshsapkota7.com.np/sitemap.xml\n', {
+  const content = [
+    'User-agent: *',
+    'Allow: /',
+    '',
+    'User-agent: Googlebot',
+    'Allow: /',
+    '',
+    'User-agent: Bingbot',
+    'Allow: /',
+    '',
+    'User-agent: OAI-SearchBot',
+    'Allow: /',
+    '',
+    'User-agent: GPTBot',
+    'Disallow: /api/',
+    '',
+    'Sitemap: https://sportivo.dipeshsapkota7.com.np/sitemap.xml',
+    'Sitemap: https://sportivo.dipeshsapkota7.com.np/sitemap-index.xml',
+    '',
+  ].join('\n');
+
+  return new Response(content, {
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
   });
 }
