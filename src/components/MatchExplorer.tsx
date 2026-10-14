@@ -13,8 +13,28 @@ export default function MatchExplorer({ category, matches }: Props) {
   const [query, setQuery] = useState('');
   const filtered = useMemo(() => {
     const value = query.trim().toLowerCase();
-    if (!value) return matches;
-    return matches.filter((match) => `${titleOf(match)} ${match.category || category}`.toLowerCase().includes(value));
+    const list = value
+      ? matches.filter((match) => `${titleOf(match)} ${match.category || category}`.toLowerCase().includes(value))
+      : matches;
+
+    return [...list].sort((a, b) => {
+      const statusA = statusOf(a);
+      const statusB = statusOf(b);
+
+      // 1. Live matches always come first
+      if (statusA === 'Live' && statusB !== 'Live') return -1;
+      if (statusB === 'Live' && statusA !== 'Live') return 1;
+
+      // 2. Upcoming matches come before Final matches
+      if (statusA === 'Upcoming' && statusB === 'Final') return -1;
+      if (statusB === 'Upcoming' && statusA === 'Final') return 1;
+
+      const timeA = typeof a.date === 'number' ? a.date : new Date(a.date || a.startTime || a.start_at || a.timestamp || 0).getTime() || 0;
+      const timeB = typeof b.date === 'number' ? b.date : new Date(b.date || b.startTime || b.start_at || b.timestamp || 0).getTime() || 0;
+
+      // Chronological order for upcoming fixtures
+      return timeA - timeB;
+    });
   }, [category, matches, query]);
 
   return (
@@ -37,15 +57,19 @@ export default function MatchExplorer({ category, matches }: Props) {
           {filtered.map((match, index) => {
             const title = titleOf(match);
             const status = statusOf(match);
+            const isLive = status === 'Live';
             const { first, second } = teamParts(title);
             const poster = publicUrl(match.poster || match.image || match.thumbnail || undefined);
             return (
-              <a key={`${slugify(title)}-${index}`} href={`/${category}/match/${encodeURIComponent(slugify(title))}/`} className="group overflow-hidden rounded-2xl border border-white/10 bg-[#111a19] shadow-xl shadow-black/10 transition-all duration-300 hover:-translate-y-1 hover:border-[#e5b94f]/50 focus:outline-none focus:ring-2 focus:ring-[#c9f36b]">
+              <a key={`${slugify(title)}-${index}`} href={`/${category}/match/${encodeURIComponent(slugify(title))}/`} className={`group overflow-hidden rounded-2xl border bg-[#111a19] shadow-xl shadow-black/10 transition-all duration-300 hover:-translate-y-1 hover:border-[#e5b94f]/50 focus:outline-none focus:ring-2 focus:ring-[#c9f36b] ${isLive ? 'border-red-500/50 ring-1 ring-red-500/30' : 'border-white/10'}`}>
                 <div className="relative flex h-36 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-[#182b2a] via-[#18212b] to-[#111a19]">
-                  <span className="absolute left-2 top-2 z-10 rounded bg-black/80 px-2 py-1 text-[10px] font-bold text-white">{status === 'Live' ? 'LIVE' : status === 'Final' ? 'Final' : timeOf(match)}</span>
+                  <span className={`absolute left-2 top-2 z-10 flex items-center gap-1.5 rounded px-2 py-1 text-[10px] font-bold text-white shadow-md ${isLive ? 'bg-red-600 font-black tracking-wider' : 'bg-black/80'}`}>
+                    {isLive && <span className="inline-block h-1.5 w-1.5 animate-ping rounded-full bg-white"></span>}
+                    {isLive ? 'LIVE' : status === 'Final' ? 'Final' : timeOf(match)}
+                  </span>
                   {poster ? <img src={poster} alt={`${title} poster`} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" /> : <div className="px-4 text-center text-sm font-bold text-slate-300"><span>{first}</span>{second && <><span className="mx-2 text-[#c9f36b]">vs</span><span>{second}</span></>}</div>}
                 </div>
-                <div className="p-3"><h3 className="line-clamp-2 text-sm font-bold text-slate-100 group-hover:text-[#e5b94f]">{title}</h3><p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">{match.category || category} {status !== 'Live' && `| ${status}`}</p></div>
+                <div className="p-3"><h3 className="line-clamp-2 text-sm font-bold text-slate-100 group-hover:text-[#e5b94f]">{title}</h3><p className="mt-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500"><span>{match.category || category}</span><span>•</span><span className={isLive ? 'text-red-400 font-black' : ''}>{isLive ? 'Broadcasting Now' : status === 'Final' ? 'Final' : timeOf(match)}</span></p></div>
               </a>
             );
           })}

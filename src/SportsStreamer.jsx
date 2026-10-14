@@ -23,14 +23,28 @@ const getMatchStatus = (match) => {
   const time = String(match?.time || '').toLowerCase();
   if (['live', 'inplay', 'in-play', 'ongoing'].includes(status) || time === 'live') return 'live';
   if (['finished', 'complete', 'completed', 'ended', 'result'].includes(status)) return 'result';
+
+  if (typeof match?.date === 'number' && match.date <= 0) return 'live';
+
+  const timestamp = match?.date || match?.startTime || match?.start_at || match?.timestamp;
+  if (timestamp) {
+    const start = typeof timestamp === 'number' ? timestamp : new Date(timestamp).getTime();
+    if (!Number.isNaN(start) && start > 0) {
+      const now = Date.now();
+      if (now >= start && now <= start + 3.5 * 60 * 60 * 1000) return 'live';
+      if (now > start + 3.5 * 60 * 60 * 1000) return 'result';
+    }
+  }
+
   return 'upcoming';
 };
 
 const getMatchTime = (match) => {
   const timestamp = match?.date || match?.startTime || match?.start_at || match?.timestamp;
   if (!timestamp) return match?.time || 'Time TBA';
+  if (typeof timestamp === 'number' && timestamp <= 0) return '24/7 Live Feed';
   const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime()) || date.getUTCFullYear() === 1970) return match?.time || 'Time TBA';
+  if (Number.isNaN(date.getTime()) || date.getUTCFullYear() <= 1970) return match?.time || 'Time TBA';
   return new Intl.DateTimeFormat('en-NP', {
     timeZone: 'Asia/Kathmandu',
     dateStyle: 'medium',
@@ -110,13 +124,25 @@ export default function SportsStreamer() {
     return () => window.removeEventListener('popstate', handleUrlChange);
   }, [matches, selectedMatch]);
 
-  const filteredMatches = searchQuery
+  const filteredMatches = (searchQuery
     ? matches.filter((match) => {
         const lowerQuery = searchQuery.toLowerCase();
         return (match.title && match.title.toLowerCase().includes(lowerQuery)) ||
           (match.category && match.category.toLowerCase().includes(lowerQuery));
       })
-    : matches;
+    : matches
+  ).slice().sort((a, b) => {
+    const statusA = getMatchStatus(a);
+    const statusB = getMatchStatus(b);
+    if (statusA === 'live' && statusB !== 'live') return -1;
+    if (statusB === 'live' && statusA !== 'live') return 1;
+    if (statusA === 'upcoming' && statusB === 'result') return -1;
+    if (statusB === 'upcoming' && statusA === 'result') return 1;
+
+    const timeA = typeof a.date === 'number' ? a.date : new Date(a.date || a.startTime || a.start_at || a.timestamp || 0).getTime() || 0;
+    const timeB = typeof b.date === 'number' ? b.date : new Date(b.date || b.startTime || b.start_at || b.timestamp || 0).getTime() || 0;
+    return timeA - timeB;
+  });
 
   async function fetchMatches(category, signal) {
     setLoading(true);
@@ -175,10 +201,12 @@ export default function SportsStreamer() {
       
       if (parsedStreams.length > 0) {
         setActiveStream(parsedStreams[0]);
+      } else {
+        setError('No active stream feeds available for this fixture yet. Live feeds typically go online 15 minutes before kickoff.');
       }
     } catch (err) {
       console.error(err);
-      setError('Stream is currently offline or failed to parse.');
+      setError('This stream is currently offline. Live feeds typically go live 15 minutes before kickoff.');
     }
   }
 

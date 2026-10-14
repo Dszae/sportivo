@@ -1,4 +1,4 @@
-const categories = new Set(['football', 'cricket', 'basketball']);
+const categories = new Set(['football', 'cricket', 'basketball', 'live']);
 
 export default async function handler(request, response) {
   const category = String(request.query?.category || '').toLowerCase();
