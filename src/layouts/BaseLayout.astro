@@ -47,6 +47,11 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="bingbot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="google-extended" content="index, follow" />
+    <meta name="gptbot" content="index, follow" />
+    <meta name="chatgpt-user" content="index, follow" />
+    <meta name="claudebot" content="index, follow" />
+    <meta name="perplexitybot" content="index, follow" />
     
     <!-- Geo Meta Tags for Nepal Standard Time / Local Ranking -->
     <meta name="geo.region" content="NP" />
@@ -57,6 +62,7 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
     <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
+    <link rel="help" type="text/plain" href="/llms.txt" title="LLM Context Summary" />
     
     <!-- Primary Title & Description -->
     <title>{title}</title>
