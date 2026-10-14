@@ -12,6 +12,7 @@ interface Props {
   imageHeight?: number;
   imageType?: string;
   keywords?: string;
+  noindex?: boolean;
 }
 
 const {
@@ -25,6 +26,7 @@ const {
   imageHeight = 568,
   imageType = 'image/png',
   keywords = 'Dipesh Sapkota, Dipesh Sapkota Sportivo, dszae, Sportivo, Sportivo Nepal, live sports fixtures, football live stream Nepal, cricket schedules NST, basketball fixtures, Nepali software developer',
+  noindex = false,
 } = Astro.props;
 
 const siteUrl = 'https://sportivo.dipeshsapkota7.com.np';
@@ -44,14 +46,20 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     <link rel="author" href="https://www.dipeshsapkota7.com.np/" />
     
     <!-- Search Engine Indexing Directives -->
-    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-    <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-    <meta name="bingbot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-    <meta name="google-extended" content="index, follow" />
-    <meta name="gptbot" content="index, follow" />
-    <meta name="chatgpt-user" content="index, follow" />
-    <meta name="claudebot" content="index, follow" />
-    <meta name="perplexitybot" content="index, follow" />
+    {noindex ? (
+      <meta name="robots" content="noindex, nofollow" />
+    ) : (
+      <>
+        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+        <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+        <meta name="bingbot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+        <meta name="google-extended" content="index, follow" />
+        <meta name="gptbot" content="index, follow" />
+        <meta name="chatgpt-user" content="index, follow" />
+        <meta name="claudebot" content="index, follow" />
+        <meta name="perplexitybot" content="index, follow" />
+      </>
+    )}
     
     <!-- Geo Meta Tags for Nepal Standard Time / Local Ranking -->
     <meta name="geo.region" content="NP" />

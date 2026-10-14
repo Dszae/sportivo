@@ -60,7 +60,7 @@ export function GET() {
   return new Response(content, {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
-      'X-Robots-Tag': 'all, index, follow',
+      'X-Robots-Tag': 'noindex',
     },
   });
 }
