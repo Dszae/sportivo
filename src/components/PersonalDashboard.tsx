@@ -798,3 +798,4 @@ export default function PersonalDashboard({ allMatchesByCategory }: Props) {
     </div>
   );
 }
+

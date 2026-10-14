@@ -123,3 +123,4 @@ export function saveUserPreferences(prefs: UserPreferences): void {
     window.dispatchEvent(new CustomEvent('sportivo:preferences-changed', { detail: prefs }));
   } catch {}
 }
+
