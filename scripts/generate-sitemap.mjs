@@ -33,6 +33,7 @@ const staticRoutes = [
     },
   },
   { url: `${siteUrl}/api-docs/`, priority: '0.70', changefreq: 'weekly' },
+  { url: `${siteUrl}/dashboard/`, priority: '0.90', changefreq: 'daily' },
   ...categories.map((category) => ({
     url: `${siteUrl}/${category}/`,
     priority: '0.85',

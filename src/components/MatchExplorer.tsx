@@ -10,6 +10,7 @@ import {
   timeOf,
   titleOf,
 } from '../lib/sportivo';
+import { loadUserPreferences, saveUserPreferences, type UserPreferences } from '../lib/preferences';
 
 type Props = { category: Category; matches: Match[] };
 type DateFilter = 'all' | 'today' | 'tomorrow' | 'week';
@@ -31,32 +32,42 @@ export default function MatchExplorer({ category, matches }: Props) {
 
   const categoryLabel = category[0].toUpperCase() + category.slice(1);
 
-  // Initialize client preferences from localStorage
+  // Initialize client preferences from shared preferences and sync across tabs
   useEffect(() => {
-    try {
-      const savedFavs = localStorage.getItem('sportivo_favs');
-      if (savedFavs) setFavorites(JSON.parse(savedFavs));
+    const prefs = loadUserPreferences();
+    setFavorites(prefs.starredMatches);
+    if (prefs.timeZone) setTimeZone(prefs.timeZone);
 
+    try {
       const savedSearches = localStorage.getItem('sportivo_searches');
       if (savedSearches) setRecentSearches(JSON.parse(savedSearches));
+    } catch {}
 
-      const detectedTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      if (detectedTz) setTimeZone(detectedTz);
-    } catch {
-      // Graceful fallback for restricted storage environments
-    }
+    const handlePrefChange = (e: Event) => {
+      const customEvent = e as CustomEvent<UserPreferences>;
+      const current = customEvent.detail || loadUserPreferences();
+      setFavorites(current.starredMatches || []);
+      if (current.timeZone) setTimeZone(current.timeZone);
+    };
+
+    window.addEventListener('sportivo:preferences-changed', handlePrefChange);
+    window.addEventListener('storage', handlePrefChange);
+    return () => {
+      window.removeEventListener('sportivo:preferences-changed', handlePrefChange);
+      window.removeEventListener('storage', handlePrefChange);
+    };
   }, []);
 
   const toggleFavorite = (slug: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setFavorites((prev) => {
-      const next = prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug];
-      try {
-        localStorage.setItem('sportivo_favs', JSON.stringify(next));
-      } catch {}
-      return next;
-    });
+    const currentPrefs = loadUserPreferences();
+    const nextFavorites = currentPrefs.starredMatches.includes(slug)
+      ? currentPrefs.starredMatches.filter((s) => s !== slug)
+      : [...currentPrefs.starredMatches, slug];
+    
+    saveUserPreferences({ ...currentPrefs, starredMatches: nextFavorites });
+    setFavorites(nextFavorites);
   };
 
   const handleSearchSubmit = (val: string) => {

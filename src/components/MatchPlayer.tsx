@@ -12,6 +12,7 @@ import {
   timeOf,
   titleOf,
 } from '../lib/sportivo';
+import { loadUserPreferences, saveUserPreferences, type UserPreferences } from '../lib/preferences';
 
 type Stream = { embedUrl?: string; url?: string; language?: string; hd?: boolean } | string;
 type Props = { match: Match };
@@ -48,20 +49,31 @@ export default function MatchPlayer({ match }: Props) {
   const ts = getMatchTimestamp(match);
   const league = match.category === 'football' ? detectFootballLeague(match) : null;
 
-  // Initialize client preferences
+  // Initialize client preferences and listen for updates
   useEffect(() => {
-    try {
-      const savedFavs = localStorage.getItem('sportivo_favs');
-      if (savedFavs) {
-        const list: string[] = JSON.parse(savedFavs);
-        setIsFavorite(list.includes(slug));
-      }
-      const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      if (detected) setLocalTz(detected);
+    const prefs = loadUserPreferences();
+    setIsFavorite(prefs.starredMatches.includes(slug));
+    if (prefs.timeZone) {
+      setTimeZone(prefs.timeZone);
+      setLocalTz(prefs.timeZone);
+    }
 
-      const savedTz = localStorage.getItem('sportivo_tz');
-      if (savedTz) setTimeZone(savedTz);
-    } catch {}
+    const handlePrefChange = (e: Event) => {
+      const customEvent = e as CustomEvent<UserPreferences>;
+      const current = customEvent.detail || loadUserPreferences();
+      setIsFavorite(current.starredMatches.includes(slug));
+      if (current.timeZone) {
+        setTimeZone(current.timeZone);
+        setLocalTz(current.timeZone);
+      }
+    };
+
+    window.addEventListener('sportivo:preferences-changed', handlePrefChange);
+    window.addEventListener('storage', handlePrefChange);
+    return () => {
+      window.removeEventListener('sportivo:preferences-changed', handlePrefChange);
+      window.removeEventListener('storage', handlePrefChange);
+    };
   }, [slug]);
 
   // Fullscreen event listener
@@ -126,13 +138,12 @@ export default function MatchPlayer({ match }: Props) {
   };
 
   const toggleFavorite = () => {
-    try {
-      const saved = localStorage.getItem('sportivo_favs');
-      const list: string[] = saved ? JSON.parse(saved) : [];
-      const updated = list.includes(slug) ? list.filter((s) => s !== slug) : [...list, slug];
-      localStorage.setItem('sportivo_favs', JSON.stringify(updated));
-      setIsFavorite(updated.includes(slug));
-    } catch {}
+    const currentPrefs = loadUserPreferences();
+    const nextStarred = currentPrefs.starredMatches.includes(slug)
+      ? currentPrefs.starredMatches.filter((s) => s !== slug)
+      : [...currentPrefs.starredMatches, slug];
+    saveUserPreferences({ ...currentPrefs, starredMatches: nextStarred });
+    setIsFavorite(nextStarred.includes(slug));
   };
 
   const toggleFullscreen = () => {
