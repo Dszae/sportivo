@@ -225,11 +225,11 @@ const homepageJsonLd = {
       {categories.map((category) => (
         <div>
           <div class="mb-4 flex items-baseline justify-between gap-4">
-            <h2 class="text-2xl font-black text-white">
-              {category[0].toUpperCase() + category.slice(1)} fixtures
+            <h2 class="text-2xl font-black text-white capitalize">
+              {category}
             </h2>
             <a class="text-xs font-bold text-[#c9f36b] hover:text-white transition" href={`/${category}/`}>
-              View all {category} fixtures &rarr;
+              Explore {category} &rarr;
             </a>
           </div>
           <MatchExplorer client:load category={category} matches={byCategory[category] || []} />

@@ -339,12 +339,12 @@ export default function MatchPlayer({ match }: Props) {
 
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3 text-xs">
             <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Kickoff (NST)</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Kickoff Time</span>
               <p className="mt-1 font-bold text-white">{timeOf(match, 'Asia/Kathmandu')}</p>
             </div>
 
             <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Your Local Time</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Local Time</span>
               <p className="mt-1 font-bold text-slate-200">{timeOf(match, localTz)}</p>
             </div>
 
@@ -357,7 +357,7 @@ export default function MatchPlayer({ match }: Props) {
           </div>
 
           <p className="mt-4 text-xs leading-relaxed text-slate-400">
-            Stream signals are calibrated for low latency in Nepal Standard Time (NST). If audio or video pauses, switch servers or toggle low-data mode.
+            Stream signals are optimized for low latency. If audio or video pauses, switch servers above.
           </p>
         </div>
 

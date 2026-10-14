@@ -26,10 +26,8 @@ export default function MatchExplorer({ category, matches }: Props) {
   const [showWatchlistOnly, setShowWatchlistOnly] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [lowDataMode, setLowDataMode] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
   const [timeZone, setTimeZone] = useState<'Asia/Kathmandu' | string>('Asia/Kathmandu');
-  const [localTzName, setLocalTzName] = useState<string>('Local Time');
 
   const categoryLabel = category[0].toUpperCase() + category.slice(1);
 
@@ -42,15 +40,8 @@ export default function MatchExplorer({ category, matches }: Props) {
       const savedSearches = localStorage.getItem('sportivo_searches');
       if (savedSearches) setRecentSearches(JSON.parse(savedSearches));
 
-      const savedLowData = localStorage.getItem('sportivo_low_data');
-      if (savedLowData) setLowDataMode(savedLowData === 'true');
-
       const detectedTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      if (detectedTz) {
-        setLocalTzName(detectedTz);
-        const savedTz = localStorage.getItem('sportivo_tz');
-        if (savedTz) setTimeZone(savedTz);
-      }
+      if (detectedTz) setTimeZone(detectedTz);
     } catch {
       // Graceful fallback for restricted storage environments
     }
@@ -66,24 +57,6 @@ export default function MatchExplorer({ category, matches }: Props) {
       } catch {}
       return next;
     });
-  };
-
-  const toggleLowData = () => {
-    setLowDataMode((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem('sportivo_low_data', String(next));
-      } catch {}
-      return next;
-    });
-  };
-
-  const handleTimezoneToggle = () => {
-    const nextTz = timeZone === 'Asia/Kathmandu' ? localTzName : 'Asia/Kathmandu';
-    setTimeZone(nextTz);
-    try {
-      localStorage.setItem('sportivo_tz', nextTz);
-    } catch {}
   };
 
   const handleSearchSubmit = (val: string) => {
@@ -164,7 +137,7 @@ export default function MatchExplorer({ category, matches }: Props) {
     const status = statusOf(match);
     const isLive = status === 'Live';
     const { first, second } = teamParts(title);
-    const poster = !lowDataMode ? publicUrl(match.poster || match.image || match.thumbnail || undefined) : null;
+    const poster = publicUrl(match.poster || match.image || match.thumbnail || undefined);
     const matchLeague = category === 'football' ? detectFootballLeague(match) : null;
     const formattedTime = timeOf(match, timeZone);
 
@@ -244,7 +217,7 @@ export default function MatchExplorer({ category, matches }: Props) {
       <div className="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[#e5b94f]">Real-time schedule</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#e5b94f]">Schedule</span>
             <span className="text-slate-600">•</span>
             <span className="inline-flex items-center gap-1 text-[10px] text-slate-400">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
@@ -252,44 +225,16 @@ export default function MatchExplorer({ category, matches }: Props) {
             </span>
           </div>
           <h2 id={`schedule-title-${category}`} className="text-2xl font-black text-white mt-0.5">
-            {showWatchlistOnly ? '★ My Watchlist' : `${activeLeagueLabel} fixtures`}
+            {showWatchlistOnly ? '★ My Watchlist' : selectedLeague === 'All' ? `${categoryLabel}` : selectedLeague}
           </h2>
           <p className="mt-1 text-xs text-slate-400">
-            {filtered.length} fixtures calibrated in {timeZone === 'Asia/Kathmandu' ? 'Nepal Standard Time (NST)' : localTzName}.
+            {filtered.length} matches scheduled.
           </p>
         </div>
 
-        <div className="flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row sm:items-center">
-          {/* Timezone Toggle */}
-          <button
-            type="button"
-            onClick={handleTimezoneToggle}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-300 hover:border-white/20 hover:text-white transition"
-            title="Toggle between Nepal Standard Time and your device's local timezone"
-          >
-            <svg className="h-3.5 w-3.5 text-[#c9f36b]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-            <span>{timeZone === 'Asia/Kathmandu' ? 'NST (Nepal)' : 'Local Time'}</span>
-          </button>
-
-          {/* Low-Data Mode Toggle */}
-          <button
-            type="button"
-            onClick={toggleLowData}
-            className={`inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition ${
-              lowDataMode
-                ? 'border-amber-500/50 bg-amber-500/10 text-amber-300'
-                : 'border-white/10 bg-white/5 text-slate-300 hover:text-white'
-            }`}
-            title="Toggle lightweight low-data mode for mobile or slow connections"
-          >
-            <span>{lowDataMode ? '⚡ Low-Data: On' : '⚡ Low-Data'}</span>
-          </button>
-
+        <div className="w-full sm:w-72">
           {/* Search Box */}
-          <div className="relative w-full sm:w-72">
+          <div className="relative w-full">
             <label htmlFor={`search-${category}`} className="sr-only">Search matches or teams</label>
             <input
               id={`search-${category}`}
@@ -470,8 +415,8 @@ export default function MatchExplorer({ category, matches }: Props) {
                 </span>
                 <h3 className="text-base font-black text-white sm:text-lg">
                   {selectedLeague !== 'All'
-                    ? `Live ${selectedLeague} Matches`
-                    : `Live ${categoryLabel} Matches Happening Now`}
+                    ? `Live — ${selectedLeague}`
+                    : 'Live Matches'}
                 </h3>
               </div>
               {liveMatches.length > 0 && (
@@ -495,17 +440,17 @@ export default function MatchExplorer({ category, matches }: Props) {
                 </div>
                 <p className="mt-3 text-sm font-bold text-white">
                   {selectedLeague !== 'All'
-                    ? `No ${selectedLeague} matches are currently running live right now.`
-                    : `No ${category} matches are currently running live right now.`}
+                    ? `No live matches right now in ${selectedLeague}.`
+                    : 'No matches currently broadcasting live.'}
                 </p>
                 <p className="mt-1 text-xs text-slate-400">
-                  Upcoming fixtures and verified broadcast streams are scheduled below in {timeZone === 'Asia/Kathmandu' ? 'Nepal Standard Time (NST)' : localTzName}.
+                  Upcoming events and verified broadcast streams are scheduled below.
                 </p>
               </div>
             )}
           </div>
 
-          {/* Section 2: Upcoming Fixtures */}
+          {/* Section 2: Upcoming Matches */}
           {upcomingMatches.length > 0 && (
             <div>
               <div className="mb-4 flex items-center justify-between">
@@ -513,8 +458,8 @@ export default function MatchExplorer({ category, matches }: Props) {
                   <span className="h-2.5 w-2.5 rounded-full bg-[#c9f36b]"></span>
                   <h3 className="text-base font-black text-white sm:text-lg">
                     {selectedLeague !== 'All'
-                      ? `Upcoming ${selectedLeague} Fixtures & Kickoff Times`
-                      : `Upcoming ${categoryLabel} Fixtures & Kickoff Times`}
+                      ? `Upcoming — ${selectedLeague}`
+                      : 'Upcoming Matches'}
                   </h3>
                 </div>
                 <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-slate-400">
@@ -534,7 +479,7 @@ export default function MatchExplorer({ category, matches }: Props) {
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <span className="h-2.5 w-2.5 rounded-full bg-slate-500"></span>
-                  <h3 className="text-base font-black text-slate-400 sm:text-lg">Completed Fixtures</h3>
+                  <h3 className="text-base font-black text-slate-400 sm:text-lg">Recent Results</h3>
                 </div>
                 <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">
                   {finalMatches.length} Final
