@@ -115,44 +115,102 @@ const homepageJsonLd = {
       ]
     },
     {
+      '@type': 'WebApplication',
+      '@id': `${canonical}#app`,
+      'url': canonical,
+      'name': 'Sportivo',
+      'applicationCategory': 'SportsApplication',
+      'operatingSystem': 'All',
+      'description': description,
+      'browserRequirements': 'Requires JavaScript. Requires HTML5.',
+      'offers': {
+        '@type': 'Offer',
+        'price': '0',
+        'priceCurrency': 'USD'
+      },
+      'author': {
+        '@id': 'https://www.dipeshsapkota7.com.np/#person'
+      },
+      'creator': {
+        '@id': 'https://www.dipeshsapkota7.com.np/#person'
+      }
+    },
+    {
+      '@type': 'BreadcrumbList',
+      '@id': `${canonical}#breadcrumb`,
+      'itemListElement': [
+        {
+          '@type': 'ListItem',
+          'position': 1,
+          'name': 'Home',
+          'item': canonical
+        }
+      ]
+    },
+    {
       '@type': 'ItemList',
       '@id': `${canonical}#sitelinks`,
       'name': 'Sportivo Primary Sitelinks',
       'itemListElement': [
         {
-          '@type': 'SiteNavigationElement',
+          '@type': 'ListItem',
           'position': 1,
           'name': 'Football Fixtures',
-          'description': 'Live football match scores, NST kickoff times, and streaming servers',
-          'url': 'https://sportivo.dipeshsapkota7.com.np/football/'
+          'item': {
+            '@type': 'WebPage',
+            '@id': 'https://sportivo.dipeshsapkota7.com.np/football/#webpage',
+            'url': 'https://sportivo.dipeshsapkota7.com.np/football/',
+            'name': 'Football Fixtures',
+            'description': 'Live football match scores, NST kickoff times, and streaming servers'
+          }
         },
         {
-          '@type': 'SiteNavigationElement',
+          '@type': 'ListItem',
           'position': 2,
           'name': 'Cricket Fixtures',
-          'description': 'Cricket match schedules and streaming availability in Nepal time',
-          'url': 'https://sportivo.dipeshsapkota7.com.np/cricket/'
+          'item': {
+            '@type': 'WebPage',
+            '@id': 'https://sportivo.dipeshsapkota7.com.np/cricket/#webpage',
+            'url': 'https://sportivo.dipeshsapkota7.com.np/cricket/',
+            'name': 'Cricket Fixtures',
+            'description': 'Cricket match schedules and streaming availability in Nepal time'
+          }
         },
         {
-          '@type': 'SiteNavigationElement',
+          '@type': 'ListItem',
           'position': 3,
           'name': 'Basketball Fixtures',
-          'description': 'Basketball game schedules, scores, and broadcast feeds',
-          'url': 'https://sportivo.dipeshsapkota7.com.np/basketball/'
+          'item': {
+            '@type': 'WebPage',
+            '@id': 'https://sportivo.dipeshsapkota7.com.np/basketball/#webpage',
+            'url': 'https://sportivo.dipeshsapkota7.com.np/basketball/',
+            'name': 'Basketball Fixtures',
+            'description': 'Basketball game schedules, scores, and broadcast feeds'
+          }
         },
         {
-          '@type': 'SiteNavigationElement',
+          '@type': 'ListItem',
           'position': 4,
           'name': 'About the Creator',
-          'description': 'Official profile and biography of the creator and publisher of Sportivo',
-          'url': 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/'
+          'item': {
+            '@type': 'WebPage',
+            '@id': 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/#webpage',
+            'url': 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/',
+            'name': 'About the Creator',
+            'description': 'Official profile and biography of the creator and publisher of Sportivo'
+          }
         },
         {
-          '@type': 'SiteNavigationElement',
+          '@type': 'ListItem',
           'position': 5,
           'name': 'Developer API',
-          'description': 'Sportivo public fixture API documentation',
-          'url': 'https://sportivo.dipeshsapkota7.com.np/api-docs/'
+          'item': {
+            '@type': 'WebPage',
+            '@id': 'https://sportivo.dipeshsapkota7.com.np/api-docs/#webpage',
+            'url': 'https://sportivo.dipeshsapkota7.com.np/api-docs/',
+            'name': 'Developer API',
+            'description': 'Sportivo public fixture API documentation'
+          }
         }
       ]
     }
