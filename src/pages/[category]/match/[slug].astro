@@ -35,10 +35,10 @@ if (!validCategory || !match) {
 const title = match ? titleOf(match) : 'Fixture not found';
 const categoryLabel = category[0].toUpperCase() + category.slice(1);
 const pageTitle = match
-  ? `${title} | ${categoryLabel} Fixture & Streams | Sportivo by Dipesh Sapkota`
+  ? `${title} - ${categoryLabel} Live Stream & NST Fixture | Sportivo`
   : 'Fixture not found | Sportivo';
 const pageDescription = match
-  ? `${title}: ${statusOf(match)} ${category} fixture scheduled for ${timeOf(match)} Nepal Standard Time on Sportivo, created by Dipesh Sapkota.`
+  ? `Watch ${title} live stream online. ${categoryLabel} fixture status: ${statusOf(match)}, kickoff at ${timeOf(match)} Nepal Standard Time on Sportivo.`
   : 'The requested Sportivo fixture was not found.';
 const canonical = `https://sportivo.dipeshsapkota7.com.np/${category}/match/${encodeURIComponent(slug)}/`;
 

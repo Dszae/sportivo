@@ -33,7 +33,7 @@ const { activeCategory } = Astro.props;
               : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
           ]}
         >
-          <span itemprop="name">{category}</span>
+          <span itemprop="name">{category[0].toUpperCase() + category.slice(1)}</span>
         </a>
       ))}
 

@@ -16,8 +16,8 @@ const data = await Promise.all(
 );
 const byCategory = Object.fromEntries(data) as Record<string, Match[]>;
 
-const title = 'Sportivo | Live Football, Cricket & Basketball Scores & Streams Nepal';
-const description = 'Follow live football, cricket, and basketball fixtures with Nepal Standard Time kickoff schedules and verified stream sources on Sportivo.';
+const title = 'Sportivo — Live Football, Cricket & Basketball Scores & Streams Nepal';
+const description = 'Sportivo is Nepal\'s live sports fixture desk for football, cricket, and basketball schedules in Nepal Standard Time (NST) with real-time stream links and scores.';
 const canonical = 'https://sportivo.dipeshsapkota7.com.np/';
 
 const homepageJsonLd = {
@@ -59,38 +59,38 @@ const homepageJsonLd = {
       'hasPart': [
         {
           '@type': 'WebPage',
-          '@id': 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/#webpage',
-          'url': 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/',
-          'name': 'About Dipesh Sapkota - Creator of Sportivo',
-          'description': 'Official profile of Dipesh Sapkota, engineering student, software developer, and the creator and publisher of Sportivo.'
-        },
-        {
-          '@type': 'WebPage',
           '@id': 'https://sportivo.dipeshsapkota7.com.np/football/#webpage',
           'url': 'https://sportivo.dipeshsapkota7.com.np/football/',
-          'name': 'Football Fixtures & Live Streams',
+          'name': 'Football Fixtures',
           'description': 'Live football scores, matches, schedules, and stream links in Nepal Standard Time.'
         },
         {
           '@type': 'WebPage',
           '@id': 'https://sportivo.dipeshsapkota7.com.np/cricket/#webpage',
           'url': 'https://sportivo.dipeshsapkota7.com.np/cricket/',
-          'name': 'Cricket Fixtures & Live Streams',
+          'name': 'Cricket Fixtures',
           'description': 'Live cricket schedules, upcoming tournaments, and stream availability.'
         },
         {
           '@type': 'WebPage',
           '@id': 'https://sportivo.dipeshsapkota7.com.np/basketball/#webpage',
           'url': 'https://sportivo.dipeshsapkota7.com.np/basketball/',
-          'name': 'Basketball Fixtures & Live Streams',
+          'name': 'Basketball Fixtures',
           'description': 'Live basketball matches, NBA fixtures, and streaming server options.'
+        },
+        {
+          '@type': 'WebPage',
+          '@id': 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/#webpage',
+          'url': 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/',
+          'name': 'About the Creator',
+          'description': 'Official profile and biography of the creator and publisher of Sportivo.'
         },
         {
           '@type': 'WebPage',
           '@id': 'https://sportivo.dipeshsapkota7.com.np/api-docs/#webpage',
           'url': 'https://sportivo.dipeshsapkota7.com.np/api-docs/',
-          'name': 'Sportivo Developer API',
-          'description': 'Public fixture endpoints documentation for developers by Dipesh Sapkota.'
+          'name': 'Developer API',
+          'description': 'Public fixture endpoints documentation for developers.'
         }
       ]
     },
@@ -122,30 +122,30 @@ const homepageJsonLd = {
         {
           '@type': 'SiteNavigationElement',
           'position': 1,
-          'name': 'About the Creator',
-          'description': 'Official profile and biography of the creator and publisher of Sportivo',
-          'url': 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/'
-        },
-        {
-          '@type': 'SiteNavigationElement',
-          'position': 2,
           'name': 'Football Fixtures',
           'description': 'Live football match scores, NST kickoff times, and streaming servers',
           'url': 'https://sportivo.dipeshsapkota7.com.np/football/'
         },
         {
           '@type': 'SiteNavigationElement',
-          'position': 3,
+          'position': 2,
           'name': 'Cricket Fixtures',
           'description': 'Cricket match schedules and streaming availability in Nepal time',
           'url': 'https://sportivo.dipeshsapkota7.com.np/cricket/'
         },
         {
           '@type': 'SiteNavigationElement',
-          'position': 4,
+          'position': 3,
           'name': 'Basketball Fixtures',
           'description': 'Basketball game schedules, scores, and broadcast feeds',
           'url': 'https://sportivo.dipeshsapkota7.com.np/basketball/'
+        },
+        {
+          '@type': 'SiteNavigationElement',
+          'position': 4,
+          'name': 'About the Creator',
+          'description': 'Official profile and biography of the creator and publisher of Sportivo',
+          'url': 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/'
         },
         {
           '@type': 'SiteNavigationElement',
@@ -194,11 +194,11 @@ const homepageJsonLd = {
       </div>
 
       <h1 class="max-w-3xl text-4xl font-black leading-[0.98] tracking-tight text-white sm:text-6xl">
-        Stay close to every <span class="text-[#c9f36b]">kickoff.</span>
+        Sportivo — Stay close to every <span class="text-[#c9f36b]">kickoff.</span>
       </h1>
       
       <p class="mt-5 max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">
-        Browse live football, cricket, and basketball schedules in Nepal Standard Time (NST) with multi-server stream fallbacks and real-time provider data.
+        Sportivo aggregates live football, cricket, and basketball schedules in Nepal Standard Time (NST) with multi-server stream fallbacks and real-time provider updates.
       </p>
 
       <div class="mt-8 flex flex-wrap items-center gap-3 text-xs font-bold">
