@@ -20,10 +20,7 @@ export default function MatchPlayer({ match }: Props) {
   useEffect(() => {
     if (!currentSource?.source || !currentSource.id) return;
 
-    setLoading(true);
-    setError('');
-    setStreams([]);
-    setActive(null);
+    let cancelled = false;
 
     fetch(`/api/stream/${encodeURIComponent(currentSource.source)}/${encodeURIComponent(currentSource.id)}`)
       .then((response) => {
@@ -31,6 +28,7 @@ export default function MatchPlayer({ match }: Props) {
         return response.json();
       })
       .then((payload) => {
+        if (cancelled) return;
         const parsed = typeof payload?.contents === 'string' ? JSON.parse(payload.contents) : payload;
         const available = (Array.isArray(parsed) ? parsed : [parsed]).filter((item): item is Stream => Boolean(publicUrl(streamUrl(item))));
         if (available.length === 0) {
@@ -41,12 +39,28 @@ export default function MatchPlayer({ match }: Props) {
         }
       })
       .catch(() => {
-        setError('This stream is currently offline. Live feeds typically go live 15 minutes before kickoff.');
+        if (!cancelled) {
+          setError('This stream is currently offline. Live feeds typically go live 15 minutes before kickoff.');
+        }
       })
       .finally(() => {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, [currentSource?.id, currentSource?.source]);
+
+  function handleSourceChange(idx: number) {
+    setSelectedSourceIndex(idx);
+    setLoading(true);
+    setError('');
+    setStreams([]);
+    setActive(null);
+  }
 
   const url = active ? publicUrl(streamUrl(active)) : null;
 
@@ -61,7 +75,7 @@ export default function MatchPlayer({ match }: Props) {
               {sources.map((s, idx) => (
                 <button
                   key={idx}
-                  onClick={() => setSelectedSourceIndex(idx)}
+                  onClick={() => handleSourceChange(idx)}
                   className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition ${
                     selectedSourceIndex === idx ? 'bg-[#c9f36b] text-black' : 'bg-slate-800 text-slate-300 hover:text-white'
                   }`}
