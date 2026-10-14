@@ -1,63 +1,108 @@
 # Sportivo
 
-Sportivo is a focused sports fixture desk for discovering football, cricket, and basketball matches, checking local kickoff times, and opening available stream sources from one responsive interface.
+Sportivo is a clean, multi-sport match center and stream locator built for football, cricket, and basketball fans. It brings live match status, league navigation, personalized feeds, and streaming channels together in one place without account walls or clutter.
 
-<p align="center">
-	<a href="https://sportivo.dipeshsapkota7.com.np/"><strong>Visit Sportivo</strong></a>
-	&nbsp;&middot;&nbsp;
-	<a href="https://sportivo.dipeshsapkota7.com.np/football/">Browse football</a>
-	&nbsp;&middot;&nbsp;
-	<a href="https://sportivo.dipeshsapkota7.com.np/cricket/">Browse cricket</a>
-</p>
+Live site: [sportivo.dipeshsapkota7.com.np](https://sportivo.dipeshsapkota7.com.np/)
 
-## Product Demo
+---
 
-![Sportivo launch demo](public/sportivo-demo.gif)
+## Highlights
 
-## Features
+- **Live Match Center**: Instant separation between games happening right now, upcoming kickoffs, and completed results with live badges.
+- **League Breakdown**: Quick filters for Premier League, UEFA Champions League, La Liga, Serie A, Bundesliga, MLS, and international tournaments.
+- **Personal Sports Desk (`/dashboard`)**: Follow specific clubs, national teams, leagues, or entire sports. Your curated feed and starred matches save automatically in your browser across sessions.
+- **Timezone Scheduling**: Automatically detects your system clock and lets you switch between local time, Kathmandu time, UTC, or other major timezones on the fly.
+- **Streaming Companion**: Switch between upstream servers, toggle fullscreen or picture-in-picture, and get clear stream health notices when channels are awaiting pre-match broadcast.
+- **Calendar Exports**: One-click Google Calendar links and direct `.ics` file downloads for upcoming matches.
+- **PWA & Offline Mode**: Installable as a Progressive Web App on phone or desktop with service worker caching.
+- **SEO & AI Discovery**: Clean server-rendered HTML, complete Schema.org `SportsEvent` structured data, automated sitemaps, and full crawler compatibility.
 
-- **Smart Live Match Center**: Clear separation of Live (with pulsing badges), Upcoming, and Final fixtures with automatic sync and manual refresh.
-- **League-Wise Competitions**: Dedicated tabs and filter pills for Champions League, Premier League, La Liga, Bundesliga, Serie A, MLS, and other competitions.
-- **Adaptive Timezone Engine**: One-click toggle between Nepal Standard Time (NST) and visitor's detected local timezone (persisted in local storage).
-- **Match Calendar & Date Navigation**: Filter fixtures by Today, Tomorrow, or Next 7 Days.
-- **Personalized Watchlist (Favorites)**: Star fixtures to build a custom schedule feed stored locally with zero mandatory account sign-up.
-- **Match Companion & Calendar Integration**: Matchrooms include live countdowns, Add to Google Calendar, and one-click `.ics` iCalendar download.
-- **Reliable Streaming Player**: Responsive player supporting fullscreen, server switching, PiP, and clear pre-match signal notices.
-- **Low-Data Mode**: Lightweight text-first mode that disables heavy media posters to preserve bandwidth on mobile networks.
-- **PWA & Offline Fallback**: Installable Progressive Web App with service worker caching and dedicated offline fallback route.
-- **Full Search Engine & AI Accessibility**: Indexable SSR HTML, Schema.org SportsEvent & BreadcrumbList JSON-LD, crawlable sitemaps, and robots.txt.
+---
 
-## Tech Stack
+## Architecture & Stack
 
-- **Framework**: Astro 5 (Server Output via `@astrojs/vercel`)
-- **UI Components**: React 19 + TypeScript
-- **Styling**: Tailwind CSS
-- **PWA**: Web App Manifest & Service Worker (`sw.js`)
-- **SEO & Structured Data**: Schema.org, Open Graph, Twitter Cards, Sitemap Index
-- **Testing & Auditing**: Playwright browser tests, automated endpoint monitoring (`scripts/monitor.mjs` and `scripts/audit.mjs`)
+- **Framework**: [Astro 5](https://astro.build/) in SSR mode with `@astrojs/vercel`
+- **UI Islands**: React 19 + TypeScript
+- **Styling**: Tailwind CSS (dark theme with mint & gold accents)
+- **Data Source**: Live match feed aggregator with multi-provider fallback
+- **PWA**: Service Worker caching (`sw.js`) with Web App Manifest
+- **Validation**: Playwright end-to-end browser audit and automated endpoint monitor
 
-## Local Development
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+ (Node 20+ recommended)
+- npm
+
+### Installation
 
 ```bash
+git clone https://github.com/Dszae/sportivo.git
+cd sportivo
 npm install
+```
+
+### Development
+
+```bash
 npm run dev
 ```
 
-For building and auditing:
+Open [http://localhost:4321](http://localhost:4321) in your browser.
+
+### Build & Audit
 
 ```bash
+# Check TypeScript diagnostics and generate production bundle
 npm run build
+
+# Run endpoint health checks
 npm run monitor
+
+# Run headless Playwright browser audit
 npm run audit
 ```
 
-## Production Deployment
+---
 
-Sportivo is hosted on Vercel with high-availability edge routing:
+## Project Structure
 
-**https://sportivo.dipeshsapkota7.com.np/**
+```text
+├── public/                 # Static assets, PWA manifest, service worker, icons
+├── scripts/
+│   ├── audit.mjs           # Playwright headless browser & SEO verifier
+│   ├── generate-sitemap.mjs# Dynamic sitemap & image metadata generator
+│   └── monitor.mjs         # Live endpoint health monitor
+├── src/
+│   ├── components/
+│   │   ├── MatchExplorer.tsx   # Category match browser & league filter
+│   │   ├── MatchPlayer.tsx     # Stream player container & controls
+│   │   ├── PersonalDashboard.tsx # Custom feed, followed teams & starred games
+│   │   ├── SiteFooter.astro    # Site footer with social links & legal notes
+│   │   └── SiteHeader.astro    # Global navigation bar
+│   ├── layouts/
+│   │   └── BaseLayout.astro    # Core HTML shell with meta tags & JSON-LD
+│   ├── lib/
+│   │   ├── preferences.ts      # User preferences store & event dispatcher
+│   │   └── sportivo.ts         # Match types, league detection, API client
+│   └── pages/
+│       ├── [category]/         # Sport hubs (/football, /cricket, /basketball)
+│       ├── dashboard/          # Personal sports dashboard (/dashboard)
+│       ├── api/                # Internal proxy endpoints for matches & streams
+│       └── index.astro         # Homepage sports desk
+```
 
-## Author
+---
 
-Built by [Dipesh Sapkota](https://www.dipeshsapkota7.com.np/).
+## Deployment
 
+Continuous deployment is configured with Vercel. Every commit to `main` builds serverless functions for dynamic API routing and serves static assets directly from the global edge.
+
+---
+
+## Creator
+
+Built by [Dipesh Sapkota](https://www.dipeshsapkota7.com.np/) &middot; [GitHub](https://github.com/Dszae) &middot; [LinkedIn](https://linkedin.com/in/dszae)
