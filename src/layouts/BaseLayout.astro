@@ -1,0 +1,45 @@
+---
+import '../index.css';
+
+interface Props {
+  title: string;
+  description: string;
+  canonical: string;
+  type?: 'website' | 'profile';
+  image?: string;
+}
+
+const { title, description, canonical, type = 'website', image = '/sportivo-preview.png' } = Astro.props;
+const siteUrl = 'https://sportivo.dipeshsapkota7.com.np';
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#080a0b" />
+    <meta name="author" content="Dipesh Sapkota" />
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
+    <link rel="canonical" href={canonical} />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:type" content={type} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={`${siteUrl}${image}`} />
+    <meta property="og:image:alt" content="Sportivo sports fixture desk" />
+    <meta property="og:site_name" content="Sportivo" />
+    <meta property="og:locale" content="en_NP" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={`${siteUrl}${image}`} />
+    <slot name="head" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

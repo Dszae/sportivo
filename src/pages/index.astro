@@ -1,0 +1,26 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import MatchExplorer from '../components/MatchExplorer';
+import { categories, fetchMatches, type Match } from '../lib/sportivo';
+
+const data = await Promise.all(categories.map(async (category) => {
+  try { return [category, await fetchMatches(category)] as const; } catch { return [category, [] as Match[]] as const; }
+}));
+const byCategory = Object.fromEntries(data) as Record<string, Match[]>;
+const description = 'Follow football, cricket, and basketball fixtures with local kickoff times and available stream sources on Sportivo by Dipesh Sapkota.';
+---
+<BaseLayout title="Sportivo by Dipesh Sapkota | Live Scores & Sports Fixtures" description={description} canonical="https://sportivo.dipeshsapkota7.com.np/">
+  <SiteHeader />
+  <main class="site-shell min-h-screen text-slate-100">
+    <section class="mx-auto max-w-7xl px-6 pb-10 pt-12 sm:pt-16">
+      <p class="mb-5 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.28em] text-[#e5b94f]"><span class="h-px w-8 bg-[#c9f36b]"></span>The live fixture desk</p>
+      <h1 class="max-w-2xl text-4xl font-black leading-[0.98] tracking-tight text-white sm:text-6xl">Stay close to the <span class="text-[#c9f36b]">moment.</span></h1>
+      <p class="mt-5 max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">Browse schedules, check Nepal local times, and open a fixture to inspect the available stream sources returned by the upstream sports provider.</p>
+      <div class="mt-8 flex flex-wrap gap-3 text-xs font-bold text-slate-400"><span class="rounded-full border border-white/10 bg-white/5 px-4 py-2">Football, cricket, and basketball</span><a class="rounded-full border border-[#3c9b7e]/30 bg-[#3c9b7e]/10 px-4 py-2 text-[#83d7bd] hover:text-white" href="/about-dipesh-sapkota/">About the creator</a></div>
+    </section>
+    <section class="mx-auto max-w-7xl space-y-14 px-6 pb-20" aria-label="Sports fixtures">
+      {categories.map((category) => <div><div class="mb-4 flex items-baseline justify-between gap-4"><h2 class="text-2xl font-black text-white">{category[0].toUpperCase() + category.slice(1)} fixtures</h2><a class="text-xs font-bold text-[#c9f36b] hover:text-white" href={`/${category}/`}>View all {category} fixtures</a></div><MatchExplorer client:load category={category} matches={byCategory[category] || []} /></div>)}
+    </section>
+  </main>
+</BaseLayout>

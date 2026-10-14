@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SiteHeader from '../../../components/SiteHeader.astro';
+import MatchPlayer from '../../../components/MatchPlayer';
+import { fetchMatches, isCategory, slugify, titleOf, statusOf, timeOf, type Category, type Match } from '../../../lib/sportivo';
+
+const categoryParam = Astro.params.category || '';
+const slug = Astro.params.slug || '';
+const validCategory = isCategory(categoryParam);
+const category = (validCategory ? categoryParam : 'football') as Category;
+let match: Match | undefined;
+if (validCategory) {
+  try { match = (await fetchMatches(category)).find((item) => slugify(titleOf(item)) === slug); } catch { match = undefined; }
+}
+if (!validCategory || !match) Astro.response.status = 404;
+const title = match ? titleOf(match) : 'Fixture not found';
+const canonical = `https://sportivo.dipeshsapkota7.com.np/${category}/match/${encodeURIComponent(slug)}/`;
+---
+<BaseLayout title={match ? `${title} | ${category} Fixture | Sportivo` : 'Fixture not found | Sportivo'} description={match ? `${title}: ${statusOf(match)} ${category} fixture scheduled for ${timeOf(match)} Nepal Standard Time on Sportivo.` : 'The requested Sportivo fixture was not found.'} canonical={canonical}>
+  <SiteHeader activeCategory={category} />
+  <main class="site-shell min-h-screen text-slate-100"><section class="mx-auto max-w-7xl px-6 pb-20 pt-10"><nav aria-label="Breadcrumb" class="mb-8 text-xs text-slate-500"><a href="/" class="hover:text-[#c9f36b]">Sportivo</a><span class="mx-2">/</span><a href={`/${category}/`} class="hover:text-[#c9f36b]">{category} fixtures</a><span class="mx-2">/</span><span>{title}</span></nav>{match ? <><h1 class="mb-6 text-3xl font-black text-white sm:text-5xl">{title}</h1><div class="mb-8 grid gap-3 text-sm text-slate-300 sm:grid-cols-3"><p class="rounded-lg border border-white/10 bg-[#111a19] px-4 py-3"><strong class="text-white">Status:</strong> {statusOf(match)}</p><p class="rounded-lg border border-white/10 bg-[#111a19] px-4 py-3"><strong class="text-white">Scheduled time:</strong> {timeOf(match)} Nepal time</p><p class="rounded-lg border border-white/10 bg-[#111a19] px-4 py-3"><strong class="text-white">Sport:</strong> {match.category || category}</p></div><MatchPlayer client:load match={match} /></> : <div class="rounded-xl border border-white/10 bg-[#111a19] p-8"><h1 class="text-3xl font-black text-white">Fixture not found</h1><p class="mt-3 text-slate-400">This Sportivo match URL does not identify a current public fixture.</p><a href={`/${category}/`} class="mt-6 inline-block font-bold text-[#c9f36b]">Return to {category} fixtures</a></div>}</section></main>
+</BaseLayout>

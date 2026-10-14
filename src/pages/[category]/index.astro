@@ -1,0 +1,20 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import MatchExplorer from '../../components/MatchExplorer';
+import { fetchMatches, isCategory, type Category, type Match } from '../../lib/sportivo';
+
+const categoryParam = Astro.params.category || '';
+const validCategory = isCategory(categoryParam);
+if (!validCategory) Astro.response.status = 404;
+const category = (validCategory ? categoryParam : 'football') as Category;
+let matches: Match[] = [];
+let unavailable = false;
+try { matches = await fetchMatches(category); } catch { unavailable = true; }
+const label = category[0].toUpperCase() + category.slice(1);
+const canonical = `https://sportivo.dipeshsapkota7.com.np/${category}/`;
+---
+<BaseLayout title={validCategory ? `${label} Fixtures & Live Scores | Sportivo` : 'Page not found | Sportivo'} description={validCategory ? `Browse ${category} fixtures, results, Nepal Standard Time schedules, and available stream sources on Sportivo.` : 'The requested Sportivo page was not found.'} canonical={validCategory ? canonical : 'https://sportivo.dipeshsapkota7.com.np/404/'}>
+  <SiteHeader activeCategory={validCategory ? category : undefined} />
+  <main class="site-shell min-h-screen text-slate-100"><section class="mx-auto max-w-7xl px-6 pb-20 pt-12 sm:pt-16">{validCategory ? <><nav aria-label="Breadcrumb" class="mb-8 text-xs text-slate-500"><a href="/" class="hover:text-[#c9f36b]">Sportivo</a><span class="mx-2">/</span><span>{label} fixtures</span></nav><h1 class="text-4xl font-black tracking-tight text-white sm:text-6xl">{label} fixtures</h1><p class="mt-4 max-w-2xl text-sm leading-7 text-slate-400">Browse {category} fixtures, statuses, and kickoff times in Nepal Standard Time. Match details and available sources are supplied by the upstream provider.</p>{unavailable && <p class="mt-6 rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-200" role="status">Fixtures are temporarily unavailable. The provider did not return a usable response.</p>}<div class="mt-10"><MatchExplorer client:load category={category} matches={matches} /></div></> : <><p class="text-xs font-bold uppercase tracking-widest text-[#e5b94f]">404</p><h1 class="mt-4 text-4xl font-black text-white">Page not found</h1><p class="mt-4 text-slate-400">The requested Sportivo page does not exist.</p><a href="/" class="mt-8 inline-block font-bold text-[#c9f36b]">Return to Sportivo</a></>}</section></main>
+</BaseLayout>

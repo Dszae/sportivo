@@ -1,42 +1,14 @@
 {
   "headers": [
     {
-      "source": "/api/matches/:category",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, s-maxage=60, stale-while-revalidate=300" }
-      ]
-    },
-    {
       "source": "/(.*)",
       "headers": [
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "X-Frame-Options", "value": "DENY" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; connect-src 'self' https://streamed.pk; img-src 'self' data: https:; media-src 'self' https:; frame-src https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" }
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://streamed.pk; img-src 'self' data: https:; media-src 'self' https:; frame-src https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" }
       ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://streamed.pk/api/:path*"
-    },
-    {
-      "source": "/favicon.ico",
-      "destination": "/favicon.svg?v=2"
-    },
-    {
-      "source": "/api-docs/",
-      "destination": "/api-docs.html"
-    },
-    {
-      "source": "/:category/match/:slug/",
-      "destination": "/api/match?category=:category&slug=:slug"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
     }
   ]
 }

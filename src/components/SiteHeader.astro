@@ -1,0 +1,24 @@
+---
+import { categories, type Category } from '../lib/sportivo';
+
+interface Props { activeCategory?: Category }
+const { activeCategory } = Astro.props;
+---
+<header class="site-header sticky top-0 z-50 border-b bg-[#101716]/95 backdrop-blur">
+  <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-4 sm:flex-row">
+    <a href="/" class="group flex flex-col" aria-label="Sportivo home">
+      <span class="flex items-center gap-3">
+        <span class="relative flex h-3 w-3"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#e5b94f] opacity-50"></span><span class="site-logo-dot relative inline-flex h-3 w-3 rounded-full"></span></span>
+        <span class="text-2xl font-black leading-none tracking-tight text-white">Sportivo<span class="site-accent">.</span></span>
+      </span>
+      <span class="ml-6 mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-[#c9f36b]">Sports fixtures by Dipesh Sapkota</span>
+    </a>
+    <nav aria-label="Sports categories" class="flex flex-wrap justify-center gap-2">
+      {categories.map((category) => (
+        <a href={`/${category}/`} aria-current={activeCategory === category ? 'page' : undefined} class:list={["rounded-full px-5 py-2 text-xs font-bold capitalize transition-all", activeCategory === category ? 'site-button-active' : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white']}>
+          {category}
+        </a>
+      ))}
+    </nav>
+  </div>
+</header>
