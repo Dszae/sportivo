@@ -18,6 +18,14 @@ for (const category of categories) {
 }
 
 await mkdir('public', { recursive: true });
-const body = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${[...new Set(urls)].map((url) => `<url><loc>${escapeXml(url)}</loc></url>`).join('')}</urlset>`;
+
+const urlEntries = [...new Set(urls)].map((url) => {
+  if (url === `${siteUrl}/about-dipesh-sapkota/`) {
+    return `<url><loc>${escapeXml(url)}</loc><image:image><image:loc>${siteUrl}/dipesh-sapkota-profile.webp</image:loc><image:title>Dipesh Sapkota - Creator and Publisher of Sportivo</image:title><image:caption>Official profile photograph of Dipesh Sapkota, engineering student and creator of Sportivo.</image:caption><image:license>${siteUrl}/about-dipesh-sapkota/</image:license></image:image></url>`;
+  }
+  return `<url><loc>${escapeXml(url)}</loc></url>`;
+}).join('');
+
+const body = `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">${urlEntries}</urlset>`;
 await writeFile('public/sitemap.xml', body, 'utf8');
-console.log(`[sitemap] generated ${new Set(urls).size} URLs`);
+console.log(`[sitemap] generated ${new Set(urls).size} URLs with Google Image Sitemap metadata`);

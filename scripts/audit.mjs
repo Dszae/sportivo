@@ -60,6 +60,14 @@ try {
 } catch (error) { fail(`/this-route-does-not-exist/: ${error.message}`); }
 
 try {
+  const { body } = await request('/about-dipesh-sapkota/');
+  if (!body.includes('dipesh-sapkota-profile.webp')) fail('/about-dipesh-sapkota/: missing profile image');
+  if (!body.includes('ImageObject')) fail('/about-dipesh-sapkota/: missing ImageObject structured data');
+  if (!body.includes('https://schema.org')) fail('/about-dipesh-sapkota/: missing schema.org context');
+  if (!body.includes('og:image') || !body.includes('dipesh-sapkota-profile.webp')) fail('/about-dipesh-sapkota/: missing og:image profile tag');
+} catch (error) { fail(`/about-dipesh-sapkota/ image audit: ${error.message}`); }
+
+try {
   const { response, body } = await request('/', 'Googlebot');
   if (response.status !== 200 || !body.includes('<h1')) fail('Googlebot homepage access failed');
 } catch (error) { fail(`Googlebot homepage: ${error.message}`); }
