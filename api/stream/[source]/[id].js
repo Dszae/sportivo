@@ -1,8 +1,9 @@
 export default async function handler(request, response) {
-  const { source, id } = request.query || {};
+  const source = String(request.query?.source || '').trim();
+  const id = String(request.query?.id || '').trim();
 
   if (!source || !id) {
-    response.status(400).json({ error: 'Missing stream source or stream id' });
+    response.status(400).json({ error: 'Source and id parameters are required' });
     return;
   }
 
@@ -10,19 +11,17 @@ export default async function handler(request, response) {
   const timeout = setTimeout(() => controller.abort(), 10000);
 
   try {
-    const upstream = await fetch(
-      `https://streamed.pk/api/stream/${encodeURIComponent(source)}/${encodeURIComponent(id)}`,
-      {
-        headers: { accept: 'application/json' },
-        signal: controller.signal,
-      }
-    );
+    const upstreamUrl = `https://streamed.pk/api/stream/${encodeURIComponent(source)}/${encodeURIComponent(id)}`;
+    const upstream = await fetch(upstreamUrl, {
+      headers: { accept: 'application/json' },
+      signal: controller.signal,
+    });
 
     if (!upstream.ok) {
       response
-        .status(502)
+        .status(upstream.status === 404 ? 404 : 502)
         .setHeader('Retry-After', '60')
-        .json({ error: 'Stream provider unavailable' });
+        .json({ error: 'Stream source unavailable or offline' });
       return;
     }
 
@@ -35,9 +34,8 @@ export default async function handler(request, response) {
     response
       .status(error.name === 'AbortError' ? 504 : 502)
       .setHeader('Retry-After', '60')
-      .json({ error: 'Stream is temporarily unavailable' });
+      .json({ error: 'Stream data is temporarily unavailable' });
   } finally {
     clearTimeout(timeout);
   }
 }
-
