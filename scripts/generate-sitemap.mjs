@@ -20,15 +20,25 @@ const slugify = (value) =>
 const nowIso = new Date().toISOString();
 
 const staticRoutes = [
-  { url: `${siteUrl}/`, priority: '1.0', changefreq: 'hourly' },
+  {
+    url: `${siteUrl}/`,
+    priority: '1.0',
+    changefreq: 'hourly',
+    image: {
+      loc: `${siteUrl}/dipesh-sapkota-profile.webp`,
+      title: 'Dipesh Sapkota - Creator and Publisher of Sportivo',
+      caption: 'Dipesh Sapkota, engineering student, software developer, and the creator and publisher of Sportivo.',
+      license: `${siteUrl}/about-dipesh-sapkota/`,
+    },
+  },
   {
     url: `${siteUrl}/about-dipesh-sapkota/`,
     priority: '0.95',
     changefreq: 'daily',
     image: {
       loc: `${siteUrl}/dipesh-sapkota-profile.webp`,
-      title: 'Dipesh Sapkota - Creator and Publisher of Sportivo',
-      caption: 'Official profile photograph of Dipesh Sapkota, engineering student and creator of Sportivo.',
+      title: 'Dipesh Sapkota - Official Portrait & Profile Photo',
+      caption: 'Official portrait and profile photo of Dipesh Sapkota, engineering student and creator of Sportivo.',
       license: `${siteUrl}/about-dipesh-sapkota/`,
     },
   },

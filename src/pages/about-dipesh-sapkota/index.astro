@@ -193,7 +193,23 @@ const jsonLd = {
       </nav>
 
       <!-- Profile Header -->
-      <figure class="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-6" itemprop="image" itemscope itemtype="https://schema.org/ImageObject">
+      <figure
+        class="mt-8 flex flex-col sm:flex-row items-start sm:items-center gap-6"
+        itemprop="image"
+        itemscope
+        itemtype="https://schema.org/ImageObject"
+      >
+        <meta itemprop="name" content="Dipesh Sapkota Profile Photo" />
+        <meta itemprop="caption" content="Dipesh Sapkota, engineering student, software developer, and the creator and publisher of Sportivo" />
+        <meta itemprop="description" content="Official portrait profile photo of Dipesh Sapkota, creator and publisher of Sportivo sports platform." />
+        <meta itemprop="width" content="627" />
+        <meta itemprop="height" content="627" />
+        <meta itemprop="encodingFormat" content="image/webp" />
+        <meta itemprop="license" content={canonical} />
+        <meta itemprop="acquireLicensePage" content={canonical} />
+        <meta itemprop="creditText" content="Dipesh Sapkota" />
+        <meta itemprop="copyrightNotice" content="Copyright 2026 Dipesh Sapkota" />
+        <link itemprop="url" href={profileImageUrl} />
         <img
           src="/dipesh-sapkota-profile.webp"
           width="627"
