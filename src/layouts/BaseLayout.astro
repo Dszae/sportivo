@@ -61,6 +61,7 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     <meta name="keywords" content={keywords} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
     <link rel="help" type="text/plain" href="/llms.txt" title="LLM Context Summary" />
     
@@ -104,5 +105,12 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
   </head>
   <body>
     <slot />
+    <script is:inline>
+      if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script>
   </body>
 </html>

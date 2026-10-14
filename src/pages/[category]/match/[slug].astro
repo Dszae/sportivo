@@ -20,9 +20,12 @@ const validCategory = isCategory(categoryParam);
 const category = (validCategory ? categoryParam : 'football') as Category;
 
 let match: Match | undefined;
+let relatedMatches: Match[] = [];
 if (validCategory) {
   try {
-    match = (await fetchMatches(category)).find((item) => slugify(titleOf(item)) === slug);
+    const list = await fetchMatches(category);
+    match = list.find((item) => slugify(titleOf(item)) === slug);
+    relatedMatches = list.filter((item) => slugify(titleOf(item)) !== slug).slice(0, 4);
   } catch {
     match = undefined;
   }
@@ -142,6 +145,48 @@ const matchJsonLd = match
           </div>
 
           <MatchPlayer client:load match={match} />
+
+          {relatedMatches.length > 0 && (
+            <div class="mt-14 border-t border-white/5 pt-10">
+              <div class="mb-6 flex items-center justify-between">
+                <div>
+                  <span class="text-[10px] font-black uppercase tracking-widest text-[#e5b94f]">More {categoryLabel}</span>
+                  <h3 class="text-xl font-black text-white mt-0.5">Upcoming Related Fixtures</h3>
+                </div>
+                <a href={`/${category}/`} class="text-xs font-bold text-[#c9f36b] hover:underline">
+                  View all {category} &rarr;
+                </a>
+              </div>
+
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {relatedMatches.map((relMatch) => {
+                  const relTitle = titleOf(relMatch);
+                  const relSlug = slugify(relTitle);
+                  const relStatus = statusOf(relMatch);
+                  const relTime = timeOf(relMatch);
+                  return (
+                    <a
+                      href={`/${category}/match/${encodeURIComponent(relSlug)}/`}
+                      class="group rounded-2xl border border-white/10 bg-[#111a19] p-4 shadow-lg hover:-translate-y-1 hover:border-[#e5b94f]/50 transition"
+                    >
+                      <div class="flex items-center justify-between text-[10px] font-bold text-slate-400">
+                        <span class={relStatus === 'Live' ? 'font-black text-red-400' : ''}>
+                          {relStatus === 'Live' ? '● LIVE' : relStatus}
+                        </span>
+                        <span>{relTime}</span>
+                      </div>
+                      <h4 class="mt-2 text-sm font-bold text-white group-hover:text-[#e5b94f] line-clamp-2">
+                        {relTitle}
+                      </h4>
+                      <span class="mt-3 inline-block text-[10px] font-bold text-[#c9f36b]">
+                        Match Center &amp; Stream &rarr;
+                      </span>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </>
       ) : (
         <div class="rounded-xl border border-white/10 bg-[#111a19] p-8">

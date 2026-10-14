@@ -176,17 +176,148 @@ export function statusOf(match: Match) {
   return 'Upcoming';
 }
 
-export function timeOf(match: Match) {
+export function getMatchTimestamp(match: Match): number | null {
+  const value = match.date || match.startTime || match.start_at || match.timestamp;
+  if (!value) return null;
+  const num = typeof value === 'number' ? value : new Date(value).getTime();
+  return Number.isNaN(num) || num <= 0 ? null : num;
+}
+
+export function timeOf(match: Match, timeZone: string = 'Asia/Kathmandu') {
   const value = match.date || match.startTime || match.start_at || match.timestamp;
   if (!value) return match.time || 'Time TBA';
   if (typeof value === 'number' && value <= 0) return '24/7 Live Feed';
   const date = new Date(value);
   if (Number.isNaN(date.getTime()) || date.getUTCFullYear() <= 1970) return match.time || 'Time TBA';
-  return new Intl.DateTimeFormat('en-NP', {
-    timeZone: 'Asia/Kathmandu',
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(date);
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: timeZone || 'Asia/Kathmandu',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).format(date);
+  } catch {
+    return new Intl.DateTimeFormat('en-NP', {
+      timeZone: 'Asia/Kathmandu',
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(date);
+  }
+}
+
+export function isMatchOnDate(
+  match: Match,
+  filter: 'all' | 'today' | 'tomorrow' | 'week',
+  timeZone: string = 'Asia/Kathmandu'
+): boolean {
+  if (filter === 'all') return true;
+  const ts = getMatchTimestamp(match);
+  if (!ts) return false;
+
+  const tz = timeZone || 'Asia/Kathmandu';
+  const now = new Date();
+  const target = new Date(ts);
+
+  try {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: tz,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const nowDateStr = formatter.format(now);
+    const matchDateStr = formatter.format(target);
+
+    if (filter === 'today') {
+      return nowDateStr === matchDateStr;
+    }
+
+    if (filter === 'tomorrow') {
+      const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      const tomorrowDateStr = formatter.format(tomorrow);
+      return tomorrowDateStr === matchDateStr;
+    }
+
+    if (filter === 'week') {
+      const diffDays = (ts - now.getTime()) / (1000 * 60 * 60 * 24);
+      return diffDays >= -0.5 && diffDays <= 7.5;
+    }
+  } catch {
+    return true;
+  }
+
+  return true;
+}
+
+export function formatCountdown(targetTimestamp: number): string {
+  const diff = targetTimestamp - Date.now();
+  if (diff <= 0) return 'Kickoff now';
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+  if (hours > 24) {
+    const days = Math.floor(hours / 24);
+    return `In ${days}d ${hours % 24}h`;
+  }
+  if (hours > 0) {
+    return `In ${hours}h ${minutes}m`;
+  }
+  return `In ${minutes}m ${seconds}s`;
+}
+
+export function generateGoogleCalendarUrl(match: Match): string {
+  const title = titleOf(match);
+  const ts = getMatchTimestamp(match);
+  if (!ts) return '';
+  const start = new Date(ts);
+  const end = new Date(ts + 2 * 60 * 60 * 1000);
+
+  const startUtc = start.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  const endUtc = end.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+  const dates = `${startUtc}/${endUtc}`;
+  const slug = slugify(title);
+  const details = encodeURIComponent(
+    `Watch ${title} live stream online on Sportivo:\nhttps://sportivo.dipeshsapkota7.com.np/${match.category || 'football'}/match/${slug}/`
+  );
+  const name = encodeURIComponent(`${title} — Sportivo`);
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${name}&dates=${dates}&details=${details}&location=Sportivo`;
+}
+
+export function generateIcsCalendarContent(match: Match): string {
+  const title = titleOf(match);
+  const ts = getMatchTimestamp(match);
+  if (!ts) return '';
+  const start = new Date(ts);
+  const end = new Date(ts + 2 * 60 * 60 * 1000);
+
+  const startUtc = start.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  const endUtc = end.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  const nowUtc = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+  const slug = slugify(title);
+  const url = `https://sportivo.dipeshsapkota7.com.np/${match.category || 'football'}/match/${slug}/`;
+
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Sportivo//Live Sports Fixtures//EN',
+    'CALSCALE:GREGORIAN',
+    'BEGIN:VEVENT',
+    `UID:sportivo-${slug}-${ts}@sportivo.dipeshsapkota7.com.np`,
+    `DTSTAMP:${nowUtc}`,
+    `DTSTART:${startUtc}`,
+    `DTEND:${endUtc}`,
+    `SUMMARY:${title} (Sportivo Live)`,
+    `DESCRIPTION:Watch ${title} on Sportivo: ${url}`,
+    `URL:${url}`,
+    'STATUS:CONFIRMED',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n');
 }
 
 export function publicUrl(value: string | undefined) {

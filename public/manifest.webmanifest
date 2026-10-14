@@ -1,0 +1,23 @@
+{
+  "name": "Sportivo — Live Sports Desk",
+  "short_name": "Sportivo",
+  "description": "Live football, cricket, and basketball schedules in Nepal Standard Time (NST) with multi-server stream fallbacks and scores.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080a0b",
+  "theme_color": "#080a0b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/sportivo-preview.png",
+      "sizes": "980x568",
+      "type": "image/png"
+    }
+  ]
+}
