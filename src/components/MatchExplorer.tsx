@@ -212,20 +212,27 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
         </div>
         <div className="p-3">
           <h3 className="line-clamp-2 text-sm font-bold text-slate-100 group-hover:text-[#e5b94f]">{title}</h3>
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
             <span>{match.category || category}</span>
             {matchLeague && (
               <>
-                <span>•</span>
-                <span className="rounded bg-white/10 px-1 py-0.2 text-[9px] font-bold tracking-normal text-[#e5b94f]">
+                <span aria-hidden="true">•</span>
+                <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-bold tracking-normal text-[#e5b94f]">
                   {matchLeague}
                 </span>
               </>
             )}
-            <span>•</span>
-            <span className={isLive ? 'font-black text-red-400' : ''}>
-              {isLive ? 'Broadcasting Now' : status === 'Final' ? 'Final' : formattedTime}
-            </span>
+            {isLive ? (
+              <>
+                <span aria-hidden="true">•</span>
+                <span className="font-black text-red-400">Broadcasting Now</span>
+              </>
+            ) : status === 'Final' ? (
+              <>
+                <span aria-hidden="true">•</span>
+                <span className="text-slate-400">Final</span>
+              </>
+            ) : null}
           </div>
         </div>
       </a>
