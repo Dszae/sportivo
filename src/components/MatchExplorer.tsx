@@ -205,7 +205,7 @@ export default function MatchExplorer({ category, matches }: Props) {
         </div>
         <div className="p-3">
           <h3 className="line-clamp-2 text-sm font-bold text-slate-100 group-hover:text-[#e5b94f]">{title}</h3>
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">
             <span>{match.category || category}</span>
             {matchLeague && (
               <>
