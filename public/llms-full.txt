@@ -1,0 +1,34 @@
+# Sportivo (Full Documentation)
+
+> Live sports scores, schedules in Nepal Standard Time (NST), and verified stream availability for football, cricket, and basketball. Created and published by Dipesh Sapkota.
+
+## Overview
+
+Sportivo is an independent, high-performance web platform built with Astro, React, and Tailwind CSS. It is authored and published by Dipesh Sapkota to solve a common problem for sports fans across South Asia: converting irregular global fixture timestamps into accurate Nepal Standard Time (UTC+5:45) while simultaneously discovering verified, working live stream broadcasts.
+
+## Canonical Web Pages
+
+- [Sportivo Home](https://sportivo.dipeshsapkota7.com.np/): Live sports fixture desk and real-time schedules.
+- [Football Fixtures](https://sportivo.dipeshsapkota7.com.np/football/): Premier League, UEFA Champions League, La Liga, Serie A, Bundesliga, and MLS fixtures.
+- [Cricket Schedules](https://sportivo.dipeshsapkota7.com.np/cricket/): Live cricket matches, ICC World Cup, IPL, and bilateral international series in NST.
+- [Basketball Fixtures](https://sportivo.dipeshsapkota7.com.np/basketball/): NBA schedules, EuroLeague, and international basketball.
+- [Personal Dashboard](https://sportivo.dipeshsapkota7.com.np/dashboard/): User dashboard and saved favorite matches watchlist.
+- [About the Creator](https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/): Profile, biography, and verified links for Dipesh Sapkota, developer of Sportivo.
+- [Developer API Docs](https://sportivo.dipeshsapkota7.com.np/api-docs/): REST API endpoints and data structures for fixtures.
+- [XML Sitemap](https://sportivo.dipeshsapkota7.com.np/sitemap.xml): Primary sitemap indexing all canonical routes.
+
+## Public JSON Endpoints
+
+- [Football API](https://sportivo.dipeshsapkota7.com.np/api/matches/football): JSON endpoint returning current football fixture objects.
+- [Cricket API](https://sportivo.dipeshsapkota7.com.np/api/matches/cricket): JSON endpoint returning current cricket fixture objects.
+- [Basketball API](https://sportivo.dipeshsapkota7.com.np/api/matches/basketball): JSON endpoint returning current basketball fixture objects.
+
+## Technical Architecture
+
+- Framework: Astro 5 (Server-side rendered via `@astrojs/vercel`)
+- UI Library: React 19 Client Hydration
+- Styling: Tailwind CSS
+- Timezone: Default Asia/Kathmandu (UTC+5:45) with user-selectable timezone preferences
+- Host: Vercel Edge Network
+- Creator & Publisher: Dipesh Sapkota (https://www.dipeshsapkota7.com.np/)
+

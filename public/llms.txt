@@ -1,30 +1,28 @@
 # Sportivo
 
-Sportivo is a sports fixture web application created and published by Dipesh Sapkota.
-It provides football, cricket, and basketball schedules, match status, Nepal Standard Time kickoff times, search, and available stream-source information.
+> Live sports scores, schedules in Nepal Standard Time (NST), and verified stream availability for football, cricket, and basketball. Created and published by Dipesh Sapkota.
 
-## Canonical public pages
+Sportivo aggregates real-time sports fixtures, kickoff times calibrated for Nepal Standard Time (UTC+5:45), live scores, and verified upstream broadcast links.
 
-- Homepage: https://sportivo.dipeshsapkota7.com.np/
-- Creator page: https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/
-- Football fixtures: https://sportivo.dipeshsapkota7.com.np/football/
-- Cricket fixtures: https://sportivo.dipeshsapkota7.com.np/cricket/
-- Basketball fixtures: https://sportivo.dipeshsapkota7.com.np/basketball/
-- Dashboard desk: https://sportivo.dipeshsapkota7.com.np/dashboard/
-- Sitemap: https://sportivo.dipeshsapkota7.com.np/sitemap.xml
-- API documentation: https://sportivo.dipeshsapkota7.com.np/api-docs/
-- Creator portfolio: https://www.dipeshsapkota7.com.np/
+## Canonical Pages
 
-## Public API overview
+- [Sportivo Home](https://sportivo.dipeshsapkota7.com.np/): Live sports fixture desk and real-time schedules.
+- [Football Fixtures](https://sportivo.dipeshsapkota7.com.np/football/): Premier League, Champions League, La Liga, and global football fixtures.
+- [Cricket Schedules](https://sportivo.dipeshsapkota7.com.np/cricket/): Live cricket matches, ICC events, IPL, and bilateral series in NST.
+- [Basketball Fixtures](https://sportivo.dipeshsapkota7.com.np/basketball/): NBA schedules, EuroLeague, and international basketball.
+- [Personal Dashboard](https://sportivo.dipeshsapkota7.com.np/dashboard/): User dashboard and saved favorite matches watchlist.
+- [About the Creator](https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/): Profile, biography, and verified links for Dipesh Sapkota, developer of Sportivo.
+- [Developer API Docs](https://sportivo.dipeshsapkota7.com.np/api-docs/): REST API endpoints and data structures for fixtures.
+- [XML Sitemap](https://sportivo.dipeshsapkota7.com.np/sitemap.xml): Primary sitemap indexing all canonical routes.
 
-- GET https://sportivo.dipeshsapkota7.com.np/api/matches/football
-- GET https://sportivo.dipeshsapkota7.com.np/api/matches/cricket
-- GET https://sportivo.dipeshsapkota7.com.np/api/matches/basketball
+## Public API Endpoints
 
-The fixture endpoints return JSON arrays supplied by the upstream sports data provider. Fields may include title or name, category, status, date or startTime, teams, poster or image, and sources. Consumers must handle missing fields, empty arrays, status changes, and upstream errors.
+- [Football API](https://sportivo.dipeshsapkota7.com.np/api/matches/football): JSON endpoint returning current football fixture objects.
+- [Cricket API](https://sportivo.dipeshsapkota7.com.np/api/matches/cricket): JSON endpoint returning current cricket fixture objects.
+- [Basketball API](https://sportivo.dipeshsapkota7.com.np/api/matches/basketball): JSON endpoint returning current basketball fixture objects.
 
-## Data and attribution
+## Data and Attribution
 
-Fixture availability, timestamps, statuses, images, and stream sources are dynamic and supplied by the upstream provider. Sportivo does not guarantee that every fixture has a stream and should not be treated as an official league, club, or broadcaster.
+Fixture availability, timestamps, statuses, images, and stream sources are dynamic and supplied by upstream sports data providers. Sportivo does not host proprietary video streams and should not be treated as an official league, club, or broadcaster.
 
-Sportivo author and publisher: Dipesh Sapkota.
+Created and published by [Dipesh Sapkota](https://www.dipeshsapkota7.com.np/), software developer and engineering student from Nepal.

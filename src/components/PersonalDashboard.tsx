@@ -19,6 +19,7 @@ import {
   POPULAR_COMPETITIONS,
   POPULAR_TEAMS,
   UserPreferences,
+  getDefaultPreferences,
   loadUserPreferences,
   saveUserPreferences,
 } from '../lib/preferences';
@@ -33,7 +34,7 @@ function teamParts(title: string) {
 }
 
 export default function PersonalDashboard({ allMatchesByCategory }: Props) {
-  const [prefs, setPrefs] = useState<UserPreferences>(loadUserPreferences());
+  const [prefs, setPrefs] = useState<UserPreferences>(getDefaultPreferences());
   const [activeTab, setActiveTab] = useState<'feed' | 'starred' | 'customize'>('feed');
   const [teamSearchQuery, setTeamSearchQuery] = useState('');
   const [customTeamInput, setCustomTeamInput] = useState('');

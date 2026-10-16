@@ -341,7 +341,7 @@ export default function MatchPlayer({ match }: Props) {
             </div>
 
             {ts && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-[#c9f36b]">
+              <span suppressHydrationWarning className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-[#c9f36b]">
                 <span className="h-2 w-2 rounded-full bg-[#c9f36b]"></span>
                 {formatCountdown(ts)}
               </span>

@@ -30,6 +30,7 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
   const [timeZone, setTimeZone] = useState<'Asia/Kathmandu' | string>('Asia/Kathmandu');
   const [visibleCount, setVisibleCount] = useState(16);
+  const [mounted, setMounted] = useState(false);
 
   const categoryLabel = category[0].toUpperCase() + category.slice(1);
 
@@ -39,6 +40,7 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
 
   // Initialize client preferences from shared preferences and sync across tabs
   useEffect(() => {
+    setMounted(true);
     const prefs = loadUserPreferences();
     setFavorites(prefs.starredMatches);
     if (prefs.timeZone) setTimeZone(prefs.timeZone);
@@ -181,6 +183,7 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
 
         <div className="relative flex h-36 w-full items-center justify-center overflow-hidden bg-[#111a19]">
           <span
+            suppressHydrationWarning
             className={`absolute left-2 top-2 z-10 flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-bold text-white shadow-md ${
               isLive ? 'bg-red-600 font-black tracking-wider' : 'bg-[#0a0f0e]/95 border border-white/10'
             }`}
@@ -350,7 +353,9 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
 
         {/* Manual Refresh & Status */}
         <div className="flex items-center gap-3 text-xs text-slate-400">
-          <span>Refreshed: {lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          <span suppressHydrationWarning>
+            {mounted ? `Refreshed: ${lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Refreshed: Live Sync'}
+          </span>
           <button
             type="button"
             onClick={() => setLastRefreshed(new Date())}

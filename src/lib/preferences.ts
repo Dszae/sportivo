@@ -66,19 +66,12 @@ const PREFS_KEY = 'sportivo_user_preferences_v1';
 const LEGACY_FAVS_KEY = 'sportivo_favs';
 
 export function getDefaultPreferences(): UserPreferences {
-  let detectedTz = 'Asia/Kathmandu';
-  if (typeof window !== 'undefined') {
-    try {
-      detectedTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kathmandu';
-    } catch {}
-  }
-
   return {
     favoriteSports: ['football', 'cricket', 'basketball'],
     favoriteLeagues: ['Premier League', 'Champions League'],
     favoriteTeams: [],
     starredMatches: [],
-    timeZone: detectedTz,
+    timeZone: 'Asia/Kathmandu',
   };
 }
 
