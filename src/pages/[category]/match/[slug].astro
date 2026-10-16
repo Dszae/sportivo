@@ -101,6 +101,7 @@ const matchJsonLd = match
   title={pageTitle}
   description={pageDescription}
   canonical={canonical}
+  noindex={!validCategory || !match}
   keywords={`${title}, ${category} fixture, live ${category} stream, Sportivo by Dipesh Sapkota, Nepal sports`}
 >
   {matchJsonLd && (

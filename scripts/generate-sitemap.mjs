@@ -62,7 +62,10 @@ for (const category of categories) {
     const matches = await response.json();
     if (Array.isArray(matches)) {
       for (const match of matches) {
-        const slug = slugify(match?.title || match?.name);
+        const title = match?.title || match?.name;
+        if (!title) continue;
+        const slug = slugify(title);
+        if (!slug || slug === 'fixture') continue;
         matchRoutes.push({
           url: `${siteUrl}/${category}/match/${encodeURIComponent(slug)}/`,
           priority: '0.60',
