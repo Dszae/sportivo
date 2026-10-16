@@ -32,11 +32,13 @@
 
 @layer components {
 	.site-shell {
+		background-color: #080a0b;
 		background: linear-gradient(180deg, rgba(8, 10, 11, 0.96), rgba(8, 10, 11, 0.78));
 	}
 
 	.site-header {
 		border-color: rgba(255, 255, 255, 0.1);
+		background-color: #080a0b;
 		background: rgba(8, 10, 11, 0.88);
 		backdrop-filter: blur(18px);
 	}

@@ -172,20 +172,20 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
           type="button"
           onClick={(e) => toggleFavorite(slug, e)}
           aria-label={isFav ? `Remove ${title} from watchlist` : `Add ${title} to watchlist`}
-          className="absolute right-2.5 top-2.5 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-transform hover:scale-110 focus:outline-none"
+          className="absolute right-2.5 top-2.5 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-[#0a0f0e]/80 border border-white/10 text-white backdrop-blur-sm transition-transform hover:scale-110 focus:outline-none"
         >
-          <span className={`text-sm ${isFav ? 'text-amber-400' : 'text-slate-400 hover:text-white'}`}>
+          <span aria-hidden="true" className={`text-sm ${isFav ? 'text-amber-400' : 'text-slate-300 hover:text-white'}`}>
             {isFav ? '★' : '☆'}
           </span>
         </button>
 
-        <div className="relative flex h-36 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-[#182b2a] via-[#18212b] to-[#111a19]">
+        <div className="relative flex h-36 w-full items-center justify-center overflow-hidden bg-[#111a19]">
           <span
-            className={`absolute left-2 top-2 z-10 flex items-center gap-1.5 rounded px-2 py-1 text-[10px] font-bold text-white shadow-md ${
-              isLive ? 'bg-red-600 font-black tracking-wider' : 'bg-black/80'
+            className={`absolute left-2 top-2 z-10 flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-bold text-white shadow-md ${
+              isLive ? 'bg-red-600 font-black tracking-wider' : 'bg-[#0a0f0e]/95 border border-white/10'
             }`}
           >
-            {isLive && <span className="inline-block h-1.5 w-1.5 animate-ping rounded-full bg-white"></span>}
+            {isLive && <span className="inline-block h-1.5 w-1.5 animate-ping rounded-full bg-white" aria-hidden="true"></span>}
             {isLive ? 'LIVE' : status === 'Final' ? 'Final' : formattedTime}
           </span>
           {poster ? (
@@ -294,31 +294,33 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
 
       {/* Date Navigation & Watchlist Pill Tabs */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-4">
-        <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Date filter">
-          {(['all', 'today', 'tomorrow', 'week'] as const).map((filter) => {
-            const isSelected = dateFilter === filter && !showWatchlistOnly;
-            return (
-              <button
-                key={filter}
-                type="button"
-                role="tab"
-                aria-selected={isSelected}
-                onClick={() => {
-                  setDateFilter(filter);
-                  setShowWatchlistOnly(false);
-                }}
-                className={`rounded-full px-3.5 py-1.5 text-xs font-bold capitalize transition-all duration-200 ${
-                  isSelected
-                    ? 'site-button-active'
-                    : 'border border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white'
-                }`}
-              >
-                {filter === 'all' ? 'All Dates' : filter === 'week' ? 'Next 7 Days' : filter}
-              </button>
-            );
-          })}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label={`Date filter for ${categoryLabel}`}>
+            {(['all', 'today', 'tomorrow', 'week'] as const).map((filter) => {
+              const isSelected = dateFilter === filter && !showWatchlistOnly;
+              return (
+                <button
+                  key={filter}
+                  type="button"
+                  role="tab"
+                  aria-selected={isSelected}
+                  onClick={() => {
+                    setDateFilter(filter);
+                    setShowWatchlistOnly(false);
+                  }}
+                  className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all duration-200 ${
+                    isSelected
+                      ? 'site-button-active'
+                      : 'border border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white'
+                  }`}
+                >
+                  {filter === 'all' ? 'All Dates' : filter === 'today' ? 'Today' : filter === 'tomorrow' ? 'Tomorrow' : 'Next 7 Days'}
+                </button>
+              );
+            })}
+          </div>
 
-          {/* Watchlist Filter Pill */}
+          {/* Watchlist Filter Pill (Separate toggle button outside tablist) */}
           <button
             type="button"
             onClick={() => setShowWatchlistOnly(!showWatchlistOnly)}
@@ -329,9 +331,10 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
                 : 'border border-white/10 bg-white/5 text-slate-300 hover:border-amber-400/40 hover:text-amber-300'
             }`}
           >
-            <span>★ Watchlist</span>
+            <span aria-hidden="true">★</span>
+            <span>Watchlist</span>
             {favorites.length > 0 && (
-              <span className="rounded-full bg-amber-400/20 px-1.5 py-0.2 text-[10px] text-amber-300">
+              <span className="rounded-full bg-amber-400/20 px-1.5 py-0.2 text-[10px] text-amber-300" aria-label={`${favorites.length} saved matches`}>
                 {favorites.length}
               </span>
             )}
@@ -471,16 +474,19 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
                 {liveMatches.map((match, index) => renderCard(match, index))}
               </div>
             ) : (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/5 bg-[#101716]/60 px-4 py-2.5 text-xs text-slate-400">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/5 bg-[#101716]/60 px-4 py-2.5 text-xs text-slate-300">
                 <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-slate-600"></span>
+                  <span className="h-2 w-2 rounded-full bg-slate-500" aria-hidden="true"></span>
                   <span className="font-medium text-slate-300">
                     {selectedLeague !== 'All'
                       ? `No live matches right now in ${selectedLeague}.`
                       : 'No matches broadcasting live right now.'}
                   </span>
                 </div>
-                <span className="text-slate-500 text-xs">Upcoming kickoff fixtures listed below &darr;</span>
+                <span className="text-slate-300 text-xs flex items-center gap-1">
+                  <span>Upcoming kickoff fixtures listed below</span>
+                  <span aria-hidden="true">&darr;</span>
+                </span>
               </div>
             )}
           </div>
@@ -490,7 +496,7 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
             <div>
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#c9f36b]"></span>
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#c9f36b]" aria-hidden="true"></span>
                   <h3 className="text-base font-black text-white sm:text-lg">
                     {selectedLeague !== 'All'
                       ? `Upcoming — ${selectedLeague}`
