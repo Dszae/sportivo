@@ -274,9 +274,12 @@ export default function PersonalDashboard({ allMatchesByCategory }: Props) {
             {poster ? (
               <img
                 src={poster}
-                alt={`${title} poster`}
+                alt={`${title} live stream broadcast banner`}
+                width="288"
+                height="144"
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
+                decoding="async"
               />
             ) : (
               <div className="px-4 text-center text-sm font-bold text-slate-300">

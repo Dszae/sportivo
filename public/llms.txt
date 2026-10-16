@@ -10,6 +10,7 @@ It provides football, cricket, and basketball schedules, match status, Nepal Sta
 - Football fixtures: https://sportivo.dipeshsapkota7.com.np/football/
 - Cricket fixtures: https://sportivo.dipeshsapkota7.com.np/cricket/
 - Basketball fixtures: https://sportivo.dipeshsapkota7.com.np/basketball/
+- Dashboard desk: https://sportivo.dipeshsapkota7.com.np/dashboard/
 - Sitemap: https://sportivo.dipeshsapkota7.com.np/sitemap.xml
 - API documentation: https://sportivo.dipeshsapkota7.com.np/api-docs/
 - Creator portfolio: https://www.dipeshsapkota7.com.np/
