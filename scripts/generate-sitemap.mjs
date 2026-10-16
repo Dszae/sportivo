@@ -10,20 +10,14 @@ const escapeXml = (value) =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&apos;');
 
-const slugify = (value) =>
-  String(value || 'fixture')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 100) || 'fixture';
-
 const nowIso = new Date().toISOString();
 
+// Clean permanent sitemap: Homepage, Creator About page, Core Sport Category hubs, Dashboard, and Developer API
 const staticRoutes = [
   {
     url: `${siteUrl}/`,
     priority: '1.0',
-    changefreq: 'hourly',
+    changefreq: 'daily',
     image: {
       loc: `${siteUrl}/dipesh-sapkota-profile.webp`,
       title: 'Dipesh Sapkota - Creator and Publisher of Sportivo',
@@ -34,7 +28,7 @@ const staticRoutes = [
   {
     url: `${siteUrl}/about-dipesh-sapkota/`,
     priority: '0.95',
-    changefreq: 'daily',
+    changefreq: 'monthly',
     image: {
       loc: `${siteUrl}/dipesh-sapkota-profile.webp`,
       title: 'Dipesh Sapkota - Official Portrait & Profile Photo',
@@ -42,53 +36,36 @@ const staticRoutes = [
       license: `${siteUrl}/about-dipesh-sapkota/`,
     },
   },
-  { url: `${siteUrl}/api-docs/`, priority: '0.70', changefreq: 'weekly' },
-  { url: `${siteUrl}/dashboard/`, priority: '0.90', changefreq: 'daily' },
-  ...categories.map((category) => ({
-    url: `${siteUrl}/${category}/`,
-    priority: '0.85',
-    changefreq: 'hourly',
-  })),
+  {
+    url: `${siteUrl}/football/`,
+    priority: '0.90',
+    changefreq: 'daily',
+  },
+  {
+    url: `${siteUrl}/cricket/`,
+    priority: '0.90',
+    changefreq: 'daily',
+  },
+  {
+    url: `${siteUrl}/basketball/`,
+    priority: '0.90',
+    changefreq: 'daily',
+  },
+  {
+    url: `${siteUrl}/dashboard/`,
+    priority: '0.80',
+    changefreq: 'weekly',
+  },
+  {
+    url: `${siteUrl}/api-docs/`,
+    priority: '0.70',
+    changefreq: 'monthly',
+  },
 ];
-
-const matchRoutes = [];
-
-for (const category of categories) {
-  try {
-    const response = await fetch(`https://streamed.pk/api/matches/${category}`, {
-      headers: { accept: 'application/json' },
-    });
-    if (!response.ok) continue;
-    const matches = await response.json();
-    if (Array.isArray(matches)) {
-      for (const match of matches) {
-        const title = match?.title || match?.name;
-        if (!title) continue;
-        const slug = slugify(title);
-        if (!slug || slug === 'fixture') continue;
-        matchRoutes.push({
-          url: `${siteUrl}/${category}/match/${encodeURIComponent(slug)}/`,
-          priority: '0.60',
-          changefreq: 'hourly',
-        });
-      }
-    }
-  } catch (error) {
-    console.warn(`[sitemap] ${category}: ${error.message}`);
-  }
-}
 
 await mkdir('public', { recursive: true });
 
-const allRoutes = [...staticRoutes, ...matchRoutes];
-const seenUrls = new Set();
-const uniqueRoutes = allRoutes.filter((r) => {
-  if (seenUrls.has(r.url)) return false;
-  seenUrls.add(r.url);
-  return true;
-});
-
-const urlEntries = uniqueRoutes
+const urlEntries = staticRoutes
   .map((route) => {
     let entry = `<url><loc>${escapeXml(route.url)}</loc><lastmod>${nowIso}</lastmod><changefreq>${route.changefreq}</changefreq><priority>${route.priority}</priority>`;
     if (route.image) {
@@ -105,4 +82,4 @@ await writeFile('public/sitemap.xml', sitemapBody, 'utf8');
 const sitemapIndexBody = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n<sitemap>\n<loc>${siteUrl}/sitemap.xml</loc>\n<lastmod>${nowIso}</lastmod>\n</sitemap>\n</sitemapindex>`;
 await writeFile('public/sitemap-index.xml', sitemapIndexBody, 'utf8');
 
-console.log(`[sitemap] generated ${uniqueRoutes.length} URLs in public/sitemap.xml and public/sitemap-index.xml with Google Image & Priority metadata`);
+console.log(`[sitemap] generated ${staticRoutes.length} permanent URLs in public/sitemap.xml and public/sitemap-index.xml`);

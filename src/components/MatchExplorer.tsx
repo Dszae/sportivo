@@ -181,6 +181,7 @@ export default function MatchExplorer({ category, matches }: Props) {
             {isLive && <span className="inline-block h-1.5 w-1.5 animate-ping rounded-full bg-white"></span>}
             {isLive ? 'LIVE' : status === 'Final' ? 'Final' : formattedTime}
           </span>
+          {poster ? (
             <img
               src={poster}
               alt={`${title} live stream broadcast banner`}
