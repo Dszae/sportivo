@@ -19,10 +19,10 @@ const staticRoutes = [
     priority: '1.0',
     changefreq: 'daily',
     image: {
-      loc: `${siteUrl}/dipesh-sapkota-profile.webp`,
-      title: 'Dipesh Sapkota - Creator and Publisher of Sportivo',
-      caption: 'Dipesh Sapkota, engineering student, software developer, and the creator and publisher of Sportivo.',
-      license: `${siteUrl}/about-dipesh-sapkota/`,
+      loc: `${siteUrl}/sportivo-preview.png`,
+      title: 'Sportivo - Live Sports Scores, Fixtures & Streams Nepal',
+      caption: 'Sportivo live sports scores and fixture desk for football, cricket, and basketball in Nepal Standard Time (NST).',
+      license: `${siteUrl}/`,
     },
   },
   {

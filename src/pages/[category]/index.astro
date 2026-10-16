@@ -23,12 +23,67 @@ try {
 
 const label = category[0].toUpperCase() + category.slice(1);
 const canonical = `https://sportivo.dipeshsapkota7.com.np/${category}/`;
-const title = validCategory
-  ? `${label} Fixtures & Live Streams - Sportivo`
-  : 'Page not found - Sportivo';
-const description = validCategory
-  ? `Browse live ${category} match scores, fixtures, and kickoff times in Nepal Standard Time (NST) with multi-server stream availability on Sportivo.`
-  : 'The requested Sportivo page was not found.';
+
+const titles: Record<Category, string> = {
+  football: 'Football Fixtures, Live Scores & Streams Nepal (NST) - Sportivo',
+  cricket: 'Cricket Schedules, Live Scores & Fixtures Nepal (NST) - Sportivo',
+  basketball: 'Basketball & NBA Schedules, Live Scores Nepal (NST) - Sportivo',
+};
+
+const descriptions: Record<Category, string> = {
+  football: 'Browse live football matches, Premier League, UEFA Champions League, and La Liga schedules in Nepal Standard Time (NST) with multi-server stream options.',
+  cricket: 'Track live cricket scores, ICC events, IPL schedules, and bilateral tournament fixtures in Nepal Standard Time (NST) on Sportivo.',
+  basketball: 'Follow NBA games, EuroLeague schedules, live basketball scores, and verified broadcast feeds in Nepal Standard Time (NST) on Sportivo.',
+};
+
+const categoryFaqs: Record<Category, Array<{ question: string; answer: string }>> = {
+  football: [
+    {
+      question: 'What time are football matches broadcast in Nepal?',
+      answer: 'All football kickoff times on Sportivo are converted in real time to Nepal Standard Time (NST / UTC+5:45). Premier League evening matches typically start between 6:00 PM and 1:30 AM NST.',
+    },
+    {
+      question: 'Which football leagues can I track on Sportivo?',
+      answer: 'Sportivo covers the Premier League, UEFA Champions League, La Liga, Serie A, Bundesliga, MLS, and major international tournaments.',
+    },
+    {
+      question: 'How does Sportivo ensure working football streams?',
+      answer: 'Sportivo aggregates multiple fallback stream servers for scheduled matches so fans have reliable broadcast options without dead links.',
+    },
+  ],
+  cricket: [
+    {
+      question: 'Are cricket match schedules shown in Nepal Standard Time (NST)?',
+      answer: 'Yes, every cricket fixture — including ICC World Cup, Asia Cup, IPL, and bilateral series — is calibrated to Asia/Kathmandu time (UTC+5:45).',
+    },
+    {
+      question: 'Does Sportivo provide live cricket scores and status?',
+      answer: 'Sportivo displays live match indicators, upcoming kickoff countdowns, and real-time provider stream availability for ongoing matches.',
+    },
+    {
+      question: 'Can I follow Nepal national cricket team matches on Sportivo?',
+      answer: 'Yes, international cricket fixtures featuring Nepal and ICC Associate nations are tracked alongside full-member matches.',
+    },
+  ],
+  basketball: [
+    {
+      question: 'When do NBA games start in Nepal time?',
+      answer: 'NBA games played in North America typically start between 4:30 AM and 8:30 AM Nepal Standard Time (NST). Sportivo displays exact local start times.',
+    },
+    {
+      question: 'Which basketball tournaments are available on Sportivo?',
+      answer: 'Sportivo tracks NBA regular season and playoffs, EuroLeague, FIBA tournaments, and NCAA college basketball fixtures.',
+    },
+    {
+      question: 'Can I filter basketball fixtures by date?',
+      answer: 'Yes, use the date filter tabs to easily view games for Today, Tomorrow, or the Next 7 Days.',
+    },
+  ],
+};
+
+const title = validCategory ? titles[category] : 'Page not found - Sportivo';
+const description = validCategory ? descriptions[category] : 'The requested Sportivo page was not found.';
+const faqs = validCategory ? categoryFaqs[category] : [];
 
 const categoryJsonLd = validCategory
   ? {
@@ -72,6 +127,18 @@ const categoryJsonLd = validCategory
               }
             ]
           }
+        },
+        {
+          '@type': 'FAQPage',
+          '@id': `${canonical}#faq`,
+          'mainEntity': faqs.map((faq) => ({
+            '@type': 'Question',
+            'name': faq.question,
+            'acceptedAnswer': {
+              '@type': 'Answer',
+              'text': faq.answer
+            }
+          }))
         }
       ]
     }
@@ -130,6 +197,28 @@ const categoryJsonLd = validCategory
           <div class="mt-10">
             <MatchExplorer client:load category={category} matches={matches} />
           </div>
+
+          <!-- Category Specific FAQs for SEO Rich Snippets -->
+          <section class="mt-20 border-t border-white/5 pt-16" aria-labelledby="category-faq-heading">
+            <div class="max-w-3xl">
+              <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#e5b94f]">Information &amp; Guidance</p>
+              <h2 id="category-faq-heading" class="mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl">
+                {label} Fixtures FAQ
+              </h2>
+              <p class="mt-2 text-sm text-slate-300">
+                Common questions about {label} kickoff times in Nepal Standard Time (NST) and live stream coverage on Sportivo.
+              </p>
+            </div>
+
+            <div class="mt-8 space-y-4">
+              {faqs.map((faq) => (
+                <div class="rounded-2xl border border-white/10 bg-[#111a19] p-6 shadow-sm">
+                  <h3 class="text-base font-bold text-white">{faq.question}</h3>
+                  <p class="mt-2 text-sm leading-relaxed text-slate-300">{faq.answer}</p>
+                </div>
+              ))}
+            </div>
+          </section>
         </>
       ) : (
         <div class="py-16">

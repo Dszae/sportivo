@@ -16,13 +16,71 @@ const data = await Promise.all(
 );
 const byCategory = Object.fromEntries(data) as Record<string, Match[]>;
 
-const title = 'Sportivo — Live Sports Scores, Fixtures & Streams Nepal';
-const description = 'Follow live football, cricket, and basketball schedules in Nepal Standard Time (NST) with real-time score updates and verified multi-server stream links.';
+const title = 'Sportivo — Live Sports Scores, Fixtures & Streams Nepal (NST)';
+const description = 'Follow live football, cricket, and basketball schedules in Nepal Standard Time (NST) with real-time score updates, match companions, and verified multi-server streams.';
 const canonical = 'https://sportivo.dipeshsapkota7.com.np/';
+
+const faqs = [
+  {
+    question: 'What is Sportivo?',
+    answer: 'Sportivo is an independent live sports schedule and scores desk created by Dipesh Sapkota. It aggregates football, cricket, and basketball matches from verified sports feeds and automatically converts kickoff timestamps into Nepal Standard Time (NST / UTC+5:45).',
+  },
+  {
+    question: 'How are kickoff times converted to Nepal Standard Time (NST)?',
+    answer: 'Sportivo processes fixture timestamps from upstream providers and automatically converts them to Asia/Kathmandu time (UTC+5:45). Fans across Nepal can see exact local start times for Premier League, Champions League, IPL, and NBA games without doing manual timezone math.',
+  },
+  {
+    question: 'Which sports and tournaments are covered on Sportivo?',
+    answer: 'Sportivo provides fixture schedules, real-time scores, and stream availability for Football (Premier League, UEFA Champions League, La Liga, Serie A, Bundesliga, MLS), Cricket (ICC World Cup, bilateral series, IPL), and Basketball (NBA, EuroLeague).',
+  },
+  {
+    question: 'How do I save favorite teams and matches on Sportivo?',
+    answer: 'Tap the ☆ star on any fixture card or visit the "My Watchlist" dashboard. Your saved teams and starred matches are synchronized locally in your browser without requiring account creation.',
+  },
+  {
+    question: 'Who created and maintains Sportivo?',
+    answer: 'Sportivo was designed, developed, and published by Dipesh Sapkota, a software developer and engineering student from Nepal.',
+  },
+];
 
 const homepageJsonLd = {
   '@context': 'https://schema.org',
   '@graph': [
+    {
+      '@type': 'SportsOrganization',
+      '@id': `${canonical}#organization`,
+      'name': 'Sportivo',
+      'url': canonical,
+      'logo': 'https://sportivo.dipeshsapkota7.com.np/favicon.svg',
+      'description': description,
+      'founder': {
+        '@id': 'https://www.dipeshsapkota7.com.np/#person'
+      },
+      'sameAs': [
+        'https://github.com/dszae',
+        'https://linkedin.com/in/dszae',
+        'https://facebook.com/dsz.ae'
+      ],
+      'knowsAbout': [
+        'Football Fixtures & Live Streams',
+        'Cricket Schedules & Scores',
+        'Basketball & NBA Fixtures',
+        'Nepal Standard Time (NST)',
+        'Live Sports Streaming'
+      ]
+    },
+    {
+      '@type': 'FAQPage',
+      '@id': `${canonical}#faq`,
+      'mainEntity': faqs.map((faq) => ({
+        '@type': 'Question',
+        'name': faq.question,
+        'acceptedAnswer': {
+          '@type': 'Answer',
+          'text': faq.answer
+        }
+      }))
+    },
     {
       '@type': 'WebSite',
       '@id': `${canonical}#website`,
@@ -295,6 +353,97 @@ const homepageJsonLd = {
           exploreUrl={`/${category}/`}
         />
       ))}
+    </section>
+
+    <!-- Why Sportivo: SEO Authority & Feature Highlights -->
+    <section class="border-t border-white/5 bg-[#0a0f0e]/60 py-20">
+      <div class="mx-auto max-w-7xl px-6">
+        <div class="max-w-3xl">
+          <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#e5b94f]">Nepal Sports Desk</p>
+          <h2 class="mt-2 text-3xl font-black tracking-tight text-white sm:text-4xl">
+            Why Sports Fans in Nepal Rely on Sportivo
+          </h2>
+          <p class="mt-4 text-sm leading-7 text-slate-300 sm:text-base">
+            Never miss a kickoff because of international timezone confusion. Sportivo is engineered to bring accurate schedules, live scores, and verified broadcast links into one unified experience.
+          </p>
+        </div>
+
+        <div class="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="rounded-2xl border border-white/10 bg-[#111a19] p-6 shadow-md transition-all hover:border-[#c9f36b]/40">
+            <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#c9f36b]/10 text-[#c9f36b]">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </span>
+            <h3 class="mt-4 text-base font-bold text-white">Nepal Standard Time (NST)</h3>
+            <p class="mt-2 text-xs leading-relaxed text-slate-400">
+              Timestamps are automatically converted into UTC+5:45. See exact local match start times without manual calculations.
+            </p>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-[#111a19] p-6 shadow-md transition-all hover:border-[#c9f36b]/40">
+            <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#c9f36b]/10 text-[#c9f36b]">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+              </svg>
+            </span>
+            <h3 class="mt-4 text-base font-bold text-white">Multi-Server Streams</h3>
+            <p class="mt-2 text-xs leading-relaxed text-slate-400">
+              Dynamically aggregates live stream fallbacks from multiple upstream providers so you always have a working broadcast feed.
+            </p>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-[#111a19] p-6 shadow-md transition-all hover:border-[#c9f36b]/40">
+            <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#c9f36b]/10 text-[#c9f36b]">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+            </span>
+            <h3 class="mt-4 text-base font-bold text-white">Personal Watchlist</h3>
+            <p class="mt-2 text-xs leading-relaxed text-slate-400">
+              Star your must-watch games to build a custom feed, filter by date, and track your teams across football, cricket, and basketball.
+            </p>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-[#111a19] p-6 shadow-md transition-all hover:border-[#c9f36b]/40">
+            <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#c9f36b]/10 text-[#c9f36b]">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+            </span>
+            <h3 class="mt-4 text-base font-bold text-white">Live Status &amp; Scores</h3>
+            <p class="mt-2 text-xs leading-relaxed text-slate-400">
+              Live indicators show which games are broadcasting right now, which are upcoming, and which fixtures have ended.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Homepage Frequently Asked Questions (FAQ) Section -->
+    <section class="border-t border-white/5 py-20" aria-labelledby="homepage-faq-heading">
+      <div class="mx-auto max-w-4xl px-6">
+        <div class="text-center">
+          <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#e5b94f]">Information &amp; Guidance</p>
+          <h2 id="homepage-faq-heading" class="mt-2 text-3xl font-black tracking-tight text-white sm:text-4xl">
+            Frequently Asked Questions
+          </h2>
+          <p class="mt-3 text-sm text-slate-300">
+            Everything you need to know about Sportivo fixtures, kickoff times, and stream tracking in Nepal.
+          </p>
+        </div>
+
+        <div class="mt-10 space-y-4">
+          {faqs.map((faq) => (
+            <div class="rounded-2xl border border-white/10 bg-[#111a19] p-6 shadow-sm">
+              <h3 class="text-base font-bold text-white">{faq.question}</h3>
+              <p class="mt-2 text-sm leading-relaxed text-slate-300">{faq.answer}</p>
+            </div>
+          ))}
+        </div>
+      </div>
     </section>
   </main>
 

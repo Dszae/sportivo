@@ -63,7 +63,18 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     
     <!-- Geo Meta Tags for Nepal Standard Time / Local Ranking -->
     <meta name="geo.region" content="NP" />
-    <meta name="geo.placename" content="Nepal" />
+    <meta name="geo.placename" content="Kathmandu, Nepal" />
+    <meta name="geo.position" content="27.7172;85.3240" />
+    <meta name="ICBM" content="27.7172, 85.3240" />
+    
+    <!-- Application & Performance Optimization -->
+    <meta name="application-name" content="Sportivo" />
+    <meta name="apple-mobile-web-app-title" content="Sportivo" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="format-detection" content="telephone=no" />
+    <link rel="preconnect" href="https://sportivo.dipeshsapkota7.com.np" />
+    <link rel="dns-prefetch" href="https://sportivo.dipeshsapkota7.com.np" />
     
     <!-- Keywords & Canonical -->
     <meta name="keywords" content={keywords} />
@@ -78,6 +89,7 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
     <link rel="help" type="text/plain" href="/llms.txt" title="LLM Context Summary" />
+    <link rel="alternate" type="text/plain" href="/llms-full.txt" title="Full LLM Context Documentation" />
     
     <!-- Primary Title & Description -->
     <title>{title}</title>

@@ -6,6 +6,7 @@ import MatchPlayer from '../../../components/MatchPlayer';
 import {
   detectFootballLeague,
   fetchMatches,
+  getMatchTimestamp,
   isCategory,
   slugify,
   titleOf,
@@ -14,6 +15,11 @@ import {
   type Category,
   type Match,
 } from '../../../lib/sportivo';
+
+function teamParts(rawTitle: string) {
+  const parts = rawTitle.split(/\s+vs\.?\s+|\s+-\s+/i);
+  return { home: parts[0]?.trim() || rawTitle, away: parts[1]?.trim() || '' };
+}
 
 const categoryParam = Astro.params.category || '';
 const slug = Astro.params.slug || '';
@@ -39,12 +45,22 @@ if (!validCategory || !match) {
 const title = match ? titleOf(match) : 'Fixture not found';
 const categoryLabel = category[0].toUpperCase() + category.slice(1);
 const pageTitle = match
-  ? `${title} - ${categoryLabel} Live Stream & NST Fixture | Sportivo`
+  ? `${title} - ${categoryLabel} Live Stream & Score | Nepal Time | Sportivo`
   : 'Fixture not found | Sportivo';
 const pageDescription = match
-  ? `Watch ${title} live stream online. ${categoryLabel} fixture status: ${statusOf(match)}, kickoff at ${timeOf(match)} Nepal Standard Time on Sportivo.`
+  ? `Watch ${title} live broadcast online. ${categoryLabel} match status: ${statusOf(match)}, kickoff at ${timeOf(match)} Nepal Standard Time (NST) on Sportivo.`
   : 'The requested Sportivo fixture was not found.';
 const canonical = `https://sportivo.dipeshsapkota7.com.np/${category}/match/${encodeURIComponent(slug)}/`;
+
+const matchTs = match ? getMatchTimestamp(match) : null;
+const startDateIso = matchTs ? new Date(matchTs).toISOString() : undefined;
+const endDateIso = matchTs ? new Date(matchTs + 2.5 * 3600 * 1000).toISOString() : undefined;
+const { home, away } = teamParts(title);
+const eventStatusUrl = match && statusOf(match) === 'Live'
+  ? 'https://schema.org/EventLive'
+  : match && statusOf(match) === 'Final'
+  ? 'https://schema.org/EventPostponed'
+  : 'https://schema.org/EventScheduled';
 
 const matchJsonLd = match
   ? {
@@ -57,7 +73,15 @@ const matchJsonLd = match
           'sport': category,
           'description': pageDescription,
           'url': canonical,
-          'eventStatus': statusOf(match) === 'Live' ? 'https://schema.org/EventScheduled' : 'https://schema.org/EventScheduled',
+          ...(startDateIso ? { 'startDate': startDateIso } : {}),
+          ...(endDateIso ? { 'endDate': endDateIso } : {}),
+          'eventStatus': eventStatusUrl,
+          ...(home ? { 'homeTeam': { '@type': 'SportsTeam', 'name': home } } : {}),
+          ...(away ? { 'awayTeam': { '@type': 'SportsTeam', 'name': away } } : {}),
+          'competitor': [
+            ...(home ? [{ '@type': 'SportsTeam', 'name': home }] : []),
+            ...(away ? [{ '@type': 'SportsTeam', 'name': away }] : [])
+          ],
           'organizer': {
             '@type': 'Person',
             '@id': 'https://www.dipeshsapkota7.com.np/#person',
@@ -67,6 +91,13 @@ const matchJsonLd = match
           'location': {
             '@type': 'VirtualLocation',
             'url': canonical
+          },
+          'offers': {
+            '@type': 'Offer',
+            'url': canonical,
+            'price': '0',
+            'priceCurrency': 'USD',
+            'availability': 'https://schema.org/InStock'
           }
         },
         {
