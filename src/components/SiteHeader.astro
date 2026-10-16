@@ -17,7 +17,7 @@ const { activeCategory } = Astro.props;
         </span>
         <span class="text-2xl font-black leading-none tracking-tight text-white">Sportivo<span class="site-accent">.</span></span>
       </span>
-      <span class="ml-6 mt-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 group-hover:text-[#c9f36b] transition-colors">Live Sports Desk · Nepal</span>
+      <span class="ml-6 mt-0.5 text-xs font-bold uppercase tracking-wider text-slate-400 group-hover:text-[#c9f36b] transition-colors">Live Sports Desk · Nepal</span>
     </a>
 
     <nav aria-label="Main Navigation" class="flex flex-wrap items-center justify-center gap-2" itemscope itemtype="https://schema.org/SiteNavigationElement">
@@ -50,7 +50,7 @@ const { activeCategory } = Astro.props;
         title="Personal Sports Dashboard"
       >
         <span>★</span>
-        <span itemprop="name">My Desk</span>
+        <span itemprop="name">My Sports Desk</span>
       </a>
 
       <a
@@ -58,21 +58,18 @@ const { activeCategory } = Astro.props;
         itemprop="url"
         aria-current={activeCategory === 'creator' ? 'page' : undefined}
         class:list={[
-          "inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold transition-all border",
+          "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold transition-all border",
           activeCategory === 'creator'
             ? 'site-button-active border-[#c9f36b]'
             : 'border-white/15 bg-white/5 text-slate-300 hover:border-[#c9f36b]/40 hover:bg-[#c9f36b]/10 hover:text-[#c9f36b]'
         ]}
         title="About the Creator"
       >
-        <img
-          src="/dipesh-sapkota-profile.webp"
-          alt="Creator profile"
-          width="18"
-          height="18"
-          class="h-4 w-4 rounded-full object-cover border border-[#c9f36b]/80"
-          loading="eager"
-        />
+        <svg class="h-3.5 w-3.5 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
         <span itemprop="name">About</span>
       </a>
     </nav>

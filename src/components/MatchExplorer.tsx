@@ -12,7 +12,7 @@ import {
 } from '../lib/sportivo';
 import { loadUserPreferences, saveUserPreferences, type UserPreferences } from '../lib/preferences';
 
-type Props = { category: Category; matches: Match[] };
+type Props = { category: Category; matches: Match[]; exploreUrl?: string };
 type DateFilter = 'all' | 'today' | 'tomorrow' | 'week';
 
 function teamParts(title: string) {
@@ -20,7 +20,7 @@ function teamParts(title: string) {
   return { first: parts[0]?.trim() || title, second: parts[1]?.trim() || '' };
 }
 
-export default function MatchExplorer({ category, matches }: Props) {
+export default function MatchExplorer({ category, matches, exploreUrl }: Props) {
   const [query, setQuery] = useState('');
   const [selectedLeague, setSelectedLeague] = useState<FootballLeague>('All');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
@@ -29,8 +29,13 @@ export default function MatchExplorer({ category, matches }: Props) {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
   const [timeZone, setTimeZone] = useState<'Asia/Kathmandu' | string>('Asia/Kathmandu');
+  const [visibleCount, setVisibleCount] = useState(16);
 
   const categoryLabel = category[0].toUpperCase() + category.slice(1);
+
+  useEffect(() => {
+    setVisibleCount(16);
+  }, [selectedLeague, dateFilter, query, showWatchlistOnly]);
 
   // Initialize client preferences from shared preferences and sync across tabs
   useEffect(() => {
@@ -138,6 +143,8 @@ export default function MatchExplorer({ category, matches }: Props) {
   const liveMatches = useMemo(() => filtered.filter((m) => statusOf(m) === 'Live'), [filtered]);
   const upcomingMatches = useMemo(() => filtered.filter((m) => statusOf(m) === 'Upcoming'), [filtered]);
   const finalMatches = useMemo(() => filtered.filter((m) => statusOf(m) === 'Final'), [filtered]);
+  const displayedUpcoming = useMemo(() => upcomingMatches.slice(0, visibleCount), [upcomingMatches, visibleCount]);
+  const remainingUpcoming = upcomingMatches.length - displayedUpcoming.length;
 
   const activeLeagueLabel = selectedLeague === 'All' ? categoryLabel : selectedLeague;
 
@@ -231,16 +238,27 @@ export default function MatchExplorer({ category, matches }: Props) {
       <div className="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[#e5b94f]">Schedule</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-[#e5b94f]">Schedule</span>
             <span className="text-slate-600">•</span>
-            <span className="inline-flex items-center gap-1 text-[10px] text-slate-400">
+            <span className="inline-flex items-center gap-1 text-xs text-slate-400">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
               Live Sync
             </span>
           </div>
-          <h2 id={`schedule-title-${category}`} className="text-2xl font-black text-white mt-0.5">
-            {showWatchlistOnly ? '★ My Watchlist' : selectedLeague === 'All' ? `${categoryLabel}` : selectedLeague}
-          </h2>
+          <div className="mt-1 flex flex-wrap items-center gap-3">
+            <h2 id={`schedule-title-${category}`} className="text-2xl font-black text-white">
+              {showWatchlistOnly ? '★ My Watchlist' : selectedLeague === 'All' ? `${categoryLabel}` : selectedLeague}
+            </h2>
+            {exploreUrl && (
+              <a
+                href={exploreUrl}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#c9f36b]/40 bg-[#c9f36b]/10 px-3.5 py-1 text-xs font-bold text-[#c9f36b] hover:bg-[#c9f36b] hover:text-[#080a0b] transition-all shadow-sm shadow-[#c9f36b]/10"
+              >
+                <span>Explore {categoryLabel}</span>
+                <span aria-hidden="true">&rarr;</span>
+              </a>
+            )}
+          </div>
           <p className="mt-1 text-xs text-slate-400">
             {filtered.length} matches scheduled.
           </p>
@@ -258,7 +276,7 @@ export default function MatchExplorer({ category, matches }: Props) {
                 if (e.key === 'Enter') handleSearchSubmit(query);
               }}
               placeholder="Search matches or teams..."
-              className="w-full rounded-lg border border-white/10 bg-[#111a19] px-4 py-2 text-sm text-white placeholder-slate-500 focus:border-[#c9f36b] focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-[#111a19] px-4 py-2 text-sm text-white placeholder-slate-500 focus:border-[#c9f36b] focus:outline-none"
             />
             {query && (
               <button
@@ -276,33 +294,39 @@ export default function MatchExplorer({ category, matches }: Props) {
 
       {/* Date Navigation & Watchlist Pill Tabs */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-4">
-        <div className="flex flex-wrap items-center gap-2">
-          {(['all', 'today', 'tomorrow', 'week'] as const).map((filter) => (
-            <button
-              key={filter}
-              type="button"
-              onClick={() => {
-                setDateFilter(filter);
-                setShowWatchlistOnly(false);
-              }}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold capitalize transition ${
-                dateFilter === filter && !showWatchlistOnly
-                  ? 'bg-white/15 text-[#c9f36b]'
-                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-              }`}
-            >
-              {filter === 'all' ? 'All Dates' : filter === 'week' ? 'Next 7 Days' : filter}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Date filter">
+          {(['all', 'today', 'tomorrow', 'week'] as const).map((filter) => {
+            const isSelected = dateFilter === filter && !showWatchlistOnly;
+            return (
+              <button
+                key={filter}
+                type="button"
+                role="tab"
+                aria-selected={isSelected}
+                onClick={() => {
+                  setDateFilter(filter);
+                  setShowWatchlistOnly(false);
+                }}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-bold capitalize transition-all duration-200 ${
+                  isSelected
+                    ? 'site-button-active'
+                    : 'border border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white'
+                }`}
+              >
+                {filter === 'all' ? 'All Dates' : filter === 'week' ? 'Next 7 Days' : filter}
+              </button>
+            );
+          })}
 
           {/* Watchlist Filter Pill */}
           <button
             type="button"
             onClick={() => setShowWatchlistOnly(!showWatchlistOnly)}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+            aria-pressed={showWatchlistOnly}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all duration-200 ${
               showWatchlistOnly
-                ? 'bg-amber-400/20 text-amber-300 ring-1 ring-amber-400/40'
-                : 'text-slate-400 hover:bg-white/5 hover:text-amber-300'
+                ? 'border border-amber-400/50 bg-amber-400/20 text-amber-300 shadow-sm shadow-amber-400/20'
+                : 'border border-white/10 bg-white/5 text-slate-300 hover:border-amber-400/40 hover:text-amber-300'
             }`}
           >
             <span>★ Watchlist</span>
@@ -315,16 +339,18 @@ export default function MatchExplorer({ category, matches }: Props) {
         </div>
 
         {/* Manual Refresh & Status */}
-        <div className="flex items-center gap-3 text-xs text-slate-500">
+        <div className="flex items-center gap-3 text-xs text-slate-400">
           <span>Refreshed: {lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
           <button
             type="button"
             onClick={() => setLastRefreshed(new Date())}
-            className="rounded p-1 text-slate-400 hover:bg-white/5 hover:text-white transition"
+            className="rounded-full border border-white/10 bg-white/5 p-1.5 text-slate-400 hover:border-white/20 hover:text-white transition"
             title="Refresh schedule"
             aria-label="Refresh schedule"
           >
-            ↻
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+            </svg>
           </button>
         </div>
       </div>
@@ -345,8 +371,8 @@ export default function MatchExplorer({ category, matches }: Props) {
                 onClick={() => setSelectedLeague(league)}
                 className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#c9f36b] ${
                   isSelected
-                    ? 'bg-[#c9f36b] text-[#0a1110] shadow-md shadow-[#c9f36b]/20 ring-2 ring-[#c9f36b]'
-                    : 'border border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:bg-white/10 hover:text-white'
+                    ? 'site-button-active ring-2 ring-[#c9f36b]'
+                    : 'border border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white'
                 }`}
               >
                 <span>{league === 'All' ? 'All Leagues' : league}</span>
@@ -366,13 +392,13 @@ export default function MatchExplorer({ category, matches }: Props) {
       {/* Recent Searches Pills */}
       {recentSearches.length > 0 && !query && (
         <div className="mb-6 flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Recent searches:</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Recent:</span>
           {recentSearches.map((term, i) => (
             <button
               key={i}
               type="button"
               onClick={() => setQuery(term)}
-              className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-slate-300 hover:border-[#c9f36b]/40 hover:text-[#c9f36b] transition"
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300 hover:border-[#c9f36b]/40 hover:text-[#c9f36b] transition"
             >
               {term}
             </button>
@@ -385,7 +411,7 @@ export default function MatchExplorer({ category, matches }: Props) {
                 localStorage.removeItem('sportivo_searches');
               } catch {}
             }}
-            className="text-[10px] text-slate-500 hover:text-slate-300 underline transition ml-1"
+            className="text-xs text-slate-400 hover:text-slate-200 underline transition ml-1"
           >
             Clear
           </button>
@@ -445,21 +471,16 @@ export default function MatchExplorer({ category, matches }: Props) {
                 {liveMatches.map((match, index) => renderCard(match, index))}
               </div>
             ) : (
-              <div className="rounded-2xl border border-white/10 bg-gradient-to-r from-[#111a19] via-[#0d1615] to-[#111a19] p-6 text-center shadow-lg">
-                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full border border-slate-700 bg-white/5 text-slate-400">
-                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
-                  </svg>
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/5 bg-[#101716]/60 px-4 py-2.5 text-xs text-slate-400">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-slate-600"></span>
+                  <span className="font-medium text-slate-300">
+                    {selectedLeague !== 'All'
+                      ? `No live matches right now in ${selectedLeague}.`
+                      : 'No matches broadcasting live right now.'}
+                  </span>
                 </div>
-                <p className="mt-3 text-sm font-bold text-white">
-                  {selectedLeague !== 'All'
-                    ? `No live matches right now in ${selectedLeague}.`
-                    : 'No matches currently broadcasting live.'}
-                </p>
-                <p className="mt-1 text-xs text-slate-400">
-                  Upcoming events and verified broadcast streams are scheduled below.
-                </p>
+                <span className="text-slate-500 text-xs">Upcoming kickoff fixtures listed below &darr;</span>
               </div>
             )}
           </div>
@@ -476,14 +497,36 @@ export default function MatchExplorer({ category, matches }: Props) {
                       : 'Upcoming Matches'}
                   </h3>
                 </div>
-                <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-slate-400">
+                <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs font-semibold text-slate-400">
                   {upcomingMatches.length} Scheduled
                 </span>
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {upcomingMatches.map((match, index) => renderCard(match, index))}
+                {displayedUpcoming.map((match, index) => renderCard(match, index))}
               </div>
+
+              {remainingUpcoming > 0 && (
+                <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCount((prev) => prev + 16)}
+                    className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-2 text-xs font-bold text-white hover:border-[#c9f36b]/40 hover:bg-[#c9f36b]/10 hover:text-[#c9f36b] transition-all"
+                  >
+                    <span>Show more upcoming matches</span>
+                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-[#c9f36b]">+{Math.min(remainingUpcoming, 16)}</span>
+                  </button>
+                  {remainingUpcoming > 16 && (
+                    <button
+                      type="button"
+                      onClick={() => setVisibleCount(upcomingMatches.length)}
+                      className="rounded-full border border-white/5 px-4 py-2 text-xs font-medium text-slate-400 hover:text-white transition"
+                    >
+                      View all ({upcomingMatches.length})
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
