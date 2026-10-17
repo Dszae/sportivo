@@ -188,6 +188,15 @@ const categoryJsonLd = validCategory
             </a>
           </div>
 
+          <div class="mb-8 rounded-2xl border border-white/10 bg-[#111a19] p-6 shadow-sm">
+            <h2 class="text-base font-bold text-white mb-2">{label} Schedule &amp; Broadcast Desk (NST)</h2>
+            <p class="text-xs leading-relaxed text-slate-300">
+              {category === 'basketball' && 'Sportivo tracks NBA regular season games, playoffs, EuroLeague, and FIBA tournaments. All game tip-offs are synchronized directly to Nepal Standard Time (UTC+5:45), helping fans across Nepal follow early morning games with verified multi-source stream fallbacks.'}
+              {category === 'football' && 'Sportivo aggregates match fixtures across the Premier League, UEFA Champions League, La Liga, Serie A, and Bundesliga. Kickoffs are calibrated to Nepal Standard Time (UTC+5:45) with multi-provider broadcast signals.'}
+              {category === 'cricket' && 'Sportivo provides comprehensive cricket schedules for ICC tournaments, the Indian Premier League (IPL), bilateral international series, and Nepal national team matches in Nepal Standard Time (UTC+5:45).'}
+            </p>
+          </div>
+
           {unavailable && (
             <p class="mt-6 rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-200" role="status">
               Fixtures are temporarily unavailable. The upstream provider did not return a usable response.
