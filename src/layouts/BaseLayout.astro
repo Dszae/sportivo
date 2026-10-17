@@ -79,13 +79,17 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     <!-- Keywords & Canonical -->
     <meta name="keywords" content={keywords} />
     <link rel="canonical" href={canonical} />
-    <!-- Favicons & Touch Icons -->
-    <link rel="icon" href="/favicon.ico" sizes="any" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <!-- Favicons & Touch Icons (Google Search & Multi-device compliant) -->
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="icon" href="/icon-48x48.png" type="image/png" sizes="48x48" />
+    <link rel="icon" href="/favicon-48x48.png" type="image/png" sizes="48x48" />
+    <link rel="icon" href="/icon-96x96.png" type="image/png" sizes="96x96" />
+    <link rel="icon" href="/favicon-96x96.png" type="image/png" sizes="96x96" />
+    <link rel="icon" href="/icon-192x192.png" type="image/png" sizes="192x192" />
+    <link rel="icon" href="/favicon-192x192.png" type="image/png" sizes="192x192" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any" />
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" type="image/png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
     <link rel="help" type="text/plain" href="/llms.txt" title="LLM Context Summary" />
