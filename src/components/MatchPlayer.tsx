@@ -85,23 +85,59 @@ export default function MatchPlayer({ match }: Props) {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  // Fetch streams from provider
+  // Fetch streams from provider with multi-tier resilient fallback
   useEffect(() => {
     if (!currentSource?.source || !currentSource.id) return;
 
     let cancelled = false;
 
-    fetch(`/api/stream/${encodeURIComponent(currentSource.source)}/${encodeURIComponent(currentSource.id)}`)
-      .then((response) => {
-        if (!response.ok) throw new Error('Stream unavailable');
-        return response.json();
-      })
-      .then((payload) => {
-        if (cancelled) return;
-        const parsed = typeof payload?.contents === 'string' ? JSON.parse(payload.contents) : payload;
+    async function loadStreams() {
+      if (!currentSource?.source || !currentSource.id) return;
+      const src = encodeURIComponent(currentSource.source);
+      const sid = encodeURIComponent(currentSource.id);
+
+      let payload: unknown = null;
+
+      // Tier 1: Local API proxy with trailing slash
+      try {
+        const res = await fetch(`/api/stream/${src}/${sid}/`);
+        if (res.ok) payload = await res.json();
+      } catch {}
+
+      // Tier 2: Local API proxy without trailing slash
+      if (!payload) {
+        try {
+          const res = await fetch(`/api/stream/${src}/${sid}`);
+          if (res.ok) payload = await res.json();
+        } catch {}
+      }
+
+      // Tier 3: Direct upstream CORS fallback
+      if (!payload) {
+        try {
+          const res = await fetch(`https://streamed.pk/api/stream/${src}/${sid}`);
+          if (res.ok) payload = await res.json();
+        } catch {}
+      }
+
+      if (cancelled) return;
+
+      if (!payload) {
+        setError(
+          'This stream feed is currently offline or waiting for pre-match broadcast signal. Live streams activate 15 minutes before kickoff.'
+        );
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const parsed = typeof (payload as { contents?: string })?.contents === 'string'
+          ? JSON.parse((payload as { contents: string }).contents)
+          : payload;
         const available = (Array.isArray(parsed) ? parsed : [parsed]).filter((item): item is Stream =>
           Boolean(publicUrl(streamUrl(item)))
         );
+
         if (available.length === 0) {
           setError(
             'Live broadcast feeds typically go online 15 minutes before official kickoff. Check back shortly or switch providers above.'
@@ -109,20 +145,18 @@ export default function MatchPlayer({ match }: Props) {
         } else {
           setStreams(available);
           setActive(available[0] || null);
+          setError('');
         }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setError(
-            'This stream feed is currently offline or waiting for pre-match broadcast signal. Live streams activate 15 minutes before kickoff.'
-          );
-        }
-      })
-      .finally(() => {
+      } catch {
+        setError('Unable to parse broadcast stream signals.');
+      } finally {
         if (!cancelled) {
           setLoading(false);
         }
-      });
+      }
+    }
+
+    loadStreams();
 
     return () => {
       cancelled = true;

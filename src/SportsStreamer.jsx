@@ -147,20 +147,37 @@ export default function SportsStreamer() {
   async function fetchMatches(category, signal) {
     setLoading(true);
     setError(null);
+    let data = null;
+
     try {
-      const response = await fetch(`/api/matches/${encodeURIComponent(category)}`, { signal });
-      if (!response.ok) throw new Error('Failed to fetch matches');
-      const data = await response.json();
-      const nextMatches = Array.isArray(data) ? data : [];
-      setMatches(nextMatches);
-      setLastUpdated(new Date());
-    } catch (err) {
-      if (err.name === 'AbortError') return;
-      setError(err.message);
-      setMatches([]);
-    } finally {
-      setLoading(false);
+      const response = await fetch(`/api/matches/${encodeURIComponent(category)}/`, { signal });
+      if (response.ok) data = await response.json();
+    } catch {}
+
+    if (!data) {
+      try {
+        const response = await fetch(`/api/matches/${encodeURIComponent(category)}`, { signal });
+        if (response.ok) data = await response.json();
+      } catch {}
     }
+
+    if (!data) {
+      try {
+        const response = await fetch(`https://streamed.pk/api/matches/${encodeURIComponent(category)}`, { signal });
+        if (response.ok) data = await response.json();
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+
+    if (data && Array.isArray(data)) {
+      setMatches(data);
+      setLastUpdated(new Date());
+    } else {
+      setError('Unable to load fixtures right now.');
+      setMatches([]);
+    }
+    setLoading(false);
   }
 
   async function loadStream(match, updateUrl = true) {
@@ -183,10 +200,32 @@ export default function SportsStreamer() {
     try {
       const source = match.sources[0];
       if (!source?.source || !source?.id) throw new Error('Invalid stream source');
-      const response = await fetch(`/api/stream/${encodeURIComponent(source.source)}/${encodeURIComponent(source.id)}`);
-      if (!response.ok) throw new Error('Failed to fetch stream details');
+
+      const src = encodeURIComponent(source.source);
+      const sid = encodeURIComponent(source.id);
+      let streamData = null;
+
+      try {
+        const res = await fetch(`/api/stream/${src}/${sid}/`);
+        if (res.ok) streamData = await res.json();
+      } catch {}
+
+      if (!streamData) {
+        try {
+          const res = await fetch(`/api/stream/${src}/${sid}`);
+          if (res.ok) streamData = await res.json();
+        } catch {}
+      }
+
+      if (!streamData) {
+        try {
+          const res = await fetch(`https://streamed.pk/api/stream/${src}/${sid}`);
+          if (res.ok) streamData = await res.json();
+        } catch {}
+      }
+
+      if (!streamData) throw new Error('Failed to fetch stream details');
       
-      const streamData = await response.json();
       let actualData = streamData;
       if (typeof streamData.contents === 'string') {
         try {
