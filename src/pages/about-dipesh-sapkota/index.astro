@@ -27,136 +27,76 @@ const faqs = [
   },
 ];
 
-const jsonLd = {
+const profilePageSchema = {
   '@context': 'https://schema.org',
-  '@graph': [
-    {
-      '@type': 'ProfilePage',
-      '@id': `${canonical}#webpage`,
-      'url': canonical,
-      'name': title,
-      'description': description,
-      'isPartOf': {
-        '@type': 'WebSite',
-        '@id': 'https://sportivo.dipeshsapkota7.com.np/#website',
-        'url': 'https://sportivo.dipeshsapkota7.com.np/',
-        'name': 'Sportivo',
-        'description': 'Sports fixtures desk for football, cricket, and basketball schedules and streams by Dipesh Sapkota.',
-        'publisher': {
-          '@id': 'https://www.dipeshsapkota7.com.np/#person'
-        }
+  '@type': 'ProfilePage',
+  'dateCreated': '2026-01-01T00:00:00.000Z',
+  'dateModified': '2026-10-17T15:20:00.000Z',
+  'mainEntity': {
+    '@type': 'Person',
+    'name': 'Dipesh Sapkota',
+    'alternateName': ['Dipesh', 'dszae'],
+    'identifier': 'dszae',
+    'url': canonical,
+    'image': profileImageUrl,
+    'description': 'Dipesh Sapkota is the creator and publisher of Sportivo, an engineering student, software developer, and builder from Nepal.',
+    'jobTitle': 'Software Developer & Engineering Student',
+    'nationality': {
+      '@type': 'Country',
+      'name': 'Nepal'
+    },
+    'worksFor': {
+      '@type': 'Organization',
+      'name': 'Sportivo',
+      'url': 'https://sportivo.dipeshsapkota7.com.np/'
+    },
+    'sameAs': [
+      'https://www.dipeshsapkota7.com.np/',
+      'https://github.com/dszae',
+      'https://linkedin.com/in/dszae',
+      'https://facebook.com/dsz.ae'
+    ],
+    'knowsAbout': [
+      'Sportivo',
+      'Sports Streaming Platforms',
+      'Football Fixtures & Kickoff Times',
+      'Cricket Schedules',
+      'Basketball Schedules',
+      'React & Astro Development',
+      'Web Development',
+      'Machine Learning'
+    ]
+  },
+  'breadcrumb': {
+    '@type': 'BreadcrumbList',
+    'itemListElement': [
+      {
+        '@type': 'ListItem',
+        'position': 1,
+        'name': 'Sportivo Home',
+        'item': 'https://sportivo.dipeshsapkota7.com.np/'
       },
-      'breadcrumb': {
-        '@type': 'BreadcrumbList',
-        'itemListElement': [
-          {
-            '@type': 'ListItem',
-            'position': 1,
-            'name': 'Sportivo Home',
-            'item': 'https://sportivo.dipeshsapkota7.com.np/'
-          },
-          {
-            '@type': 'ListItem',
-            'position': 2,
-            'name': 'Dipesh Sapkota (Creator)',
-            'item': canonical
-          }
-        ]
-      },
-      'mainEntity': {
-        '@type': 'Person',
-        '@id': 'https://www.dipeshsapkota7.com.np/#person',
-        'name': 'Dipesh Sapkota',
-        'alternateName': ['Dipesh', 'dszae'],
-        'url': 'https://www.dipeshsapkota7.com.np/',
-        'jobTitle': 'Software Developer & Engineering Student',
-        'description': 'Dipesh Sapkota is the creator and publisher of Sportivo, an engineering student, AI/ML enthusiast, and software builder from Nepal.',
-        'nationality': {
-          '@type': 'Country',
-          'name': 'Nepal'
-        },
-        'sameAs': [
-          'https://www.dipeshsapkota7.com.np/',
-          'https://github.com/dszae',
-          'https://linkedin.com/in/dszae',
-          'https://facebook.com/dsz.ae'
-        ],
-        'knowsAbout': [
-          'Sportivo',
-          'Sports Streaming Platforms',
-          'Football Fixtures & Kickoff Times',
-          'Cricket Schedules',
-          'Basketball Schedules',
-          'React & Astro Development',
-          'Web Development',
-          'Machine Learning'
-        ],
-        'image': {
-          '@type': 'ImageObject',
-          '@id': `${profileImageUrl}#image`,
-          'url': profileImageUrl,
-          'contentUrl': profileImageUrl,
-          'thumbnailUrl': profileImageUrl,
-          'name': 'Dipesh Sapkota Profile Photo',
-          'caption': 'Dipesh Sapkota, creator and developer of Sportivo',
-          'description': 'Official portrait profile photograph of Dipesh Sapkota, creator and publisher of Sportivo.',
-          'width': 627,
-          'height': 627,
-          'encodingFormat': 'image/webp',
-          'representativeOfPage': true,
-          'author': {
-            '@id': 'https://www.dipeshsapkota7.com.np/#person'
-          },
-          'creator': {
-            '@id': 'https://www.dipeshsapkota7.com.np/#person'
-          },
-          'copyrightHolder': {
-            '@id': 'https://www.dipeshsapkota7.com.np/#person'
-          },
-          'creditText': 'Dipesh Sapkota',
-          'copyrightNotice': 'Copyright 2026 Dipesh Sapkota',
-          'license': canonical,
-          'acquireLicensePage': canonical
-        }
+      {
+        '@type': 'ListItem',
+        'position': 2,
+        'name': 'Dipesh Sapkota (Creator)',
+        'item': canonical
       }
-    },
-    {
-      '@type': 'ImageObject',
-      '@id': `${profileImageUrl}#image`,
-      'url': profileImageUrl,
-      'contentUrl': profileImageUrl,
-      'thumbnailUrl': profileImageUrl,
-      'name': 'Dipesh Sapkota Profile Photo',
-      'caption': 'Dipesh Sapkota, creator and developer of Sportivo',
-      'description': 'Official portrait profile photograph of Dipesh Sapkota, creator and publisher of Sportivo.',
-      'width': 627,
-      'height': 627,
-      'encodingFormat': 'image/webp',
-      'representativeOfPage': true,
-      'author': {
-        '@id': 'https://www.dipeshsapkota7.com.np/#person'
-      },
-      'creator': {
-        '@id': 'https://www.dipeshsapkota7.com.np/#person'
-      },
-      'creditText': 'Dipesh Sapkota',
-      'copyrightNotice': 'Copyright 2026 Dipesh Sapkota. All rights reserved.',
-      'license': canonical,
-      'acquireLicensePage': canonical
-    },
-    {
-      '@type': 'FAQPage',
-      '@id': `${canonical}#faq`,
-      'mainEntity': faqs.map((faq) => ({
-        '@type': 'Question',
-        'name': faq.question,
-        'acceptedAnswer': {
-          '@type': 'Answer',
-          'text': faq.answer
-        }
-      }))
+    ]
+  }
+};
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  'mainEntity': faqs.map((faq) => ({
+    '@type': 'Question',
+    'name': faq.question,
+    'acceptedAnswer': {
+      '@type': 'Answer',
+      'text': faq.answer
     }
-  ]
+  }))
 };
 ---
 <BaseLayout
@@ -173,7 +113,8 @@ const jsonLd = {
 >
   <Fragment slot="head">
     <link rel="preload" as="image" href="/dipesh-sapkota-profile.webp" type="image/webp" fetchpriority="high" />
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <script type="application/ld+json" set:html={JSON.stringify(profilePageSchema)} />
+    <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
   </Fragment>
 
   <SiteHeader activeCategory="creator" />
