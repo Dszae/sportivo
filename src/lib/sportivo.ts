@@ -345,14 +345,17 @@ export async function fetchLiveMatches(signal?: AbortSignal): Promise<Match[]> {
 }
 
 export async function fetchMatches(category: Category, signal?: AbortSignal): Promise<Match[]> {
+  const timeoutSignal = AbortSignal.timeout(5000);
+  const effectiveSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
+
   const [matchesRes, liveRes] = await Promise.allSettled([
     fetch(`${upstream}/api/matches/${category}`, {
       headers: { accept: 'application/json' },
-      signal,
+      signal: effectiveSignal,
     }),
     fetch(`${upstream}/api/matches/live`, {
       headers: { accept: 'application/json' },
-      signal,
+      signal: effectiveSignal,
     }),
   ]);
 
