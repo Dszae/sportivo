@@ -51,7 +51,23 @@ const homepageJsonLd = {
       '@id': `${canonical}#organization`,
       'name': 'Sportivo',
       'url': canonical,
-      'logo': 'https://sportivo.dipeshsapkota7.com.np/favicon.svg',
+      'logo': {
+        '@type': 'ImageObject',
+        '@id': `${canonical}#logo`,
+        'url': 'https://sportivo.dipeshsapkota7.com.np/favicon.svg',
+        'contentUrl': 'https://sportivo.dipeshsapkota7.com.np/favicon.svg',
+        'caption': 'Sportivo Official Logo',
+        'creditText': 'Sportivo by Dipesh Sapkota',
+        'creator': {
+          '@type': 'Person',
+          '@id': 'https://www.dipeshsapkota7.com.np/#person',
+          'name': 'Dipesh Sapkota',
+          'url': 'https://www.dipeshsapkota7.com.np/'
+        },
+        'copyrightNotice': 'Copyright 2026 Sportivo',
+        'license': canonical,
+        'acquireLicensePage': canonical
+      },
       'description': description,
       'founder': {
         '@id': 'https://www.dipeshsapkota7.com.np/#person'
@@ -68,6 +84,24 @@ const homepageJsonLd = {
         'Nepal Standard Time (NST)',
         'Live Sports Streaming'
       ]
+    },
+    {
+      '@type': 'ImageObject',
+      '@id': `${canonical}#primary-image`,
+      'url': 'https://sportivo.dipeshsapkota7.com.np/sportivo-preview.png',
+      'contentUrl': 'https://sportivo.dipeshsapkota7.com.np/sportivo-preview.png',
+      'name': 'Sportivo Sports Fixture Desk Preview',
+      'caption': 'Sportivo live sports scores, kickoff schedules, and streams in Nepal Standard Time (NST)',
+      'creditText': 'Dipesh Sapkota',
+      'creator': {
+        '@type': 'Person',
+        '@id': 'https://www.dipeshsapkota7.com.np/#person',
+        'name': 'Dipesh Sapkota',
+        'url': 'https://www.dipeshsapkota7.com.np/'
+      },
+      'copyrightNotice': 'Copyright 2026 Dipesh Sapkota',
+      'license': canonical,
+      'acquireLicensePage': canonical
     },
     {
       '@type': 'FAQPage',
@@ -93,18 +127,11 @@ const homepageJsonLd = {
       ],
       'description': description,
       'inLanguage': 'en-NP',
+      'primaryImageOfPage': {
+        '@id': `${canonical}#primary-image`
+      },
       'publisher': {
-        '@type': 'Person',
-        '@id': 'https://www.dipeshsapkota7.com.np/#person',
-        'name': 'Dipesh Sapkota',
-        'url': 'https://www.dipeshsapkota7.com.np/',
-        'image': 'https://sportivo.dipeshsapkota7.com.np/dipesh-sapkota-profile.webp',
-        'sameAs': [
-          'https://www.dipeshsapkota7.com.np/',
-          'https://github.com/dszae',
-          'https://linkedin.com/in/dszae',
-          'https://facebook.com/dsz.ae'
-        ]
+        '@id': 'https://www.dipeshsapkota7.com.np/#person'
       },
       'author': {
         '@id': 'https://www.dipeshsapkota7.com.np/#person'
@@ -164,7 +191,24 @@ const homepageJsonLd = {
         '@type': 'Country',
         'name': 'Nepal'
       },
-      'image': 'https://sportivo.dipeshsapkota7.com.np/dipesh-sapkota-profile.webp',
+      'image': {
+        '@type': 'ImageObject',
+        '@id': 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/#profile-image',
+        'url': 'https://sportivo.dipeshsapkota7.com.np/dipesh-sapkota-profile.webp',
+        'contentUrl': 'https://sportivo.dipeshsapkota7.com.np/dipesh-sapkota-profile.webp',
+        'name': 'Dipesh Sapkota Profile Photo',
+        'caption': 'Dipesh Sapkota, engineering student, software developer, and the creator and publisher of Sportivo',
+        'creditText': 'Dipesh Sapkota',
+        'creator': {
+          '@type': 'Person',
+          '@id': 'https://www.dipeshsapkota7.com.np/#person',
+          'name': 'Dipesh Sapkota',
+          'url': 'https://www.dipeshsapkota7.com.np/'
+        },
+        'copyrightNotice': 'Copyright 2026 Dipesh Sapkota',
+        'license': 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/',
+        'acquireLicensePage': 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/'
+      },
       'sameAs': [
         'https://www.dipeshsapkota7.com.np/',
         'https://github.com/dszae',

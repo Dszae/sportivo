@@ -31,14 +31,36 @@ const profilePageSchema = {
   '@context': 'https://schema.org',
   '@type': 'ProfilePage',
   'dateCreated': '2026-01-01T00:00:00.000Z',
-  'dateModified': '2026-10-17T15:20:00.000Z',
+  'dateModified': '2026-10-19T10:45:00.000Z',
+  'primaryImageOfPage': {
+    '@type': 'ImageObject',
+    '@id': `${canonical}#profile-image`
+  },
   'mainEntity': {
     '@type': 'Person',
+    '@id': 'https://www.dipeshsapkota7.com.np/#person',
     'name': 'Dipesh Sapkota',
     'alternateName': ['Dipesh', 'dszae'],
     'identifier': 'dszae',
     'url': canonical,
-    'image': profileImageUrl,
+    'image': {
+      '@type': 'ImageObject',
+      '@id': `${canonical}#profile-image`,
+      'url': profileImageUrl,
+      'contentUrl': profileImageUrl,
+      'name': 'Dipesh Sapkota Profile Photo',
+      'caption': 'Dipesh Sapkota, engineering student, software developer, and the creator and publisher of Sportivo',
+      'creditText': 'Dipesh Sapkota',
+      'creator': {
+        '@type': 'Person',
+        '@id': 'https://www.dipeshsapkota7.com.np/#person',
+        'name': 'Dipesh Sapkota',
+        'url': 'https://www.dipeshsapkota7.com.np/'
+      },
+      'copyrightNotice': 'Copyright 2026 Dipesh Sapkota',
+      'license': canonical,
+      'acquireLicensePage': canonical
+    },
     'description': 'Dipesh Sapkota is the creator and publisher of Sportivo, an engineering student, software developer, and builder from Nepal.',
     'jobTitle': 'Software Developer & Engineering Student',
     'nationality': {
@@ -151,6 +173,10 @@ const faqSchema = {
         <meta itemprop="creditText" content="Dipesh Sapkota" />
         <meta itemprop="copyrightNotice" content="Copyright 2026 Dipesh Sapkota" />
         <link itemprop="url" href={profileImageUrl} />
+        <span itemprop="creator" itemscope itemtype="https://schema.org/Person">
+          <meta itemprop="name" content="Dipesh Sapkota" />
+          <link itemprop="url" href="https://www.dipeshsapkota7.com.np/" />
+        </span>
         <img
           src="/dipesh-sapkota-profile.webp"
           width="627"
