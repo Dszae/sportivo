@@ -1,4 +1,4 @@
-const baseUrl = (process.env.SPORTIVO_URL || 'http://localhost:4321').replace(/\/$/, '');
+const baseUrl = (process.env.SPORTIVO_URL || process.argv[2] || 'http://localhost:4321').replace(/\/$/, '');
 const routes = ['/', '/football/', '/cricket/', '/basketball/', '/about-dipesh-sapkota/', '/api-docs/', '/dashboard/'];
 const failures = [];
 const results = [];
