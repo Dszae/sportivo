@@ -301,7 +301,12 @@ export default function MatchPlayer({ match }: Props) {
                   width="800"
                   height="450"
                   referrerPolicy="no-referrer"
-                  className="absolute inset-0 h-full w-full object-cover opacity-30 blur-[1px] pointer-events-none"
+                  className="opacity-0 absolute inset-0 h-full w-full object-cover blur-[1px] pointer-events-none transition-opacity duration-500"
+                  onLoad={(e) => {
+                    const el = e.currentTarget as HTMLElement;
+                    el.classList.remove('opacity-0');
+                    el.classList.add('opacity-30');
+                  }}
                   onError={(e) => {
                     (e.currentTarget as HTMLElement).style.display = 'none';
                   }}

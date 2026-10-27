@@ -8,6 +8,7 @@ export const APPROVED_PLAYBACK_DOMAINS = [
   'thedaddy.pk',
   'timst.top',
   'wigilive.top',
+  'ehgembxe.cfd',
   'commondatastorage.googleapis.com',
   'stream.mux.com',
 ] as const;

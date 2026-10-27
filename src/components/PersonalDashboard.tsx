@@ -289,10 +289,13 @@ export default function PersonalDashboard({ allMatchesByCategory }: Props) {
                 alt=""
                 width="288"
                 height="144"
-                className="relative z-[5] h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                className="opacity-0 relative z-[5] h-full w-full object-cover transition-opacity duration-300 group-hover:scale-105"
                 loading="lazy"
                 decoding="async"
                 referrerPolicy="no-referrer"
+                onLoad={(e) => {
+                  (e.currentTarget as HTMLElement).classList.remove('opacity-0');
+                }}
                 onError={(e) => {
                   (e.currentTarget as HTMLElement).style.display = 'none';
                 }}
