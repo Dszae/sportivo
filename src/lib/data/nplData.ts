@@ -152,15 +152,15 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "startTime": "2026-10-27T17:00:00+05:45",
     "timestamp": 1793099700000,
     "venue": "TU International Cricket Ground, Kirtipur",
-    "status": "LIVE",
-    "homeScore": "Waiting to bat",
-    "awayScore": "94/7 (15.1 ov)",
-    "summary": "Janakpur Bolts batting first",
+    "status": "COMPLETED",
+    "homeScore": "132/9 (20 ov)",
+    "awayScore": "113/10 (19.3 ov)",
+    "summary": "Karnali Yaks won by 19 runs",
     "broadcast": {
       "provider": "NetTV / Action Sports HD",
       "authorizedEmbedUrl": "https://ott-nlive.nettvstreamz.com/ottnpweb/npl_live3/index.m3u8",
       "isHls": true,
-      "availabilityStatus": "live"
+      "availabilityStatus": "offline"
     },
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-03"
   },

@@ -63,6 +63,45 @@ export default function NplSchedule() {
   const [query, setQuery] = useState('');
   const [lastSyncTime, setLastSyncTime] = useState('Just now');
 
+  // Real-time synchronization for live scores, results & broadcast availability
+  useEffect(() => {
+    let timer: any = null;
+
+    async function syncFixtures() {
+      try {
+        const res = await fetch('/api/npl/fixtures/');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.fixtures)) {
+            setFixtures(data.fixtures);
+            const now = new Date();
+            setLastSyncTime(
+              now.toLocaleTimeString('en-US', {
+                timeZone: 'Asia/Kathmandu',
+                hour: 'numeric',
+                minute: '2-digit',
+              }) + ' NST'
+            );
+          }
+        }
+      } catch {}
+    }
+
+    // Initial sync
+    syncFixtures();
+
+    // Poll every 30s when tab is active
+    timer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        syncFixtures();
+      }
+    }, 30000);
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, []);
+
   const todayYmd = useMemo(() => getKathmanduYmd(), []);
 
   // Classify matches into Today, Upcoming, and All
@@ -254,8 +293,8 @@ export default function NplSchedule() {
             <span aria-hidden="true">&rarr;</span>
           </a>
 
-          {/* Watch Live Button strictly displayed ONLY when authorized broadcast is mapped */}
-          {hasAuthorizedBroadcast ? (
+          {/* Watch Live Button strictly displayed ONLY when match is actively LIVE */}
+          {isLive && hasAuthorizedBroadcast ? (
             <a
               href={detailUrl}
               className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-3.5 py-1.5 text-xs font-black text-white shadow-md hover:bg-red-500 transition-all hover:scale-105"
