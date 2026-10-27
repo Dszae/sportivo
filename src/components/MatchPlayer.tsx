@@ -300,7 +300,7 @@ export default function MatchPlayer({ match }: Props) {
                   alt=""
                   width="800"
                   height="450"
-                  referrerPolicy="no-referrer"
+                  referrerPolicy="strict-origin-when-cross-origin"
                   className="opacity-0 absolute inset-0 h-full w-full object-cover blur-[1px] pointer-events-none transition-opacity duration-500"
                   onLoad={(e) => {
                     const el = e.currentTarget as HTMLElement;
@@ -434,7 +434,7 @@ export default function MatchPlayer({ match }: Props) {
                   allowFullScreen
                   allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
                   sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
-                  referrerPolicy="no-referrer"
+                  referrerPolicy="strict-origin-when-cross-origin"
                   title={`${title} live stream`}
                   onLoad={() => setPlayerState('playing')}
                 ></iframe>
