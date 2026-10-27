@@ -116,6 +116,14 @@ export default function MatchPlayer({ match }: Props) {
               if (data.fatal) {
                 switch (data.type) {
                   case Hls.ErrorTypes.NETWORK_ERROR:
+                    // Auto-failover to backup server if current server fails (e.g. NetTV 404 -> Rumble Cloud HD)
+                    const currentIdx = streams.findIndex((s) => s.embedUrl === activeStream.embedUrl);
+                    if (currentIdx >= 0 && currentIdx < streams.length - 1) {
+                      const nextStream = streams[currentIdx + 1];
+                      hls.destroy();
+                      setActiveStream(nextStream);
+                      return;
+                    }
                     hls.startLoad();
                     break;
                   case Hls.ErrorTypes.MEDIA_ERROR:

@@ -260,19 +260,6 @@ export const nplAdapter: ProviderAdapter = {
         }
 
         if (discovered.length > 0) {
-          const numMatch = id.match(/\d+/);
-          const num = numMatch ? numMatch[0] : null;
-
-          discovered.sort((a, b) => {
-            if (num) {
-              const aMatch = a.key.includes(num);
-              const bMatch = b.key.includes(num);
-              if (aMatch && !bMatch) return -1;
-              if (!aMatch && bMatch) return 1;
-            }
-            return 0;
-          });
-
           // Deduplicate by URL
           const uniqueStreams: typeof discovered = [];
           const seen = new Set<string>();
@@ -283,10 +270,33 @@ export const nplAdapter: ProviderAdapter = {
             }
           }
 
+          // Probe streams in parallel to ensure verified live feeds (e.g. Rumble 200 OK) are prioritized
+          const probed = await Promise.all(
+            uniqueStreams.map(async (s) => {
+              try {
+                const res = await fetch(s.url, {
+                  method: 'HEAD',
+                  signal: AbortSignal.timeout(2000),
+                });
+                const alive = res.ok || res.status === 200 || res.status === 206;
+                return { ...s, alive, status: res.status };
+              } catch {
+                return { ...s, alive: false, status: 0 };
+              }
+            })
+          );
+
+          // Sort so alive streams come first
+          probed.sort((a, b) => {
+            if (a.alive && !b.alive) return -1;
+            if (!a.alive && b.alive) return 1;
+            return 0;
+          });
+
           return {
             status: 'ready',
             provider: 'NPL Live Broadcast Feed',
-            streams: uniqueStreams.map((s) => ({
+            streams: probed.map((s) => ({
               embedUrl: s.url,
               hd: true,
               isNativeVideo: true,
