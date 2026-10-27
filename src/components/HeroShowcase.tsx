@@ -52,7 +52,7 @@ export default function HeroShowcase() {
       className="relative mx-auto mb-12 max-w-7xl overflow-hidden rounded-3xl border border-white/10 bg-[#080c0b] shadow-2xl"
     >
       <div className="relative min-h-[440px] w-full sm:min-h-[480px] lg:min-h-[520px]">
-        {/* All backgrounds pre-rendered; active one is visible */}
+        {/* All backgrounds pre-rendered; active one is visible with zoom-in animation */}
         {BG_IMAGES.map((url, idx) => (
           <div
             key={idx}
@@ -66,8 +66,8 @@ export default function HeroShowcase() {
               height="800"
               loading={idx === 0 ? 'eager' : 'lazy'}
               decoding="async"
-              className="h-full w-full object-cover object-center"
-              style={{ filter: 'brightness(0.8) contrast(1.05)' }}
+              className={`h-full w-full object-cover object-center ${idx === bgIndex ? 'img-zoom-in' : ''}`}
+              style={{ filter: 'brightness(0.45) contrast(1.05)', opacity: 0.85 }}
             />
           </div>
         ))}
@@ -161,6 +161,13 @@ export default function HeroShowcase() {
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(12px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes zoomIn {
+          from { transform: scale(1); }
+          to { transform: scale(1.12); }
+        }
+        .img-zoom-in {
+          animation: zoomIn 6s ease-out forwards;
         }
       `}</style>
     </section>
