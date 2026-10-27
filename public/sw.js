@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sportivo-pwa-v1';
+const CACHE_NAME = 'sportivo-pwa-v2';
 const STATIC_ASSETS = [
   '/',
   '/offline/',
@@ -19,7 +19,11 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        })
       );
     })
   );
@@ -30,12 +34,18 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Never intercept or cache streaming feeds, websockets, or API requests
+  // 1. NEVER intercept cross-origin CDN requests (e.g. Unsplash images, external player streams, CDN crests)
+  // Let the browser fetch them directly with standard HTTP caching
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  // 2. Never intercept API endpoints or dynamic streaming routes
   if (url.pathname.startsWith('/api/') || url.pathname.includes('/stream/')) {
     return;
   }
 
-  // Network-first for navigation requests (HTML pages)
+  // 3. Network-first for navigation requests (HTML pages)
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).catch(async () => {
@@ -46,8 +56,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first for images, fonts, styles
-  if (request.destination === 'image' || request.destination === 'font' || request.destination === 'style') {
+  // 4. For same-origin images: Network-first to guarantee fresh assets, fallback to cache if offline
+  if (request.destination === 'image') {
+    event.respondWith(
+      fetch(request).catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // 5. Cache-first only for static local fonts & stylesheets
+  if (request.destination === 'font' || request.destination === 'style') {
     event.respondWith(
       caches.match(request).then((cached) => {
         if (cached) return cached;
@@ -65,4 +83,3 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(fetch(request).catch(() => caches.match(request)));
 });
-

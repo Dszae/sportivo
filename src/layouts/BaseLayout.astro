@@ -169,9 +169,15 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     </script>
 
     <script is:inline>
+      if (typeof window !== 'undefined' && 'caches' in window) {
+        // Automatically evict stale v1 caches to unblock normal browser windows
+        caches.delete('sportivo-pwa-v1').catch(() => {});
+      }
       if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(() => {});
+          navigator.serviceWorker.register('/sw.js').then((reg) => {
+            reg.update().catch(() => {});
+          }).catch(() => {});
         });
       }
     </script>
