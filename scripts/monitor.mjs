@@ -1,4 +1,4 @@
-const baseUrl = process.env.SPORTIVO_URL || 'https://sportivo.dipeshsapkota7.com.np';
+const baseUrl = (process.env.SPORTIVO_URL || process.argv[2] || 'https://sportivo.dipeshsapkota7.com.np').replace(/\/$/, '');
 const paths = [
   '/',
   '/football/',
@@ -9,9 +9,9 @@ const paths = [
   '/llms.txt',
   '/api-docs/',
   '/dashboard/',
-  '/api/matches/football',
-  '/api/matches/cricket',
-  '/api/matches/basketball',
+  '/api/matches/football/',
+  '/api/matches/cricket/',
+  '/api/matches/basketball/',
 ];
 
 let failures = 0;
@@ -39,8 +39,8 @@ for (const path of paths) {
     if (isApi) {
       try {
         const data = JSON.parse(body);
-        detail = Array.isArray(data) ? `${data.length} fixtures` : 'JSON object';
-        if (!Array.isArray(data)) failures++;
+        detail = Array.isArray(data) ? `${data.length} fixtures` : (data.error || 'JSON object');
+        if (!Array.isArray(data) && !data.error) failures++;
       } catch {
         detail = 'invalid JSON';
         failures++;

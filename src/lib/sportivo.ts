@@ -337,6 +337,8 @@ export async function fetchLiveMatches(signal?: AbortSignal): Promise<Match[]> {
       signal,
     });
     if (!response.ok) return [];
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) return [];
     const data: unknown = await response.json();
     return Array.isArray(data) ? (data as Match[]) : [];
   } catch {
@@ -348,45 +350,57 @@ export async function fetchMatches(category: Category, signal?: AbortSignal): Pr
   const timeoutSignal = AbortSignal.timeout(5000);
   const effectiveSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
 
-  const [matchesRes, liveRes] = await Promise.allSettled([
-    fetch(`${upstream}/api/matches/${category}`, {
-      headers: { accept: 'application/json' },
-      signal: effectiveSignal,
-    }),
-    fetch(`${upstream}/api/matches/live`, {
-      headers: { accept: 'application/json' },
-      signal: effectiveSignal,
-    }),
-  ]);
+  try {
+    const [matchesRes, liveRes] = await Promise.allSettled([
+      fetch(`${upstream}/api/matches/${category}`, {
+        headers: { accept: 'application/json' },
+        signal: effectiveSignal,
+      }),
+      fetch(`${upstream}/api/matches/live`, {
+        headers: { accept: 'application/json' },
+        signal: effectiveSignal,
+      }),
+    ]);
 
-  if (matchesRes.status !== 'fulfilled' || !matchesRes.value.ok) {
-    const code = matchesRes.status === 'fulfilled' ? matchesRes.value.status : 'network error';
-    throw new Error(`Fixture provider returned ${code}`);
-  }
-
-  const data: unknown = await matchesRes.value.json();
-  const matches = Array.isArray(data) ? (data as Match[]) : [];
-
-  const liveIds = new Set<string>();
-  if (liveRes.status === 'fulfilled' && liveRes.value.ok) {
-    try {
-      const liveData: unknown = await liveRes.value.json();
-      if (Array.isArray(liveData)) {
-        liveData.forEach((item: Match) => {
-          if (item.id) liveIds.add(item.id);
-        });
+    let matches: Match[] = [];
+    if (matchesRes.status === 'fulfilled' && matchesRes.value.ok) {
+      try {
+        const contentType = matchesRes.value.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const data: unknown = await matchesRes.value.json();
+          if (Array.isArray(data)) matches = data as Match[];
+        }
+      } catch {
+        matches = [];
       }
-    } catch {
-      // live fallback gracefully omitted
     }
-  }
 
-  return matches.map((match) => {
-    if (match.id && liveIds.has(match.id)) {
-      return { ...match, status: 'live' };
+    const liveIds = new Set<string>();
+    if (liveRes.status === 'fulfilled' && liveRes.value.ok) {
+      try {
+        const liveContentType = liveRes.value.headers.get('content-type') || '';
+        if (liveContentType.includes('application/json')) {
+          const liveData: unknown = await liveRes.value.json();
+          if (Array.isArray(liveData)) {
+            liveData.forEach((item: Match) => {
+              if (item.id) liveIds.add(item.id);
+            });
+          }
+        }
+      } catch {
+        // live fallback gracefully omitted
+      }
     }
-    return match;
-  });
+
+    return matches.map((match) => {
+      if (match.id && liveIds.has(match.id)) {
+        return { ...match, status: 'live' };
+      }
+      return match;
+    });
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchStream(source: string, id: string) {
