@@ -9,9 +9,9 @@ const paths = [
   '/llms.txt',
   '/api-docs/',
   '/dashboard/',
-  '/api/matches/football',
-  '/api/matches/cricket',
-  '/api/matches/basketball',
+  '/api/matches/football/',
+  '/api/matches/cricket/',
+  '/api/matches/basketball/',
 ];
 
 let failures = 0;
