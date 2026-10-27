@@ -39,12 +39,20 @@ export default function HeroShowcase() {
   const [bgIndex, setBgIndex] = useState(0);
   const [sloganIndex, setSloganIndex] = useState(0);
 
-  // Smooth, continuous 6.5s cycle — buttery crossfades with zero DOM churn
+  // Preload all background images immediately to eliminate any network flash or flicker
+  useEffect(() => {
+    BG_IMAGES.forEach((url) => {
+      const img = new Image();
+      img.src = url;
+    });
+  }, []);
+
+  // Smooth, continuous 7s cycle — slow cinematic dissolve with zero flicker
   useEffect(() => {
     const timer = setInterval(() => {
       setBgIndex((prev) => (prev + 1) % BG_IMAGES.length);
       setSloganIndex((prev) => (prev + 1) % SLOGANS.length);
-    }, 6500);
+    }, 7000);
     return () => clearInterval(timer);
   }, []);
 
@@ -53,15 +61,15 @@ export default function HeroShowcase() {
       aria-label="Sportivo — Live Sports Streaming"
       className="relative w-full overflow-hidden bg-[#080a0b]"
     >
-      {/* Full-bleed Edge-to-Edge Background with Ken Burns Zoom & Subtle Opacity */}
+      {/* Full-bleed Edge-to-Edge Background with Cinema Crossfade & Slow Ken Burns */}
       <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden" aria-hidden="true">
         {BG_IMAGES.map((url, idx) => {
           const isActive = idx === bgIndex;
           return (
             <div
               key={idx}
-              className={`absolute inset-0 w-full h-full transition-opacity duration-1500 ease-in-out ${
-                isActive ? 'opacity-100 z-0' : 'opacity-0 -z-10'
+              className={`absolute inset-0 w-full h-full transition-opacity duration-[2200ms] ease-in-out will-change-[opacity] ${
+                isActive ? 'opacity-100 z-10' : 'opacity-0 z-0'
               }`}
             >
               <img
@@ -69,12 +77,17 @@ export default function HeroShowcase() {
                 alt=""
                 width="1920"
                 height="1080"
-                loading={idx === 0 ? 'eager' : 'lazy'}
+                loading="eager"
                 decoding="async"
-                className={`h-full w-full object-cover object-center transition-transform duration-[7000ms] ease-out ${
+                className={`h-full w-full object-cover object-center transition-transform duration-[8500ms] ease-out will-change-transform ${
                   isActive ? 'scale-110' : 'scale-100'
                 }`}
-                style={{ filter: 'brightness(0.65) contrast(1.1)', opacity: 0.55 }}
+                style={{
+                  filter: 'brightness(0.6) contrast(1.1)',
+                  opacity: 0.5,
+                  backfaceVisibility: 'hidden',
+                  transform: 'translateZ(0)',
+                }}
               />
             </div>
           );
