@@ -5,9 +5,9 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      // Whenever our app asks for /api, Vite secretly routes it to streamed.pk
+      // Whenever our app asks for /api, Vite secretly routes it to strmfree.st
       '/api': {
-        target: 'https://streamed.pk',
+        target: 'https://strmfree.st',
         changeOrigin: true,
         secure: false,
       }

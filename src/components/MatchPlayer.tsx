@@ -119,8 +119,13 @@ export default function MatchPlayer({ match }: Props) {
       // Tier 3: Direct upstream CORS fallback
       if (!payload) {
         try {
-          const res = await fetch(`https://streamed.pk/api/stream/${src}/${sid}`);
-          if (res.ok) payload = await res.json();
+          const res = await fetch(`https://strmfree.st/api/v1/sources/${sid}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data?.sources) && data.sources.length > 0) {
+              payload = data.sources.map((url: string) => ({ embedUrl: url, hd: true, language: 'English' }));
+            }
+          }
         } catch {}
       }
 
