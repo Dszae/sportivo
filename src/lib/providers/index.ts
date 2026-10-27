@@ -47,24 +47,41 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
   const ppv = adapters.ppv;
   const strmfree = adapters.strmfree;
   const espn = adapters.espn;
-  const timst = adapters.timst;
 
-  const [ppvResults, strmfreeResults, espnResults, timstResults] = await Promise.allSettled([
+  // Ingest PPV (primary official stream provider) alongside StrmFree and ESPN.
+  // Note: 24/7 channel adapters (timst) are strictly excluded from match-wise listings.
+  const [ppvResults, strmfreeResults, espnResults] = await Promise.allSettled([
     ppv.fetchMatches(category, effectiveSignal),
     strmfree.fetchMatches(category, effectiveSignal),
     espn.fetchMatches(category, effectiveSignal),
-    timst.fetchMatches(category, effectiveSignal),
   ]);
 
   const matches: NormalizedMatch[] = [];
   const seenSlugs = new Set<string>();
 
   function isMatchWise(item: NormalizedMatch): boolean {
+    const title = (item.title || '').trim();
+    if (!title) return false;
+
+    if (category === 'cricket') {
+      // For cricket, allow verified live broadcast channels or competitive matches
+      const isVerifiedCricketFeed = /willow|fox cricket|sky sports cricket/i.test(title);
+      const isCricketMatch = /\s+vs\.?\s+|\s+v\s+|\s+at\s+/i.test(title);
+      return isVerifiedCricketFeed || isCricketMatch;
+    }
+
+    // Exclude general 24/7 TV channels from football and basketball grids
+    if (/^(beIN|Sky Sports|TNT Sports|ESPN|Fox Sports|SuperSport|Sony Sports|EuroSport|Match TV|DAZN|Premier Sports)/i.test(title)) {
+      if (!/\s+vs\.?\s+|\s+v\s+|\s+at\s+/i.test(title)) {
+        return false;
+      }
+    }
+
     if (item.teams && typeof item.teams === 'object' && item.teams.home && item.teams.away) {
       return true;
     }
-    const title = item.title || '';
-    // Must be a head-to-head fixture ("Team A vs Team B")
+
+    // Must be a head-to-head fixture ("Team A vs Team B" or "Team A at Team B")
     if (/\s+vs\.?\s+/i.test(title) || /\s+v\s+/i.test(title) || /\s+at\s+/i.test(title)) {
       return true;
     }
@@ -88,7 +105,20 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
           }
         }
         if (!existing.poster && item.poster) existing.poster = item.poster;
-        if (!existing.teams && item.teams) existing.teams = item.teams;
+
+        // Merge team info and badges
+        if (item.teams) {
+          if (!existing.teams) {
+            existing.teams = item.teams;
+          } else {
+            if (!existing.teams.home?.badge && item.teams.home?.badge) {
+              existing.teams.home = { ...existing.teams.home, badge: item.teams.home.badge };
+            }
+            if (!existing.teams.away?.badge && item.teams.away?.badge) {
+              existing.teams.away = { ...existing.teams.away, badge: item.teams.away.badge };
+            }
+          }
+        }
         continue;
       }
 
@@ -97,24 +127,19 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
     }
   }
 
-  // 1. Ingest PPV (direct verified feeds)
+  // 1. Ingest PPV (primary provider: verified matches, 16:9 posters, and clean embeds)
   if (ppvResults.status === 'fulfilled') {
     ingest(ppvResults.value);
   }
 
-  // 2. Ingest StrmFree (primary for live multi-server streams)
+  // 2. Ingest StrmFree (adds multi-server streams and club badges)
   if (strmfreeResults.status === 'fulfilled') {
     ingest(strmfreeResults.value);
   }
 
-  // 3. Ingest ESPN (official scoreboards & team crests)
+  // 3. Ingest ESPN (adds crests and scoreboards)
   if (espnResults.status === 'fulfilled') {
     ingest(espnResults.value);
-  }
-
-  // 4. Ingest 24/7 channels
-  if (timstResults.status === 'fulfilled') {
-    ingest(timstResults.value);
   }
 
   // Sort: Live matches first, then upcoming by start time

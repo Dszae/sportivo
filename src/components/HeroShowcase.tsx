@@ -105,54 +105,22 @@ export default function HeroShowcase() {
               idx === current ? 'opacity-100 z-0' : 'opacity-0 -z-10 pointer-events-none'
             }`}
           >
-            {/* Background Image */}
+            {/* Background Image - Clean, High Contrast & Fully Visible */}
             <img
               src={s.imageUrl}
-              alt=""
+              alt={s.title}
               width="1600"
               height="800"
-              loading={idx === 0 ? 'eager' : 'lazy'}
+              loading="eager"
               decoding="async"
-              className="h-full w-full object-cover object-center filter brightness-[0.7] contrast-[1.1]"
+              className="h-full w-full object-cover object-center filter brightness-[0.85] contrast-[1.08]"
             />
 
-            {/* Dark Cinematic Vignette Gradients */}
-            <div className={`absolute inset-0 bg-gradient-to-r ${s.accentGradient} opacity-95`}></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-[#080c0b] via-[#080c0b]/60 to-transparent"></div>
-            <div className="absolute inset-0 bg-gradient-to-b from-[#080c0b]/80 via-transparent to-[#080c0b]"></div>
+            {/* Clean Vignette to ensure text readability without hiding the sports action */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#080c0b]/90 via-[#080c0b]/40 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-[#080c0b] via-transparent to-transparent"></div>
           </div>
         ))}
-
-        {/* AUTHENTIC HALFTONE TEXTURE OVERLAY */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-[2] opacity-40 mix-blend-overlay"
-          style={{
-            backgroundImage: `radial-gradient(circle at center, rgba(255, 255, 255, 0.45) 1.5px, transparent 1.5px), radial-gradient(circle at center, rgba(201, 243, 107, 0.3) 1px, transparent 1px)`,
-            backgroundSize: '14px 14px, 7px 7px',
-            backgroundPosition: '0 0, 3.5px 3.5px',
-            maskImage: 'linear-gradient(to left, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 40%, transparent 85%)',
-            WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 40%, transparent 85%)',
-          }}
-        ></div>
-
-        {/* Diagonal Halftone Texture Graphic Elements (Retro Sports Poster Mesh) */}
-        <svg
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-10 top-0 z-[3] h-full w-1/2 opacity-25 mix-blend-screen"
-          viewBox="0 0 400 400"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <defs>
-            <pattern id="halftone-dots" x="0" y="0" width="16" height="16" patternUnits="userSpaceOnUse">
-              <circle cx="8" cy="8" r="3" fill="#c9f36b" />
-              <circle cx="0" cy="0" r="1.5" fill="#e5b94f" />
-              <circle cx="16" cy="16" r="1.5" fill="#ffffff" />
-            </pattern>
-          </defs>
-          <rect width="400" height="400" fill="url(#halftone-dots)" />
-        </svg>
 
         {/* Content Layer */}
         <div className="relative z-10 flex min-h-[460px] sm:min-h-[500px] lg:min-h-[540px] flex-col justify-between p-6 sm:p-10 lg:p-14">

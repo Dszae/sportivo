@@ -136,17 +136,21 @@ export class PpvAdapter implements ProviderAdapter {
             item.always_live === 1 ||
             (startsAt > 0 && nowSec >= startsAt && (endsAt === 0 || nowSec <= endsAt + 1800));
           const isFinal = endsAt > 0 && nowSec > endsAt + 1800;
-          const status = isLive ? 'Live' : isFinal ? 'Final' : 'Upcoming';
+          const status = category === 'cricket' ? 'Live' : isLive ? 'Live' : isFinal ? 'Final' : 'Upcoming';
 
           const matchTimeMs = startsAt > 0 ? startsAt * 1000 : Date.now();
           const teams = extractTeams(item.name);
+          const displayTitle =
+            category === 'cricket' && !item.name.toLowerCase().includes('cricket')
+              ? `${item.name} Cricket Live`
+              : item.name;
 
           matches.push({
             id: item.uri_name || String(item.id),
-            title: item.name,
+            title: displayTitle,
             category,
-            competition: item.tag || item.source_tag || undefined,
-            league: item.tag || item.source_tag || undefined,
+            competition: item.tag || item.source_tag || (category === 'cricket' ? 'Live Cricket Broadcast' : undefined),
+            league: item.tag || item.source_tag || (category === 'cricket' ? 'Live Cricket' : undefined),
             status,
             date: matchTimeMs,
             poster: item.poster && item.poster.startsWith('https://') ? item.poster : undefined,
@@ -242,3 +246,4 @@ export class PpvAdapter implements ProviderAdapter {
     };
   }
 }
+

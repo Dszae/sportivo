@@ -273,109 +273,69 @@ export default function PersonalDashboard({ allMatchesByCategory }: Props) {
               {isLive ? 'LIVE' : status === 'Final' ? 'Final' : formattedTime}
             </span>
 
-            {/* Background Poster */}
-            {poster && (
-              <img
-                src={getSafeThumbnailUrl(poster)}
-                alt=""
-                width="288"
-                height="144"
-                loading="lazy"
-                decoding="async"
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  (e.currentTarget as HTMLElement).style.display = 'none';
-                }}
-                className={
-                  match.teams && typeof match.teams === 'object' && ('home' in match.teams || 'away' in match.teams)
-                    ? 'absolute inset-0 h-full w-full object-cover opacity-20 pointer-events-none'
-                    : 'relative z-[5] h-full w-full object-cover transition-transform duration-300 group-hover:scale-105'
-                }
-              />
-            )}
+            {/* Real Visible Match Thumbnail */}
+            <img
+              src={getSafeThumbnailUrl(poster) || (category === 'cricket' ? 'https://static.ppvservices.st/assets/thumb/2e3cba2a94ae6af4b958675e73fe91e9-thumbnail.jpg' : 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=600&auto=format&fit=crop')}
+              alt={title}
+              width="288"
+              height="144"
+              loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
 
-            <div className="absolute inset-0 z-10 flex items-center justify-center px-4 text-center text-sm font-bold text-slate-300">
-              {match.teams && typeof match.teams === 'object' && ('home' in match.teams || 'away' in match.teams) ? (
-                <div className="flex items-center justify-center gap-3 w-full px-2">
-                  {/* Home Team */}
-                  <div className="flex flex-col items-center gap-1.5 flex-1 max-w-[95px]">
-                    {match.teams.home?.badge ? (
-                      <div className="relative flex h-11 w-11 items-center justify-center">
-                        <img
-                          src={getSafeThumbnailUrl(match.teams.home.badge)}
-                          alt={match.teams.home.name || first}
-                          width="44"
-                          height="44"
-                          className="h-11 w-11 object-contain drop-shadow"
-                          onError={(e) => {
-                            const el = e.currentTarget as HTMLElement;
-                            el.style.display = 'none';
-                            const fallback = el.nextElementSibling as HTMLElement;
-                            if (fallback) fallback.classList.remove('hidden');
-                          }}
-                        />
-                        <div className="hidden flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-black text-[#c9f36b]">
-                          {(match.teams.home.name || first || 'H').slice(0, 3).toUpperCase()}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-black text-[#c9f36b]">
-                        {(match.teams.home?.name || first || 'H').slice(0, 3).toUpperCase()}
-                      </div>
-                    )}
-                    <span className="line-clamp-1 text-[11px] text-white font-bold text-center">
-                      {match.teams.home?.name || first}
+            {/* Dark Bottom Vignette Gradient */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0b100f] via-black/20 to-black/30 pointer-events-none"></div>
+
+            {/* Team Crests Overlaid on Thumbnail if Home/Away Present */}
+            {match.teams && typeof match.teams === 'object' && (match.teams.home || match.teams.away) && (
+              <div className="absolute inset-x-2 bottom-2 z-10 flex items-center justify-center gap-2 rounded-xl bg-black/60 px-2.5 py-1 backdrop-blur-md border border-white/10">
+                {/* Home Team */}
+                <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                  {match.teams.home?.badge ? (
+                    <img
+                      src={getSafeThumbnailUrl(match.teams.home.badge)}
+                      alt=""
+                      width="20"
+                      height="20"
+                      className="h-5 w-5 shrink-0 object-contain drop-shadow"
+                      onError={(e) => ((e.currentTarget as HTMLElement).style.display = 'none')}
+                    />
+                  ) : (
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-[9px] font-black text-[#c9f36b]">
+                      {(match.teams.home?.name || first || 'H').slice(0, 2).toUpperCase()}
                     </span>
-                  </div>
-
-                  {/* VS Badge */}
-                  <span className="text-xs font-black text-[#c9f36b] shrink-0 px-1 py-0.5 rounded bg-black/40 border border-white/5">
-                    VS
+                  )}
+                  <span className="line-clamp-1 text-[11px] font-bold text-white">
+                    {match.teams.home?.name || first}
                   </span>
-
-                  {/* Away Team */}
-                  <div className="flex flex-col items-center gap-1.5 flex-1 max-w-[95px]">
-                    {match.teams.away?.badge ? (
-                      <div className="relative flex h-11 w-11 items-center justify-center">
-                        <img
-                          src={getSafeThumbnailUrl(match.teams.away.badge)}
-                          alt={match.teams.away.name || second}
-                          width="44"
-                          height="44"
-                          className="h-11 w-11 object-contain drop-shadow"
-                          onError={(e) => {
-                            const el = e.currentTarget as HTMLElement;
-                            el.style.display = 'none';
-                            const fallback = el.nextElementSibling as HTMLElement;
-                            if (fallback) fallback.classList.remove('hidden');
-                          }}
-                        />
-                        <div className="hidden flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-black text-[#c9f36b]">
-                          {(match.teams.away.name || second || 'A').slice(0, 3).toUpperCase()}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-black text-[#c9f36b]">
-                        {(match.teams.away?.name || second || 'A').slice(0, 3).toUpperCase()}
-                      </div>
-                    )}
-                    <span className="line-clamp-1 text-[11px] text-white font-bold text-center">
-                      {match.teams.away?.name || second}
-                    </span>
-                  </div>
                 </div>
-              ) : (
-                <div>
-                  <span>{first}</span>
-                  {second && (
-                    <>
-                      <span className="mx-2 text-[#c9f36b]">vs</span>
-                      <span>{second}</span>
-                    </>
+
+                <span className="text-[10px] font-black text-[#c9f36b] shrink-0">VS</span>
+
+                {/* Away Team */}
+                <div className="flex items-center justify-end gap-1.5 flex-1 min-w-0">
+                  <span className="line-clamp-1 text-[11px] font-bold text-white text-right">
+                    {match.teams.away?.name || second}
+                  </span>
+                  {match.teams.away?.badge ? (
+                    <img
+                      src={getSafeThumbnailUrl(match.teams.away.badge)}
+                      alt=""
+                      width="20"
+                      height="20"
+                      className="h-5 w-5 shrink-0 object-contain drop-shadow"
+                      onError={(e) => ((e.currentTarget as HTMLElement).style.display = 'none')}
+                    />
+                  ) : (
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-[9px] font-black text-[#c9f36b]">
+                      {(match.teams.away?.name || second || 'A').slice(0, 2).toUpperCase()}
+                    </span>
                   )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           <div className="p-4">

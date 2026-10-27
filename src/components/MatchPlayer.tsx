@@ -482,7 +482,7 @@ export default function MatchPlayer({ match }: Props) {
                   allowFullScreen
                   allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
                   {...(useSandbox
-                    ? { sandbox: 'allow-scripts allow-same-origin allow-forms allow-presentation' }
+                    ? { sandbox: 'allow-scripts allow-same-origin allow-forms allow-presentation allow-popups' }
                     : {})}
                   referrerPolicy="strict-origin-when-cross-origin"
                   title={`${title} live stream`}

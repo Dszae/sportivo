@@ -147,6 +147,31 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
   const liveMatches = useMemo(() => filtered.filter((m) => statusOf(m) === 'Live'), [filtered]);
   const upcomingMatches = useMemo(() => filtered.filter((m) => statusOf(m) === 'Upcoming'), [filtered]);
   const finalMatches = useMemo(() => filtered.filter((m) => statusOf(m) === 'Final'), [filtered]);
+  const hasTomorrowMatches = useMemo(
+    () => matches.some((m) => isMatchOnDate(m, 'tomorrow', timeZone)),
+    [matches, timeZone]
+  );
+  const hasWeekMatches = useMemo(
+    () => matches.some((m) => isMatchOnDate(m, 'week', timeZone)),
+    [matches, timeZone]
+  );
+
+  const availableDateFilters = useMemo(() => {
+    const filters: Array<'all' | 'today' | 'tomorrow' | 'week'> = ['all', 'today'];
+    if (hasTomorrowMatches) filters.push('tomorrow');
+    if (hasWeekMatches) filters.push('week');
+    return filters;
+  }, [hasTomorrowMatches, hasWeekMatches]);
+
+  useEffect(() => {
+    if (dateFilter === 'tomorrow' && !hasTomorrowMatches) {
+      setDateFilter('all');
+    }
+    if (dateFilter === 'week' && !hasWeekMatches) {
+      setDateFilter('all');
+    }
+  }, [dateFilter, hasTomorrowMatches, hasWeekMatches]);
+
   const displayedUpcoming = useMemo(() => upcomingMatches.slice(0, visibleCount), [upcomingMatches, visibleCount]);
   const remainingUpcoming = upcomingMatches.length - displayedUpcoming.length;
 
@@ -159,7 +184,14 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
     const status = statusOf(match);
     const isLive = status === 'Live';
     const { first, second } = teamParts(title);
-    const poster = publicUrl(match.poster || match.image || match.thumbnail || undefined);
+    const rawPoster = match.poster || match.image || match.thumbnail || undefined;
+    const defaultThumbnail =
+      category === 'cricket'
+        ? 'https://static.ppvservices.st/assets/thumb/2e3cba2a94ae6af4b958675e73fe91e9-thumbnail.jpg'
+        : category === 'basketball'
+        ? 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=600&auto=format&fit=crop'
+        : 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=600&auto=format&fit=crop';
+    const poster = getSafeThumbnailUrl(publicUrl(rawPoster) || rawPoster) || defaultThumbnail;
     const matchLeague = category === 'football' ? detectFootballLeague(match) : null;
     const formattedTime = timeOf(match, timeZone);
 
@@ -183,10 +215,28 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
           </span>
         </button>
 
-        {/* Top Split: Match Badges & Action Stage */}
-        <div className="relative flex h-36 w-full items-center justify-center overflow-hidden bg-gradient-to-b from-[#162320] via-[#0f1715] to-[#0a0f0e]">
-          {/* Subtle Ambient Radial Glow */}
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(201,243,107,0.12)_0%,transparent_70%)]"></div>
+        {/* Top Split: Match Thumbnail Stage */}
+        <div className="relative flex h-36 w-full items-center justify-center overflow-hidden bg-[#070c0b]">
+          {/* Real Visible Match Thumbnail */}
+          <img
+            src={poster}
+            alt={title}
+            width="288"
+            height="144"
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              const el = e.currentTarget as HTMLImageElement;
+              if (el.src !== defaultThumbnail) {
+                el.src = defaultThumbnail;
+              }
+            }}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+
+          {/* Dark Bottom Vignette Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0b100f] via-black/20 to-black/30 pointer-events-none"></div>
 
           {/* Status Badge */}
           <span
@@ -199,110 +249,54 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
             {isLive ? 'LIVE' : status === 'Final' ? 'Final' : formattedTime}
           </span>
 
-          {/* Background Poster (subtle backdrop if teams present, otherwise primary card poster) */}
-          {poster && (
-            <img
-              src={getSafeThumbnailUrl(poster)}
-              alt=""
-              width="288"
-              height="144"
-              loading="lazy"
-              decoding="async"
-              referrerPolicy="no-referrer"
-              onError={(e) => {
-                (e.currentTarget as HTMLElement).style.display = 'none';
-              }}
-              className={
-                match.teams && typeof match.teams === 'object' && ('home' in match.teams || 'away' in match.teams)
-                  ? 'absolute inset-0 h-full w-full object-cover opacity-15 pointer-events-none'
-                  : 'relative z-[5] h-full w-full object-cover transition-transform duration-300 group-hover:scale-105'
-              }
-            />
-          )}
-
-          {/* Team Crests Layout */}
-          <div className="absolute inset-0 z-10 flex items-center justify-center px-4 text-center text-sm font-bold text-slate-300">
-            {match.teams && typeof match.teams === 'object' && ('home' in match.teams || 'away' in match.teams) ? (
-              <div className="flex items-center justify-center gap-3 w-full px-2">
-                {/* Home Team */}
-                <div className="flex flex-col items-center gap-1.5 flex-1 max-w-[95px]">
-                  {match.teams.home?.badge ? (
-                    <div className="relative flex h-12 w-12 items-center justify-center">
-                      <img
-                        src={getSafeThumbnailUrl(match.teams.home.badge)}
-                        alt={match.teams.home.name || first}
-                        width="48"
-                        height="48"
-                        className="h-12 w-12 object-contain drop-shadow-md"
-                        onError={(e) => {
-                          const el = e.currentTarget as HTMLElement;
-                          el.style.display = 'none';
-                          const fallback = el.nextElementSibling as HTMLElement;
-                          if (fallback) fallback.classList.remove('hidden');
-                        }}
-                      />
-                      <div className="hidden flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-black text-[#c9f36b]">
-                        {(match.teams.home.name || first || 'H').slice(0, 3).toUpperCase()}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-black text-[#c9f36b]">
-                      {(match.teams.home?.name || first || 'H').slice(0, 3).toUpperCase()}
-                    </div>
-                  )}
-                  <span className="line-clamp-1 text-[11px] text-white font-bold text-center">
-                    {match.teams.home?.name || first}
+          {/* Team Crests Overlaid on Thumbnail if Home/Away Present */}
+          {match.teams && typeof match.teams === 'object' && (match.teams.home || match.teams.away) && (
+            <div className="absolute inset-x-2 bottom-2 z-10 flex items-center justify-center gap-2 rounded-xl bg-black/60 px-2.5 py-1 backdrop-blur-md border border-white/10">
+              {/* Home Team */}
+              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                {match.teams.home?.badge ? (
+                  <img
+                    src={getSafeThumbnailUrl(match.teams.home.badge)}
+                    alt=""
+                    width="20"
+                    height="20"
+                    className="h-5 w-5 shrink-0 object-contain drop-shadow"
+                    onError={(e) => ((e.currentTarget as HTMLElement).style.display = 'none')}
+                  />
+                ) : (
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-[9px] font-black text-[#c9f36b]">
+                    {(match.teams.home?.name || first || 'H').slice(0, 2).toUpperCase()}
                   </span>
-                </div>
-
-                {/* VS Badge */}
-                <span className="text-[11px] font-black text-[#c9f36b] shrink-0 px-2 py-0.5 rounded-full bg-black/60 border border-white/10 shadow-sm">
-                  VS
+                )}
+                <span className="line-clamp-1 text-[11px] font-bold text-white">
+                  {match.teams.home?.name || first}
                 </span>
-
-                {/* Away Team */}
-                <div className="flex flex-col items-center gap-1.5 flex-1 max-w-[95px]">
-                  {match.teams.away?.badge ? (
-                    <div className="relative flex h-12 w-12 items-center justify-center">
-                      <img
-                        src={getSafeThumbnailUrl(match.teams.away.badge)}
-                        alt={match.teams.away.name || second}
-                        width="48"
-                        height="48"
-                        className="h-12 w-12 object-contain drop-shadow-md"
-                        onError={(e) => {
-                          const el = e.currentTarget as HTMLElement;
-                          el.style.display = 'none';
-                          const fallback = el.nextElementSibling as HTMLElement;
-                          if (fallback) fallback.classList.remove('hidden');
-                        }}
-                      />
-                      <div className="hidden flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-black text-[#c9f36b]">
-                        {(match.teams.away.name || second || 'A').slice(0, 3).toUpperCase()}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-black text-[#c9f36b]">
-                      {(match.teams.away?.name || second || 'A').slice(0, 3).toUpperCase()}
-                    </div>
-                  )}
-                  <span className="line-clamp-1 text-[11px] text-white font-bold text-center">
-                    {match.teams.away?.name || second}
-                  </span>
-                </div>
               </div>
-            ) : (
-              <div>
-                <span>{first}</span>
-                {second && (
-                  <>
-                    <span className="mx-2 text-[#c9f36b]">vs</span>
-                    <span>{second}</span>
-                  </>
+
+              <span className="text-[10px] font-black text-[#c9f36b] shrink-0">VS</span>
+
+              {/* Away Team */}
+              <div className="flex items-center justify-end gap-1.5 flex-1 min-w-0">
+                <span className="line-clamp-1 text-[11px] font-bold text-white text-right">
+                  {match.teams.away?.name || second}
+                </span>
+                {match.teams.away?.badge ? (
+                  <img
+                    src={getSafeThumbnailUrl(match.teams.away.badge)}
+                    alt=""
+                    width="20"
+                    height="20"
+                    className="h-5 w-5 shrink-0 object-contain drop-shadow"
+                    onError={(e) => ((e.currentTarget as HTMLElement).style.display = 'none')}
+                  />
+                ) : (
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-[9px] font-black text-[#c9f36b]">
+                    {(match.teams.away?.name || second || 'A').slice(0, 2).toUpperCase()}
+                  </span>
                 )}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Bottom Split: Match Metadata */}
@@ -396,7 +390,7 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-4">
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label={`Date filter for ${categoryLabel}`}>
-            {(['all', 'today', 'tomorrow', 'week'] as const).map((filter) => {
+            {availableDateFilters.map((filter) => {
               const isSelected = dateFilter === filter && !showWatchlistOnly;
               return (
                 <button
