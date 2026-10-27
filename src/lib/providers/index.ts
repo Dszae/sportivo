@@ -55,8 +55,23 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
   const matches: NormalizedMatch[] = [];
   const seenSlugs = new Set<string>();
 
+  function isMatchWise(item: NormalizedMatch): boolean {
+    if (item.teams && typeof item.teams === 'object' && item.teams.home && item.teams.away) {
+      return true;
+    }
+    const title = item.title || '';
+    // Must be a head-to-head fixture ("Team A vs Team B")
+    if (/\s+vs\.?\s+/i.test(title) || /\s+v\s+/i.test(title)) {
+      return true;
+    }
+    return false;
+  }
+
   function ingest(items: NormalizedMatch[]) {
     for (const item of items) {
+      // Strictly only ingest head-to-head matches ("this vs this team")
+      if (!isMatchWise(item)) continue;
+
       const slug = slugify(item.title);
       if (!slug || seenSlugs.has(slug)) continue;
       seenSlugs.add(slug);

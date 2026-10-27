@@ -353,11 +353,39 @@ export function generateIcsCalendarContent(match: Match): string {
 
 export function getSafeThumbnailUrl(url: string | undefined): string | undefined {
   if (!url || typeof url !== 'string') return undefined;
-  if (url.startsWith('/api/thumbnail')) return url;
-  if (/^https?:\/\//i.test(url)) {
-    return `/api/thumbnail?url=${encodeURIComponent(url)}`;
+  const trimmed = url.trim();
+  if (!trimmed) return undefined;
+  if (trimmed.startsWith('/')) return trimmed;
+
+  if (/^https:\/\//i.test(trimmed)) {
+    try {
+      const parsed = new URL(trimmed);
+      const host = parsed.hostname.toLowerCase();
+      if (
+        host === 'localhost' ||
+        host === '127.0.0.1' ||
+        host === '0.0.0.0' ||
+        host === '::1' ||
+        host.endsWith('.local') ||
+        host.endsWith('.internal') ||
+        host === '169.254.169.254' ||
+        /^10\./.test(host) ||
+        /^192\.168\./.test(host) ||
+        /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host)
+      ) {
+        return undefined;
+      }
+      return trimmed;
+    } catch {
+      return undefined;
+    }
   }
-  return url;
+
+  if (/^http:\/\//i.test(trimmed)) {
+    return `/api/thumbnail?url=${encodeURIComponent(trimmed)}`;
+  }
+
+  return undefined;
 }
 
 export function publicUrl(value: string | undefined): string | null {

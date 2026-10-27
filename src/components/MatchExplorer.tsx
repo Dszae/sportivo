@@ -193,34 +193,94 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
             {isLive && <span className="inline-block h-1.5 w-1.5 animate-ping rounded-full bg-white" aria-hidden="true"></span>}
             {isLive ? 'LIVE' : status === 'Final' ? 'Final' : formattedTime}
           </span>
-          <div className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm font-bold text-slate-300">
-            {match.teams && typeof match.teams === 'object' && 'home' in match.teams && match.teams.home?.badge && match.teams.away?.badge ? (
+          {/* Background Poster (subtle backdrop if teams present, otherwise primary card poster) */}
+          {poster && (
+            <img
+              src={getSafeThumbnailUrl(poster)}
+              alt=""
+              width="288"
+              height="144"
+              loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                (e.currentTarget as HTMLElement).style.display = 'none';
+              }}
+              className={
+                match.teams && typeof match.teams === 'object' && ('home' in match.teams || 'away' in match.teams)
+                  ? 'absolute inset-0 h-full w-full object-cover opacity-20 pointer-events-none'
+                  : 'relative z-[5] h-full w-full object-cover transition-transform duration-300 group-hover:scale-105'
+              }
+            />
+          )}
+
+          <div className="absolute inset-0 z-10 flex items-center justify-center px-4 text-center text-sm font-bold text-slate-300">
+            {match.teams && typeof match.teams === 'object' && ('home' in match.teams || 'away' in match.teams) ? (
               <div className="flex items-center justify-center gap-3 w-full px-2">
-                <div className="flex flex-col items-center gap-1 flex-1 max-w-[85px]">
-                  <img
-                    src={getSafeThumbnailUrl(match.teams.home.badge)}
-                    alt=""
-                    width="40"
-                    height="40"
-                    className="h-10 w-10 object-contain drop-shadow"
-                    onError={(e) => ((e.currentTarget as HTMLElement).style.display = 'none')}
-                  />
+                {/* Home Team */}
+                <div className="flex flex-col items-center gap-1.5 flex-1 max-w-[95px]">
+                  {match.teams.home?.badge ? (
+                    <div className="relative flex h-11 w-11 items-center justify-center">
+                      <img
+                        src={getSafeThumbnailUrl(match.teams.home.badge)}
+                        alt={match.teams.home.name || first}
+                        width="44"
+                        height="44"
+                        className="h-11 w-11 object-contain drop-shadow"
+                        onError={(e) => {
+                          const el = e.currentTarget as HTMLElement;
+                          el.style.display = 'none';
+                          const fallback = el.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.classList.remove('hidden');
+                        }}
+                      />
+                      <div className="hidden flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-black text-[#c9f36b]">
+                        {(match.teams.home.name || first || 'H').slice(0, 3).toUpperCase()}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-black text-[#c9f36b]">
+                      {(match.teams.home?.name || first || 'H').slice(0, 3).toUpperCase()}
+                    </div>
+                  )}
                   <span className="line-clamp-1 text-[11px] text-white font-bold text-center">
-                    {match.teams.home.name || first}
+                    {match.teams.home?.name || first}
                   </span>
                 </div>
-                <span className="text-xs font-black text-[#c9f36b] shrink-0">VS</span>
-                <div className="flex flex-col items-center gap-1 flex-1 max-w-[85px]">
-                  <img
-                    src={getSafeThumbnailUrl(match.teams.away.badge)}
-                    alt=""
-                    width="40"
-                    height="40"
-                    className="h-10 w-10 object-contain drop-shadow"
-                    onError={(e) => ((e.currentTarget as HTMLElement).style.display = 'none')}
-                  />
+
+                {/* VS Badge */}
+                <span className="text-xs font-black text-[#c9f36b] shrink-0 px-1 py-0.5 rounded bg-black/40 border border-white/5">
+                  VS
+                </span>
+
+                {/* Away Team */}
+                <div className="flex flex-col items-center gap-1.5 flex-1 max-w-[95px]">
+                  {match.teams.away?.badge ? (
+                    <div className="relative flex h-11 w-11 items-center justify-center">
+                      <img
+                        src={getSafeThumbnailUrl(match.teams.away.badge)}
+                        alt={match.teams.away.name || second}
+                        width="44"
+                        height="44"
+                        className="h-11 w-11 object-contain drop-shadow"
+                        onError={(e) => {
+                          const el = e.currentTarget as HTMLElement;
+                          el.style.display = 'none';
+                          const fallback = el.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.classList.remove('hidden');
+                        }}
+                      />
+                      <div className="hidden flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-black text-[#c9f36b]">
+                        {(match.teams.away.name || second || 'A').slice(0, 3).toUpperCase()}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-black text-[#c9f36b]">
+                      {(match.teams.away?.name || second || 'A').slice(0, 3).toUpperCase()}
+                    </div>
+                  )}
                   <span className="line-clamp-1 text-[11px] text-white font-bold text-center">
-                    {match.teams.away.name || second}
+                    {match.teams.away?.name || second}
                   </span>
                 </div>
               </div>
@@ -236,24 +296,6 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
               </div>
             )}
           </div>
-          {poster && (
-            <img
-              src={getSafeThumbnailUrl(poster)}
-              alt=""
-              width="288"
-              height="144"
-              loading="lazy"
-              decoding="async"
-              referrerPolicy="no-referrer"
-              onLoad={(e) => {
-                (e.currentTarget as HTMLElement).classList.remove('opacity-0');
-              }}
-              onError={(e) => {
-                (e.currentTarget as HTMLElement).style.display = 'none';
-              }}
-              className="opacity-0 relative z-[5] h-full w-full object-cover transition-opacity duration-300 group-hover:scale-105"
-            />
-          )}
         </div>
         <div className="p-3">
           <h3 className="line-clamp-2 text-sm font-bold text-slate-100 group-hover:text-[#e5b94f]">{title}</h3>

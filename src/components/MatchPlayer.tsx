@@ -36,6 +36,7 @@ export default function MatchPlayer({ match }: Props) {
   const [streams, setStreams] = useState<StreamItem[]>([]);
   const [activeStream, setActiveStream] = useState<StreamItem | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [useSandbox, setUseSandbox] = useState(false);
 
   const [isFavorite, setIsFavorite] = useState(false);
   const [copiedToast, setCopiedToast] = useState(false);
@@ -301,12 +302,7 @@ export default function MatchPlayer({ match }: Props) {
                   width="800"
                   height="450"
                   referrerPolicy="strict-origin-when-cross-origin"
-                  className="opacity-0 absolute inset-0 h-full w-full object-cover blur-[1px] pointer-events-none transition-opacity duration-500"
-                  onLoad={(e) => {
-                    const el = e.currentTarget as HTMLElement;
-                    el.classList.remove('opacity-0');
-                    el.classList.add('opacity-30');
-                  }}
+                  className="opacity-25 absolute inset-0 h-full w-full object-cover blur-[1px] pointer-events-none transition-opacity duration-500"
                   onError={(e) => {
                     (e.currentTarget as HTMLElement).style.display = 'none';
                   }}
@@ -321,21 +317,73 @@ export default function MatchPlayer({ match }: Props) {
                 </span>
 
                 {/* Team Logos if Available */}
-                {match.teams && typeof match.teams === 'object' && 'home' in match.teams && match.teams.home?.badge && match.teams.away?.badge && (
+                {match.teams && typeof match.teams === 'object' && ('home' in match.teams || 'away' in match.teams) && (
                   <div className="my-3 flex items-center justify-center gap-6">
-                    <img
-                      src={match.teams.home.badge}
-                      alt={match.teams.home.name || ''}
-                      className="h-12 w-12 object-contain drop-shadow"
-                      onError={(e) => ((e.currentTarget as HTMLElement).style.display = 'none')}
-                    />
-                    <span className="text-xs font-black text-[#c9f36b]">VS</span>
-                    <img
-                      src={match.teams.away.badge}
-                      alt={match.teams.away.name || ''}
-                      className="h-12 w-12 object-contain drop-shadow"
-                      onError={(e) => ((e.currentTarget as HTMLElement).style.display = 'none')}
-                    />
+                    {/* Home Team */}
+                    <div className="flex flex-col items-center gap-1">
+                      {match.teams.home?.badge ? (
+                        <div className="relative flex h-12 w-12 items-center justify-center">
+                          <img
+                            src={getSafeThumbnailUrl(match.teams.home.badge)}
+                            alt={match.teams.home.name || ''}
+                            width="48"
+                            height="48"
+                            className="h-12 w-12 object-contain drop-shadow"
+                            onError={(e) => {
+                              const el = e.currentTarget as HTMLElement;
+                              el.style.display = 'none';
+                              const fallback = el.nextElementSibling as HTMLElement;
+                              if (fallback) fallback.classList.remove('hidden');
+                            }}
+                          />
+                          <div className="hidden flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-black text-[#c9f36b]">
+                            {(match.teams.home.name || 'H').slice(0, 3).toUpperCase()}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-black text-[#c9f36b]">
+                          {(match.teams.home?.name || 'H').slice(0, 3).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="line-clamp-1 max-w-[100px] text-[11px] font-bold text-slate-300">
+                        {match.teams.home?.name}
+                      </span>
+                    </div>
+
+                    <span className="text-xs font-black text-[#c9f36b] px-1.5 py-0.5 rounded bg-black/40 border border-white/5">
+                      VS
+                    </span>
+
+                    {/* Away Team */}
+                    <div className="flex flex-col items-center gap-1">
+                      {match.teams.away?.badge ? (
+                        <div className="relative flex h-12 w-12 items-center justify-center">
+                          <img
+                            src={getSafeThumbnailUrl(match.teams.away.badge)}
+                            alt={match.teams.away.name || ''}
+                            width="48"
+                            height="48"
+                            className="h-12 w-12 object-contain drop-shadow"
+                            onError={(e) => {
+                              const el = e.currentTarget as HTMLElement;
+                              el.style.display = 'none';
+                              const fallback = el.nextElementSibling as HTMLElement;
+                              if (fallback) fallback.classList.remove('hidden');
+                            }}
+                          />
+                          <div className="hidden flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-black text-[#c9f36b]">
+                            {(match.teams.away.name || 'A').slice(0, 3).toUpperCase()}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-black text-[#c9f36b]">
+                          {(match.teams.away?.name || 'A').slice(0, 3).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="line-clamp-1 max-w-[100px] text-[11px] font-bold text-slate-300">
+                        {match.teams.away?.name}
+                      </span>
+                    </div>
                   </div>
                 )}
 
@@ -433,7 +481,9 @@ export default function MatchPlayer({ match }: Props) {
                   className="h-full w-full border-0"
                   allowFullScreen
                   allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+                  {...(useSandbox
+                    ? { sandbox: 'allow-scripts allow-same-origin allow-forms allow-presentation allow-popups' }
+                    : {})}
                   referrerPolicy="strict-origin-when-cross-origin"
                   title={`${title} live stream`}
                   onLoad={() => setPlayerState('playing')}
@@ -464,11 +514,19 @@ export default function MatchPlayer({ match }: Props) {
               ))}
             </div>
 
-            <div className="inline-flex items-center gap-2 text-[10px] text-slate-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#c9f36b]"></span>
-              <span>{activeServerLabel}</span>
-              <span className="text-white/20">•</span>
-              <span className="text-slate-400">Sandboxed (Top-Level Redirects Blocked)</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setUseSandbox(!useSandbox)}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${
+                  useSandbox
+                    ? 'border border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
+                    : 'border border-amber-500/40 bg-amber-500/10 text-amber-300'
+                }`}
+                title={useSandbox ? 'Sandbox enabled. Click for direct compatibility mode.' : 'Direct playback mode. Click to enable sandboxing.'}
+              >
+                <span>{useSandbox ? '🛡️ Shielded Mode' : '⚡ Direct Play (No Sandbox)'}</span>
+              </button>
             </div>
           </div>
         )}
