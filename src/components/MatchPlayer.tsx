@@ -291,12 +291,48 @@ export default function MatchPlayer({ match }: Props) {
         <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-black">
           {/* STATE 1: IDLE - Transparent & Honest Match Kickoff Poster with Accessible Play Action */}
           {playerState === 'idle' && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-[#0e1716]/95 via-[#0a100f]/98 to-[#050807] px-6 text-center">
-              {/* Match Details */}
-              <div className="mb-6 max-w-lg">
+            <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden bg-[#0a100f] px-6 text-center">
+              {/* Match Poster / Thumbnail Backdrop */}
+              {match.poster && (
+                <img
+                  src={match.poster}
+                  alt=""
+                  width="800"
+                  height="450"
+                  referrerPolicy="no-referrer"
+                  className="absolute inset-0 h-full w-full object-cover opacity-30 blur-[1px] pointer-events-none"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLElement).style.display = 'none';
+                  }}
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#050807] via-[#050807]/80 to-[#050807]/60 pointer-events-none"></div>
+
+              {/* Match Details & Team Badges */}
+              <div className="relative z-10 mb-6 max-w-lg">
                 <span className="text-[11px] font-bold uppercase tracking-widest text-[#e5b94f]">
                   {league || match.category?.toUpperCase() || 'SPORTS'} · NEPAL STANDARD TIME
                 </span>
+
+                {/* Team Logos if Available */}
+                {match.teams && typeof match.teams === 'object' && 'home' in match.teams && match.teams.home?.badge && match.teams.away?.badge && (
+                  <div className="my-3 flex items-center justify-center gap-6">
+                    <img
+                      src={match.teams.home.badge}
+                      alt={match.teams.home.name || ''}
+                      className="h-12 w-12 object-contain drop-shadow"
+                      onError={(e) => ((e.currentTarget as HTMLElement).style.display = 'none')}
+                    />
+                    <span className="text-xs font-black text-[#c9f36b]">VS</span>
+                    <img
+                      src={match.teams.away.badge}
+                      alt={match.teams.away.name || ''}
+                      className="h-12 w-12 object-contain drop-shadow"
+                      onError={(e) => ((e.currentTarget as HTMLElement).style.display = 'none')}
+                    />
+                  </div>
+                )}
+
                 <h3 className="mt-1 text-xl sm:text-2xl font-black text-white">{title}</h3>
                 <p className="mt-2 text-xs font-semibold text-slate-400">
                   {isLive ? 'Broadcasting live now' : `Kickoff: ${timeOf(match, 'Asia/Kathmandu')}`}
@@ -308,7 +344,7 @@ export default function MatchPlayer({ match }: Props) {
                 type="button"
                 onClick={resolvePlayback}
                 aria-label={`Start broadcast stream for ${title}`}
-                className="group relative inline-flex items-center gap-3 rounded-2xl bg-[#c9f36b] px-6 py-3.5 text-sm font-black text-[#0a1110] shadow-lg shadow-[#c9f36b]/20 hover:bg-[#b8e25d] focus:outline-none focus:ring-4 focus:ring-[#c9f36b]/40 transition-all hover:scale-105 active:scale-95"
+                className="relative z-10 group inline-flex items-center gap-3 rounded-2xl bg-[#c9f36b] px-6 py-3.5 text-sm font-black text-[#0a1110] shadow-lg shadow-[#c9f36b]/20 hover:bg-[#b8e25d] focus:outline-none focus:ring-4 focus:ring-[#c9f36b]/40 transition-all hover:scale-105 active:scale-95"
               >
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0a1110] text-[#c9f36b] transition-transform group-hover:scale-110">
                   <svg className="h-4 w-4 ml-0.5" viewBox="0 0 24 24" fill="currentColor">
@@ -318,7 +354,7 @@ export default function MatchPlayer({ match }: Props) {
                 <span>Play Broadcast Stream</span>
               </button>
 
-              <p className="mt-4 text-[11px] text-slate-500">
+              <p className="relative z-10 mt-4 text-[11px] text-slate-400">
                 Sandboxed Secure Embed · Top-level ad-redirects blocked
               </p>
             </div>

@@ -49,7 +49,7 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
   const [strmfreeResults, espnResults, timstResults] = await Promise.allSettled([
     strmfree.fetchMatches(category, effectiveSignal),
     espn.fetchMatches(category, effectiveSignal),
-    category === 'football' ? timst.fetchMatches(category, effectiveSignal) : Promise.resolve([]),
+    timst.fetchMatches(category, effectiveSignal),
   ]);
 
   const matches: NormalizedMatch[] = [];
@@ -133,3 +133,4 @@ export async function resolveUnifiedPlayback(
 
   return provider.resolvePlayback(safeId, signal);
 }
+

@@ -36,3 +36,4 @@ export function logDiagnostic(event: DiagnosticLogEvent): void {
     }
   }
 }
+

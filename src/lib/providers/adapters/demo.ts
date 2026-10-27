@@ -42,3 +42,4 @@ export class DemoAdapter implements ProviderAdapter {
     };
   }
 }
+

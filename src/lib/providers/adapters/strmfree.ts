@@ -51,14 +51,14 @@ export class StrmFreeAdapter implements ProviderAdapter {
             const team1 = item.team1;
             const team2 = item.team2;
             const rawThumb = typeof item.thumbnail_url === 'string' ? item.thumbnail_url : '';
-            const poster = (team1?.logo && typeof team1.logo === 'string' && team1.logo.startsWith('https://'))
-              ? team1.logo
-              : (team2?.logo && typeof team2.logo === 'string' && team2.logo.startsWith('https://'))
-              ? team2.logo
-              : rawThumb.startsWith('https://')
+            const poster = rawThumb.startsWith('https://')
               ? rawThumb
               : rawThumb.startsWith('/')
               ? `${UPSTREAM}${rawThumb}`
+              : (team1?.logo && typeof team1.logo === 'string' && team1.logo.startsWith('https://'))
+              ? team1.logo
+              : (team2?.logo && typeof team2.logo === 'string' && team2.logo.startsWith('https://'))
+              ? team2.logo
               : undefined;
 
             matches.push({
@@ -238,3 +238,4 @@ export class StrmFreeAdapter implements ProviderAdapter {
     };
   }
 }
+

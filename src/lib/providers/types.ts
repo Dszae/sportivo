@@ -58,3 +58,4 @@ export interface ProviderAdapter {
   fetchMatches(category: Category, signal?: AbortSignal): Promise<NormalizedMatch[]>;
   resolvePlayback(id: string, signal?: AbortSignal): Promise<PlaybackResolution>;
 }
+
