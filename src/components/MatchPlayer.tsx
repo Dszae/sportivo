@@ -319,7 +319,7 @@ export default function MatchPlayer({ match }: Props) {
               </button>
 
               <p className="mt-4 text-[11px] text-slate-500">
-                Sandboxed embed · Top-level ad-redirects blocked
+                Direct player embed · Full compatibility mode
               </p>
             </div>
           )}
@@ -391,7 +391,6 @@ export default function MatchPlayer({ match }: Props) {
                   className="h-full w-full border-0"
                   allowFullScreen
                   allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
                   referrerPolicy="no-referrer"
                   title={`${title} live stream`}
                   onLoad={() => setPlayerState('playing')}
@@ -426,7 +425,7 @@ export default function MatchPlayer({ match }: Props) {
               <span className="h-1.5 w-1.5 rounded-full bg-[#c9f36b]"></span>
               <span>{activeServerLabel}</span>
               <span className="text-white/20">•</span>
-              <span className="text-slate-400">Sandboxed (No Top-Level Ad-Redirects)</span>
+              <span className="text-slate-400">Direct Player Embed</span>
             </div>
           </div>
         )}
