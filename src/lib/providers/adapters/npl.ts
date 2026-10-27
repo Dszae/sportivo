@@ -157,6 +157,38 @@ export const nplAdapter: ProviderAdapter = {
       (typeof import.meta !== 'undefined' && import.meta.env?.NPL_BACKEND_URL) ||
       'http://localhost:3000';
 
+    if (id.toLowerCase() === 'auto') {
+      try {
+        const autoRes = await fetch(`${backendBase.replace(/\/$/, '')}/api/stream/auto`, {
+          signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(6000)]) : AbortSignal.timeout(6000),
+        });
+        if (autoRes.ok) {
+          const body = await autoRes.json();
+          if (body && body.url) {
+            const safeUrl = sanitizePlaybackUrl(body.url);
+            if (safeUrl) {
+              const isNative = safeUrl.endsWith('.m3u8') || safeUrl.endsWith('.mp4');
+              return {
+                status: 'ready',
+                provider: `NPL Live Broadcast (${body.id || 'Auto'})`,
+                streams: [
+                  {
+                    embedUrl: safeUrl,
+                    hd: true,
+                    isNativeVideo: isNative,
+                    isSandboxedIframe: !isNative,
+                    language: 'Nepali / English',
+                  },
+                ],
+              };
+            }
+          }
+        }
+      } catch (err: any) {
+        logDiagnostic('npl', 'debug', `Backend /api/stream/auto lookup: ${err?.message}`);
+      }
+    }
+
     const candidateIds = [toNplBackendId(id), id];
 
     for (const testId of candidateIds) {
