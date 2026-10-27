@@ -214,6 +214,13 @@ export default function MatchPlayer({ match }: Props) {
     }
   }
 
+  // Auto-connect to live stream if match is live or has active stream source
+  useEffect(() => {
+    if ((isLive || currentSource?.source === 'npl') && sources.length > 0 && playerState === 'idle' && !isResolvingRef.current) {
+      resolvePlayback();
+    }
+  }, [isLive, currentSource, sources.length, playerState]);
+
   const handleSourceChange = (idx: number) => {
     setSelectedSourceIndex(idx);
     setPlayerState('idle');
@@ -460,7 +467,7 @@ export default function MatchPlayer({ match }: Props) {
               </div>
 
               {/* DYNAMIC ACTION: Live Play vs Scheduled Future Notice */}
-              {isLive ? (
+              {isLive || sources.length > 0 ? (
                 <button
                   type="button"
                   onClick={resolvePlayback}
@@ -472,7 +479,7 @@ export default function MatchPlayer({ match }: Props) {
                       <polygon points="5 3 19 12 5 21 5 3"></polygon>
                     </svg>
                   </span>
-                  <span>Play Live Broadcast Stream</span>
+                  <span>{isLive ? 'Play Live Broadcast Stream' : 'Watch Stream Feed'}</span>
                 </button>
               ) : (
                 <div className="relative z-10 flex flex-col items-center max-w-md rounded-2xl border border-white/10 bg-black/75 p-5 backdrop-blur-md shadow-2xl">

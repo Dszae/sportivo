@@ -180,7 +180,17 @@ export function slugify(value: string) {
 }
 
 export function statusOf(match: Match) {
-  // 1. Timestamp-based calculation is ground truth: a fixture in the future can NEVER be live
+  // 1. Explicit status from upstream or tournament ground truth
+  const statusStr = String(match.status || '').toLowerCase().trim();
+  const timeStr = String(match.time || '').toLowerCase().trim();
+  if (['live', 'inplay', 'in-play', 'ongoing'].includes(statusStr) || timeStr === 'live') {
+    return 'Live';
+  }
+  if (['finished', 'complete', 'completed', 'ended', 'result', 'final'].includes(statusStr)) {
+    return 'Final';
+  }
+
+  // 2. Timestamp-based calculation:
   const rawDate = match.date || match.startTime || match.start_at || match.timestamp;
   if (rawDate) {
     const start = typeof rawDate === 'number' ? rawDate : new Date(rawDate).getTime();
@@ -190,24 +200,19 @@ export function statusOf(match: Match) {
       if (start - now > 10 * 60 * 1000) {
         return 'Upcoming';
       }
-      // Active broadcast: 10 minutes prior to kickoff up to 3.5 hours after kickoff
-      if (now >= start - 10 * 60 * 1000 && now <= start + 3.5 * 60 * 60 * 1000) {
+      // Cricket matches last up to 4.5 hours; football up to 2.5 hours
+      const maxDuration = match.category === 'cricket' ? 4.5 * 60 * 60 * 1000 : 3.5 * 60 * 60 * 1000;
+      if (now >= start - 10 * 60 * 1000 && now <= start + maxDuration) {
         return 'Live';
       }
-      if (now > start + 3.5 * 60 * 60 * 1000) {
+      if (now > start + maxDuration) {
         return 'Final';
       }
     }
   }
 
-  // 2. 24/7 channels or permanent continuous feeds (e.g. Willow Cricket with date <= 0)
+  // 3. 24/7 channels or permanent continuous feeds (e.g. Willow Cricket with date <= 0)
   if (typeof match.date === 'number' && match.date <= 0) return 'Live';
-
-  // 3. Fallback to upstream status string if no timestamp available
-  const status = String(match.status || '').toLowerCase();
-  const time = String(match.time || '').toLowerCase();
-  if (['live', 'inplay', 'in-play', 'ongoing'].includes(status) || time === 'live') return 'Live';
-  if (['finished', 'complete', 'completed', 'ended', 'result'].includes(status)) return 'Final';
 
   return 'Upcoming';
 }
