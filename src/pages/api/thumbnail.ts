@@ -2,12 +2,6 @@ import type { APIRoute } from 'astro';
 
 export const prerender = false;
 
-// 1x1 transparent PNG fallback if an image fails or is missing
-const TRANSPARENT_PNG = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
-  'base64'
-);
-
 function isSafePublicHost(hostname: string): boolean {
   const host = hostname.toLowerCase().trim();
   if (!host) return false;
@@ -37,9 +31,9 @@ export const GET: APIRoute = async ({ request }) => {
   const targetUrl = url.searchParams.get('url');
 
   if (!targetUrl) {
-    return new Response(TRANSPARENT_PNG, {
-      status: 200,
-      headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' },
+    return new Response('Missing url parameter', {
+      status: 400,
+      headers: { 'Content-Type': 'text/plain' },
     });
   }
 
@@ -47,40 +41,41 @@ export const GET: APIRoute = async ({ request }) => {
   try {
     parsed = new URL(targetUrl);
   } catch {
-    return new Response(TRANSPARENT_PNG, {
-      status: 200,
-      headers: { 'Content-Type': 'image/png' },
+    return new Response('Invalid url', {
+      status: 400,
+      headers: { 'Content-Type': 'text/plain' },
     });
   }
 
-  if (parsed.protocol !== 'https:' || !isSafePublicHost(parsed.hostname)) {
-    return new Response(TRANSPARENT_PNG, {
-      status: 200,
-      headers: { 'Content-Type': 'image/png' },
+  if ((parsed.protocol !== 'https:' && parsed.protocol !== 'http:') || !isSafePublicHost(parsed.hostname)) {
+    return new Response('Disallowed host or protocol', {
+      status: 403,
+      headers: { 'Content-Type': 'text/plain' },
     });
   }
 
   try {
     const upstreamRes = await fetch(parsed.toString(), {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
       },
-      signal: AbortSignal.timeout(4500),
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!upstreamRes.ok) {
-      return new Response(TRANSPARENT_PNG, {
-        status: 200,
-        headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600' },
+      return new Response('Upstream returned error', {
+        status: 404,
+        headers: { 'Content-Type': 'text/plain', 'Cache-Control': 'public, max-age=300' },
       });
     }
 
     const contentType = upstreamRes.headers.get('content-type') || 'image/jpeg';
     if (!contentType.toLowerCase().startsWith('image/')) {
-      return new Response(TRANSPARENT_PNG, {
-        status: 200,
-        headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600' },
+      return new Response('Not an image', {
+        status: 404,
+        headers: { 'Content-Type': 'text/plain', 'Cache-Control': 'public, max-age=300' },
       });
     }
 
@@ -95,9 +90,9 @@ export const GET: APIRoute = async ({ request }) => {
       },
     });
   } catch {
-    return new Response(TRANSPARENT_PNG, {
-      status: 200,
-      headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600' },
+    return new Response('Failed to retrieve image', {
+      status: 404,
+      headers: { 'Content-Type': 'text/plain', 'Cache-Control': 'public, max-age=60' },
     });
   }
 };

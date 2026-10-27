@@ -380,9 +380,9 @@ export function getSafeThumbnailUrl(url: string | undefined): string | undefined
       ) {
         return undefined;
       }
-      // Route all external images through the local /api/thumbnail proxy
+      // Route all external images through the local /api/thumbnail/ proxy
       // This prevents adblockers, Brave Shields, and ISP DNS filtering from blocking team logos and posters
-      return `/api/thumbnail?url=${encodeURIComponent(trimmed)}`;
+      return `/api/thumbnail/?url=${encodeURIComponent(trimmed)}`;
     } catch {
       return undefined;
     }
