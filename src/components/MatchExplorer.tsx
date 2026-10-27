@@ -504,38 +504,55 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
         </div>
       ) : (
         <div className="space-y-8">
-          {/* Live Matches Section (Only rendered when there are active live streams) */}
-          {liveMatches.length > 0 && (
+          {/* Live Matches Section — Top priority */}
+          {liveMatches.length > 0 ? (
             <div>
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="h-4 w-1.5 rounded-full bg-red-500 shadow-sm shadow-red-500/50" aria-hidden="true" />
-                  <h3 className="text-xs font-black uppercase tracking-wider text-red-400">
-                    Live Broadcasts Now
+                  <h3 className="text-xs font-black uppercase tracking-wider text-red-400 flex items-center gap-2">
+                    <span>LIVE BROADCASTS NOW</span>
+                    <span className="inline-block h-2 w-2 rounded-full bg-red-500 animate-ping" aria-hidden="true" />
                   </h3>
                 </div>
-                <span className="text-[11px] font-bold text-slate-400">{liveMatches.length} Active</span>
+                <span className="rounded-full bg-red-500/15 border border-red-500/30 px-2.5 py-0.5 text-[11px] font-black text-red-400">
+                  {liveMatches.length} Playing Live
+                </span>
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {liveMatches.map((match, index) => renderCard(match, index))}
               </div>
+            </div>
+          ) : (
+            /* User Requirement: When no live match is happening, show clear message at top of desk */
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#070d0c]/80 px-4 py-3 text-xs text-slate-300 shadow-inner">
+              <div className="flex items-center gap-2.5">
+                <span className="h-2 w-2 rounded-full bg-slate-500 shrink-0" aria-hidden="true" />
+                <span className="font-semibold text-slate-200">
+                  {selectedLeague !== 'All'
+                    ? `No matches currently playing live in ${selectedLeague}.`
+                    : `No matches broadcasting live right now in ${categoryLabel}.`}
+                </span>
+              </div>
+              <span className="text-[11px] text-[#c9f36b] font-medium flex items-center gap-1 shrink-0">
+                <span>Upcoming kickoff fixtures scheduled below (NST)</span>
+                <span aria-hidden="true">&darr;</span>
+              </span>
             </div>
           )}
 
           {/* Upcoming Fixtures Section */}
           {upcomingMatches.length > 0 && (
             <div>
-              {liveMatches.length > 0 && (
-                <div className="mb-3 flex items-center justify-between pt-2">
-                  <div className="flex items-center gap-2">
-                    <span className="h-4 w-1.5 rounded-full bg-[#c9f36b] shadow-sm shadow-[#c9f36b]/50" aria-hidden="true" />
-                    <h3 className="text-xs font-black uppercase tracking-wider text-[#c9f36b]">
-                      Scheduled Kickoffs (NST)
-                    </h3>
-                  </div>
-                  <span className="text-[11px] font-bold text-slate-400">{upcomingMatches.length} Fixtures</span>
+              <div className="mb-3 flex items-center justify-between pt-1">
+                <div className="flex items-center gap-2">
+                  <span className="h-4 w-1.5 rounded-full bg-[#c9f36b] shadow-sm shadow-[#c9f36b]/50" aria-hidden="true" />
+                  <h3 className="text-xs font-black uppercase tracking-wider text-[#c9f36b]">
+                    Scheduled Kickoffs (NST)
+                  </h3>
                 </div>
-              )}
+                <span className="text-[11px] font-bold text-slate-400">{upcomingMatches.length} Fixtures</span>
+              </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {displayedUpcoming.map((match, index) => renderCard(match, index))}
               </div>
