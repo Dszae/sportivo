@@ -1,0 +1,159 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import NplSchedule from '../../components/NplSchedule';
+
+const title = 'Nepal Premier League (NPL) 2026 Schedule, Live Scores & Streams — Sportivo';
+const description = 'Complete Nepal Premier League (NPL) 2026 match schedule in Nepal Standard Time (NST). Follow today\'s and upcoming fixtures, live scores, team logos, and authorized live streams.';
+const canonical = 'https://sportivo.dipeshsapkota7.com.np/npl/';
+
+const nplFaqs = [
+  {
+    question: 'Where is the Nepal Premier League (NPL) 2026 being held?',
+    answer: 'All Nepal Premier League matches are hosted at the Tribhuvan University International Cricket Ground in Kirtipur, Kathmandu, Nepal.',
+  },
+  {
+    question: 'What time are NPL matches played in Nepal Standard Time (NST)?',
+    answer: 'Day matches kick off at 12:30 PM NST (06:45 UTC), while evening / afternoon matches start at 5:00 PM NST (11:15 UTC).',
+  },
+  {
+    question: 'Which teams are participating in NPL 2026?',
+    answer: 'Eight franchise teams compete in the NPL: Biratnagar Kings, Chitwan Rhinos, Janakpur Bolts, Karnali Yaks, Kathmandu Gurkhas, Lumbini Lions, Pokhara Avengers, and Sudurpaschim Royals.',
+  },
+  {
+    question: 'Where can I watch NPL live streams in Nepal and internationally?',
+    answer: 'In Nepal, official broadcasts are televised on Action Sports HD and streamed via DishHome and NetTV. International coverage is provided via licensed digital feeds and YouTube official embeds when available.',
+  },
+  {
+    question: 'How does Sportivo calculate today’s and upcoming NPL matches?',
+    answer: 'Sportivo synchronizes fixtures directly with official tournament data and calculates dates and times strictly in Asia/Kathmandu (UTC+5:45), ensuring accurate match tracking without timezone discrepancies.',
+  },
+];
+
+const nplJsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'SportsEvent',
+      '@id': `${canonical}#event`,
+      'name': 'Nepal Premier League 2026',
+      'description': description,
+      'url': canonical,
+      'startDate': '2026-10-26T11:15:00+05:45',
+      'endDate': '2026-11-21T21:00:00+05:45',
+      'location': {
+        '@type': 'Place',
+        'name': 'Tribhuvan University International Cricket Ground',
+        'address': {
+          '@type': 'PostalAddress',
+          'addressLocality': 'Kirtipur',
+          'addressRegion': 'Kathmandu',
+          'addressCountry': 'NP'
+        }
+      },
+      'organizer': {
+        '@type': 'SportsOrganization',
+        'name': 'Nepal Premier League',
+        'url': 'https://nepalpremierleague.org'
+      }
+    },
+    {
+      '@type': 'FAQPage',
+      '@id': `${canonical}#faq`,
+      'mainEntity': nplFaqs.map((faq) => ({
+        '@type': 'Question',
+        'name': faq.question,
+        'acceptedAnswer': {
+          '@type': 'Answer',
+          'text': faq.answer,
+        },
+      })),
+    },
+  ],
+};
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonical={canonical}
+  keywords="Nepal Premier League, NPL 2026, NPL schedule, NPL live scores, NPL live streaming, Biratnagar Kings, Chitwan Rhinos, Janakpur Bolts, Karnali Yaks, Kathmandu Gurkhas, Lumbini Lions, Pokhara Avengers, Sudurpaschim Royals, TU Cricket Ground, Action Sports HD, NetTV"
+>
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={JSON.stringify(nplJsonLd)} />
+  </Fragment>
+
+  <SiteHeader activeCategory="npl" />
+
+  <main class="site-shell min-h-screen text-slate-100">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8 pb-24">
+      {/* Breadcrumb Navigation */}
+      <nav aria-label="Breadcrumb" class="mb-6 flex items-center gap-2 text-xs text-slate-400">
+        <a href="/" class="hover:text-white transition">Home</a>
+        <span aria-hidden="true">/</span>
+        <a href="/cricket/" class="hover:text-white transition">Cricket</a>
+        <span aria-hidden="true">/</span>
+        <span class="text-[#c9f36b] font-semibold" aria-current="page">NPL 2026</span>
+      </nav>
+
+      {/* Main NPL Schedule Desk Component */}
+      <section class="rounded-3xl border border-white/[0.08] bg-[#0a0f0e]/60 p-6 sm:p-8 lg:p-10 backdrop-blur-sm shadow-2xl shadow-black/40">
+        <NplSchedule client:load />
+      </section>
+
+      {/* NPL Tournament Overview & Info */}
+      <section class="mt-16 border-t border-white/5 pt-12">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="rounded-2xl border border-white/10 bg-[#111a19] p-6 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-[#e5b94f]">Venue Information</span>
+            <h3 class="mt-2 text-base font-bold text-white">TU International Cricket Ground</h3>
+            <p class="mt-2 text-xs leading-relaxed text-slate-400">
+              Situated in Kirtipur, Kathmandu, the TU Cricket Ground is Nepal's premier international cricket facility hosting all 32 matches of NPL 2026.
+            </p>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-[#111a19] p-6 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-[#e5b94f]">Match Times (NST)</span>
+            <h3 class="mt-2 text-base font-bold text-white">12:30 PM &amp; 5:00 PM Kickoffs</h3>
+            <p class="mt-2 text-xs leading-relaxed text-slate-400">
+              Doubleheader matchdays feature an afternoon game at 12:30 PM NST followed by a twilight match under lights at 5:00 PM NST.
+            </p>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-[#111a19] p-6 shadow-sm">
+            <span class="text-xs font-bold uppercase tracking-wider text-[#e5b94f]">Broadcasting Rights</span>
+            <h3 class="mt-2 text-base font-bold text-white">Action Sports HD &amp; NetTV</h3>
+            <p class="mt-2 text-xs leading-relaxed text-slate-400">
+              Authorized broadcast signals in Nepal are distributed via Action Sports HD, NetTV, and DishHome with verified streaming embed integration.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQs for NPL */}
+      <section class="mt-16 border-t border-white/5 pt-12" aria-labelledby="npl-faq-heading">
+        <div class="max-w-3xl">
+          <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#e5b94f]">Information &amp; Guidance</p>
+          <h2 id="npl-faq-heading" class="mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl">
+            Nepal Premier League FAQ
+          </h2>
+          <p class="mt-2 text-sm text-slate-300">
+            Everything you need to know about NPL 2026 fixtures, timings, and streaming coverage.
+          </p>
+        </div>
+
+        <div class="mt-8 space-y-4">
+          {nplFaqs.map((faq) => (
+            <div class="rounded-2xl border border-white/10 bg-[#111a19] p-6 shadow-sm">
+              <h3 class="text-base font-bold text-white">{faq.question}</h3>
+              <p class="mt-2 text-sm leading-relaxed text-slate-300">{faq.answer}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <SiteFooter />
+</BaseLayout>

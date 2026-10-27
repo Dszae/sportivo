@@ -169,16 +169,22 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     </script>
 
     <script is:inline>
-      if (typeof window !== 'undefined' && 'caches' in window) {
-        // Automatically evict stale v1 caches to unblock normal browser windows
-        caches.delete('sportivo-pwa-v1').catch(() => {});
-      }
-      if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').then((reg) => {
-            reg.update().catch(() => {});
+      if (typeof window !== 'undefined') {
+        // Unregister service workers and purge stale cache storage so normal tabs never experience image breakage or caching traps
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then((registrations) => {
+            for (const registration of registrations) {
+              registration.unregister();
+            }
           }).catch(() => {});
-        });
+        }
+        if ('caches' in window) {
+          caches.keys().then((keys) => {
+            for (const key of keys) {
+              caches.delete(key);
+            }
+          }).catch(() => {});
+        }
       }
     </script>
   </body>

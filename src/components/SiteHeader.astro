@@ -2,7 +2,7 @@
 import { categories, type Category } from '../lib/sportivo';
 
 interface Props {
-  activeCategory?: Category | 'creator' | 'api-docs' | 'dashboard';
+  activeCategory?: Category | 'creator' | 'api-docs' | 'dashboard' | 'npl';
 }
 
 const { activeCategory } = Astro.props;
@@ -53,6 +53,22 @@ const { activeCategory } = Astro.props;
           <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
         </svg>
         <span itemprop="name">My Watchlist</span>
+      </a>
+
+      <a
+        href="/npl/"
+        itemprop="url"
+        aria-current={activeCategory === 'npl' ? 'page' : undefined}
+        class:list={[
+          "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-black transition-all border",
+          activeCategory === 'npl'
+            ? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-950/50'
+            : 'border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-white'
+        ]}
+        title="Nepal Premier League 2026 Schedule & Live Stream"
+      >
+        <span class="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" aria-hidden="true"></span>
+        <span itemprop="name">NPL 2026</span>
       </a>
 
       <a

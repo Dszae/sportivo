@@ -88,6 +88,72 @@ export default function MatchPlayer({ match }: Props) {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
+  // Reusable HLS & HTML5 Video initialization with hls.js
+  useEffect(() => {
+    let hlsInstance: any = null;
+
+    if ((playerState === 'ready' || playerState === 'playing') && activeStream?.isNativeVideo && videoRef.current) {
+      const video = videoRef.current;
+      const url = activeStream.embedUrl;
+
+      if (url.includes('.m3u8')) {
+        import('hls.js').then(({ default: Hls }) => {
+          if (Hls.isSupported()) {
+            const hls = new Hls({
+              enableWorker: true,
+              lowLatencyMode: true,
+            });
+            hlsInstance = hls;
+            hls.loadSource(url);
+            hls.attachMedia(video);
+
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+              setPlayerState('playing');
+              video.play().catch(() => {});
+            });
+
+            hls.on(Hls.Events.ERROR, (_event, data) => {
+              if (data.fatal) {
+                switch (data.type) {
+                  case Hls.ErrorTypes.NETWORK_ERROR:
+                    hls.startLoad();
+                    break;
+                  case Hls.ErrorTypes.MEDIA_ERROR:
+                    hls.recoverMediaError();
+                    break;
+                  default:
+                    hls.destroy();
+                    setPlayerState('failed');
+                    setErrorMessage('HLS broadcast feed is currently offline or unreachable.');
+                    break;
+                }
+              }
+            });
+          } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = url;
+            video.play().catch(() => {});
+          } else {
+            setPlayerState('unsupported');
+            setErrorMessage('Your browser does not support HLS video streaming.');
+          }
+        }).catch(() => {
+          setPlayerState('failed');
+          setErrorMessage('Could not initialize video streaming engine.');
+        });
+      } else {
+        video.src = url;
+        video.play().catch(() => {});
+      }
+    }
+
+    return () => {
+      if (hlsInstance) {
+        hlsInstance.destroy();
+        hlsInstance = null;
+      }
+    };
+  }, [activeStream, playerState]);
+
   // Resolves playback signals on explicit user action
   async function resolvePlayback() {
     if (!currentSource?.source || !currentSource.id) {
@@ -507,16 +573,17 @@ export default function MatchPlayer({ match }: Props) {
                 <video
                   ref={videoRef}
                   controls
-                  autoPlay
-                  className="h-full w-full"
-                  src={activeStream.embedUrl}
                   playsInline
+                  className="h-full w-full"
+                  src={activeStream.embedUrl.includes('.m3u8') ? undefined : activeStream.embedUrl}
                   onLoadedMetadata={() => setPlayerState('playing')}
                   onPlaying={() => setPlayerState('playing')}
                   onWaiting={() => {}}
                   onError={() => {
-                    setPlayerState('failed');
-                    setErrorMessage('Video playback error on this server.');
+                    if (!activeStream.embedUrl.includes('.m3u8')) {
+                      setPlayerState('failed');
+                      setErrorMessage('Video playback error on this server.');
+                    }
                   }}
                 ></video>
               ) : (

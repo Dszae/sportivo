@@ -5,6 +5,7 @@ import { TimstAdapter } from './adapters/timst';
 import { PpvAdapter } from './adapters/ppv';
 import { DaddyLiveAdapter } from './adapters/daddylive';
 import { DemoAdapter } from './adapters/demo';
+import { nplAdapter } from './adapters/npl';
 import { sanitizeIdentifier } from './allowlist';
 import { logDiagnostic } from './diagnostics';
 
@@ -13,6 +14,7 @@ export * from './allowlist';
 export * from './diagnostics';
 
 const adapters: Record<string, ProviderAdapter> = {
+  npl: nplAdapter,
   ppv: new PpvAdapter(),
   strmfree: new StrmFreeAdapter(),
   espn: new EspnAdapter(),
@@ -47,14 +49,19 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
   const ppv = adapters.ppv;
   const strmfree = adapters.strmfree;
   const espn = adapters.espn;
+  const npl = adapters.npl;
 
-  // Ingest PPV (primary official stream provider) alongside StrmFree and ESPN.
-  // Note: 24/7 channel adapters (timst) are strictly excluded from match-wise listings.
-  const [ppvResults, strmfreeResults, espnResults] = await Promise.allSettled([
+  // Ingest PPV, NPL, StrmFree, and ESPN
+  const promises: Promise<any>[] = [
     ppv.fetchMatches(category, effectiveSignal),
     strmfree.fetchMatches(category, effectiveSignal),
     espn.fetchMatches(category, effectiveSignal),
-  ]);
+  ];
+  if (category === 'cricket') {
+    promises.push(npl.fetchMatches(category, effectiveSignal));
+  }
+
+  const [ppvResults, strmfreeResults, espnResults, nplResults] = await Promise.allSettled(promises);
 
   const matches: NormalizedMatch[] = [];
   const seenSlugs = new Set<string>();
@@ -134,7 +141,12 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
     }
   }
 
-  // 1. Ingest PPV (primary provider: verified matches, 16:9 posters, and clean embeds)
+  // 1. Ingest NPL (top priority for cricket fixtures in Nepal)
+  if (category === 'cricket' && nplResults && nplResults.status === 'fulfilled') {
+    ingest(nplResults.value);
+  }
+
+  // 2. Ingest PPV (primary official stream provider: verified matches, 16:9 posters, and clean embeds)
   if (ppvResults.status === 'fulfilled') {
     ingest(ppvResults.value);
   }

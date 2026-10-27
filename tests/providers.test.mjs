@@ -123,3 +123,33 @@ test('15. PPV Provider allowlist and domain validation', () => {
   );
 });
 
+test('16. NPL Provider adapter returns verified Nepal Premier League fixtures', async () => {
+  const npl = getProvider('npl');
+  assert.ok(npl, 'npl adapter should be registered');
+  const matches = await npl.fetchMatches('cricket');
+  assert.ok(Array.isArray(matches));
+  assert.ok(matches.length >= 28, 'Should have complete NPL tournament schedule');
+  
+  // Verify team names and structure
+  const match1 = matches.find((m) => m.id === 'npl26-01');
+  assert.ok(match1);
+  assert.equal(match1.competition, 'Nepal Premier League');
+  assert.equal(match1.league, 'NPL');
+  assert.equal(match1.status, 'Final'); // Completed Match 1
+});
+
+test('17. NPL broadcast authorization and stream resolution', async () => {
+  const npl = getProvider('npl');
+  assert.ok(npl);
+  // Match 3 is currently LIVE with authorized official broadcast
+  const resolution = await npl.resolvePlayback('npl26-03');
+  assert.equal(resolution.status, 'ready');
+  assert.ok(resolution.streams.length > 0);
+  assert.ok(resolution.streams[0].embedUrl.includes('youtube-nocookie.com'));
+
+  // Future match without broadcast should return unavailable without inventing streams
+  const unmapped = await npl.resolvePlayback('npl26-28');
+  assert.equal(unmapped.status, 'unavailable');
+  assert.equal(unmapped.streams.length, 0);
+});
+

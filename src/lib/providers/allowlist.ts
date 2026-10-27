@@ -19,6 +19,12 @@ export const APPROVED_PLAYBACK_DOMAINS = [
   'ppv.ms',
   'ppv.bi',
   'ppv.ug',
+  'youtube.com',
+  'youtube-nocookie.com',
+  'nettvstreamz.com',
+  'rumble.com',
+  'rumble.cloud',
+  'nepalpremierleague.org',
 ] as const;
 
 export function isAllowedPlaybackDomain(hostname: string): boolean {
