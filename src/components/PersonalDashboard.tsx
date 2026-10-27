@@ -272,26 +272,30 @@ export default function PersonalDashboard({ allMatchesByCategory }: Props) {
               {isLive ? 'LIVE' : status === 'Final' ? 'Final' : formattedTime}
             </span>
 
-            {poster ? (
+            <div className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm font-bold text-slate-300">
+              <span>{first}</span>
+              {second && (
+                <>
+                  <span className="mx-2 text-[#c9f36b]">vs</span>
+                  <span>{second}</span>
+                </>
+              )}
+            </div>
+
+            {poster && (
               <img
                 src={poster}
-                alt={`${title} live stream broadcast banner`}
+                alt=""
                 width="288"
                 height="144"
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                className="relative z-[5] h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
                 decoding="async"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = 'none';
+                }}
               />
-            ) : (
-              <div className="px-4 text-center text-sm font-bold text-slate-300">
-                <span>{first}</span>
-                {second && (
-                  <>
-                    <span className="mx-2 text-[#c9f36b]">vs</span>
-                    <span>{second}</span>
-                  </>
-                )}
-              </div>
             )}
           </div>
 

@@ -191,26 +191,29 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
             {isLive && <span className="inline-block h-1.5 w-1.5 animate-ping rounded-full bg-white" aria-hidden="true"></span>}
             {isLive ? 'LIVE' : status === 'Final' ? 'Final' : formattedTime}
           </span>
-          {poster ? (
+          <div className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm font-bold text-slate-300">
+            <span>{first}</span>
+            {second && (
+              <>
+                <span className="mx-2 text-[#c9f36b]">vs</span>
+                <span>{second}</span>
+              </>
+            )}
+          </div>
+          {poster && (
             <img
               src={poster}
-              alt={`${title} live stream broadcast banner`}
+              alt=""
               width="288"
               height="144"
               loading="lazy"
               decoding="async"
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                (e.currentTarget as HTMLElement).style.display = 'none';
+              }}
+              className="relative z-[5] h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
-          ) : (
-            <div className="px-4 text-center text-sm font-bold text-slate-300">
-              <span>{first}</span>
-              {second && (
-                <>
-                  <span className="mx-2 text-[#c9f36b]">vs</span>
-                  <span>{second}</span>
-                </>
-              )}
-            </div>
           )}
         </div>
         <div className="p-3">

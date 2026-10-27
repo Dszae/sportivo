@@ -369,11 +369,15 @@ export async function fetchMatches(category: Category, signal?: AbortSignal): Pr
           league: item.league,
           status: 'live',
           date: item.match_timestamp ? item.match_timestamp * 1000 : Date.now(),
-          poster: item.thumbnail_url
+          poster: (team1?.logo && team1.logo.startsWith('http'))
+            ? team1.logo
+            : (team2?.logo && team2.logo.startsWith('http'))
+            ? team2.logo
+            : item.thumbnail_url
             ? item.thumbnail_url.startsWith('http')
               ? item.thumbnail_url
               : `${upstream}${item.thumbnail_url}`
-            : team1?.logo || undefined,
+            : undefined,
           teams:
             team1 && team2
               ? {
@@ -423,7 +427,11 @@ export async function fetchMatches(category: Category, signal?: AbortSignal): Pr
             league: item.competition,
             status,
             date: matchTimeMs,
-            poster: team1?.logo || team2?.logo || undefined,
+            poster: (team1?.logo && team1.logo.startsWith('http'))
+              ? team1.logo
+              : (team2?.logo && team2.logo.startsWith('http'))
+              ? team2.logo
+              : undefined,
             teams:
               team1 && team2
                 ? {
