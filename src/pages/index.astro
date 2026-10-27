@@ -333,33 +333,8 @@ const homepageJsonLd = {
   <SiteHeader />
 
   <main class="site-shell min-h-screen text-slate-100">
-    <!-- Hero Showcase Section -->
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 pt-6 sm:pt-8">
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <a
-          href="/about-dipesh-sapkota/"
-          class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-300 hover:border-[#c9f36b]/40 hover:text-[#c9f36b] transition-all shadow-sm"
-          title="Learn more about the creator of Sportivo"
-        >
-          <img
-            src="/dipesh-sapkota-profile.webp"
-            alt="Creator profile"
-            class="h-4 w-4 rounded-full object-cover border border-[#c9f36b]"
-            width="16"
-            height="16"
-            loading="eager"
-          />
-          <span>Sportivo by Dipesh Sapkota</span>
-        </a>
-        <div class="flex items-center gap-2 text-xs font-bold text-[#e5b94f]">
-          <span class="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>Live Fixture Desk · Nepal Standard Time (UTC+5:45)</span>
-        </div>
-      </div>
-
-      <!-- Rotating Sports Hero with Halftone Texture -->
-      <HeroShowcase client:load />
-    </div>
+    <!-- Full-Width Immersive Hero Showcase -->
+    <HeroShowcase client:load />
 
     <!-- Fixture Explorers -->
     <section class="mx-auto max-w-7xl space-y-16 px-6 pb-20" aria-label="Sports fixtures categories">

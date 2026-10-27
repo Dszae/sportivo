@@ -49,111 +49,138 @@ export default function HeroShowcase() {
   return (
     <section
       aria-label="Sportivo — Live Sports Streaming"
-      className="relative mx-auto mb-12 max-w-7xl overflow-hidden rounded-3xl border border-white/10 bg-[#080c0b] shadow-2xl"
+      className="relative w-full overflow-hidden bg-[#080a0b]"
     >
-      <div className="relative min-h-[440px] w-full sm:min-h-[480px] lg:min-h-[520px]">
-        {/* All backgrounds pre-rendered; active one is visible with zoom-in animation */}
+      {/* Full-bleed Edge-to-Edge Background with Ken Burns Zoom & Subtle Opacity */}
+      <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden" aria-hidden="true">
         {BG_IMAGES.map((url, idx) => (
           <div
             key={idx}
-            aria-hidden="true"
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${idx === bgIndex ? 'opacity-100 z-0' : 'opacity-0 -z-10'}`}
+            className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${
+              idx === bgIndex ? 'opacity-100 z-0' : 'opacity-0 -z-10'
+            }`}
           >
             <img
               src={url}
               alt=""
-              width="1600"
-              height="800"
+              width="1920"
+              height="1080"
               loading={idx === 0 ? 'eager' : 'lazy'}
               decoding="async"
               className={`h-full w-full object-cover object-center ${idx === bgIndex ? 'img-zoom-in' : ''}`}
-              style={{ filter: 'brightness(0.45) contrast(1.05)', opacity: 0.85 }}
+              style={{ filter: 'brightness(0.35) contrast(1.1)', opacity: 0.4 }}
             />
           </div>
         ))}
 
-        {/* Gradient overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#080c0b]/92 via-[#080c0b]/50 to-transparent" aria-hidden="true" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#080c0b]/95 via-transparent to-transparent" aria-hidden="true" />
+        {/* Ambient Top Vignette */}
+        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#080a0b]/90 via-[#080a0b]/40 to-transparent"></div>
 
-        {/* Content Layer */}
-        <div className="relative z-10 flex min-h-[440px] sm:min-h-[480px] lg:min-h-[520px] flex-col justify-between p-6 sm:p-10 lg:p-14">
+        {/* Horizontal Edge Vignettes for Text Contrast */}
+        <div className="absolute inset-y-0 left-0 w-3/5 bg-gradient-to-r from-[#080a0b]/95 via-[#080a0b]/60 to-transparent"></div>
+        <div className="absolute inset-y-0 right-0 w-1/4 bg-gradient-to-l from-[#080a0b]/60 to-transparent"></div>
 
-          {/* Top Badge */}
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#c9f36b]/30 bg-[#c9f36b]/10 px-3.5 py-1.5 text-[11px] font-black uppercase tracking-widest text-[#c9f36b]">
-              <span className="h-1.5 w-1.5 animate-ping rounded-full bg-[#c9f36b]" aria-hidden="true" />
-              Sportivo
-            </span>
-            <span className="rounded-full border border-white/10 bg-black/40 px-3 py-1 text-[11px] font-bold text-slate-300 backdrop-blur-sm">
-              Nepal Standard Time (NST · UTC+5:45)
-            </span>
+        {/* Seamless Bottom Gradient Blend into Pure Site Black */}
+        <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#080a0b] via-[#080a0b]/80 to-transparent"></div>
+      </div>
+
+      {/* Content Container (Constrained & Aligned with Grid) */}
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6 pb-16 sm:pt-8 sm:pb-20 lg:pt-10 lg:pb-24">
+        {/* Top Meta Bar */}
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+          <a
+            href="/about-dipesh-sapkota/"
+            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3.5 py-1.5 text-xs font-semibold text-slate-300 backdrop-blur-md hover:border-[#c9f36b]/40 hover:text-[#c9f36b] transition-all shadow-sm"
+            title="Learn more about the creator of Sportivo"
+          >
+            <img
+              src="/dipesh-sapkota-profile.webp"
+              alt=""
+              className="h-4 w-4 rounded-full object-cover border border-[#c9f36b]"
+              width="16"
+              height="16"
+              loading="eager"
+            />
+            <span>Sportivo by Dipesh Sapkota</span>
+          </a>
+
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3.5 py-1.5 text-xs font-bold text-[#e5b94f] backdrop-blur-md">
+            <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true"></span>
+            <span>Live Fixture Desk · Nepal Standard Time (UTC+5:45)</span>
+          </div>
+        </div>
+
+        {/* Center Headline & Rotating Slogan */}
+        <div className="max-w-3xl py-4 sm:py-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#c9f36b]/30 bg-[#c9f36b]/10 px-3.5 py-1 text-[11px] font-black uppercase tracking-widest text-[#c9f36b] mb-4">
+            <span className="h-1.5 w-1.5 animate-ping rounded-full bg-[#c9f36b]" aria-hidden="true" />
+            Live Sports Hub · Nepal
           </div>
 
-          {/* Centre Headline */}
-          <div className="max-w-2xl py-6">
-            <h2
-              key={`slogan-${sloganIndex}`}
-              className="text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl"
-              style={{ animation: 'fadeUp 0.7s ease both' }}
+          <h2
+            key={`slogan-${sloganIndex}`}
+            className="text-4xl font-black leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl"
+            style={{ animation: 'fadeUp 0.7s ease both' }}
+          >
+            {slogan.headline}{' '}
+            <span className="text-[#c9f36b]">{slogan.sub}</span>
+          </h2>
+
+          <p
+            key={`desc-${sloganIndex}`}
+            className="mt-4 max-w-2xl text-base leading-relaxed text-slate-300 sm:text-lg"
+            style={{ animation: 'fadeUp 0.9s ease both' }}
+          >
+            {slogan.description}
+          </p>
+
+          {/* Quick Action Navigation */}
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <a
+              href="/football/"
+              className="inline-flex items-center gap-2 rounded-full bg-[#c9f36b] px-6 py-2.5 text-xs font-black uppercase tracking-wider text-[#080c0b] shadow-lg shadow-[#c9f36b]/20 transition-all hover:bg-[#b5e056] hover:scale-105 active:scale-95"
             >
-              {slogan.headline}{' '}
-              <span className="text-[#c9f36b]">{slogan.sub}</span>
-            </h2>
-
-            <p
-              key={`desc-${sloganIndex}`}
-              className="mt-4 max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base"
-              style={{ animation: 'fadeUp 0.9s ease both' }}
+              <span>⚽</span>
+              <span>Football Live</span>
+            </a>
+            <a
+              href="/cricket/"
+              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-2.5 text-xs font-bold text-white backdrop-blur-md transition-all hover:border-[#c9f36b]/40 hover:bg-white/15 hover:text-[#c9f36b]"
             >
-              {slogan.description}
-            </p>
-
-            <div className="mt-7 flex flex-wrap items-center gap-3">
-              <a
-                href="/football/"
-                className="inline-flex items-center gap-2 rounded-full bg-[#c9f36b] px-6 py-2.5 text-xs font-black uppercase tracking-wider text-[#080c0b] shadow-lg shadow-[#c9f36b]/20 transition-all hover:bg-[#b5e056] hover:scale-105 active:scale-95"
-              >
-                <span>⚽</span>
-                <span>Football</span>
-              </a>
-              <a
-                href="/cricket/"
-                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-xs font-bold text-white backdrop-blur-sm transition-all hover:border-white/40 hover:bg-white/10"
-              >
-                <span>🏏</span>
-                <span>Cricket</span>
-              </a>
-              <a
-                href="/basketball/"
-                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-xs font-bold text-white backdrop-blur-sm transition-all hover:border-white/40 hover:bg-white/10"
-              >
-                <span>🏀</span>
-                <span>Basketball</span>
-              </a>
-              <a
-                href="/dashboard/"
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-4 py-2.5 text-xs font-bold text-amber-300 backdrop-blur-sm transition-all hover:bg-white/5"
-              >
-                <span>★</span>
-                <span>My Watchlist</span>
-              </a>
-            </div>
+              <span>🏏</span>
+              <span>Cricket Live</span>
+            </a>
+            <a
+              href="/basketball/"
+              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-2.5 text-xs font-bold text-white backdrop-blur-md transition-all hover:border-[#c9f36b]/40 hover:bg-white/15 hover:text-[#c9f36b]"
+            >
+              <span>🏀</span>
+              <span>Basketball</span>
+            </a>
+            <a
+              href="/dashboard/"
+              className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2.5 text-xs font-bold text-amber-300 backdrop-blur-md transition-all hover:bg-amber-400/20"
+            >
+              <span>★</span>
+              <span>My Watchlist</span>
+            </a>
           </div>
+        </div>
 
-          {/* Bottom progress dots */}
-          <div className="flex items-center gap-1.5 pt-4 border-t border-white/10">
-            {BG_IMAGES.map((_, idx) => (
-              <button
-                key={idx}
-                type="button"
-                aria-label={`Background image ${idx + 1}`}
-                onClick={() => { setBgIndex(idx); setSloganIndex(idx % SLOGANS.length); }}
-                className={`block rounded-full transition-all duration-500 focus:outline-none ${idx === bgIndex ? 'h-2 w-7 bg-[#c9f36b]' : 'h-2 w-2 bg-white/20 hover:bg-white/50'}`}
-                aria-current={idx === bgIndex ? 'true' : undefined}
-              />
-            ))}
-          </div>
+        {/* Bottom Carousel Progress Indicators */}
+        <div className="flex items-center gap-1.5 pt-6 border-t border-white/5">
+          {BG_IMAGES.map((_, idx) => (
+            <button
+              key={idx}
+              type="button"
+              aria-label={`Background image ${idx + 1}`}
+              onClick={() => { setBgIndex(idx); setSloganIndex(idx % SLOGANS.length); }}
+              className={`block rounded-full transition-all duration-500 focus:outline-none ${
+                idx === bgIndex ? 'h-1.5 w-8 bg-[#c9f36b]' : 'h-1.5 w-2 bg-white/20 hover:bg-white/50'
+              }`}
+              aria-current={idx === bgIndex ? 'true' : undefined}
+            />
+          ))}
         </div>
       </div>
 
@@ -164,7 +191,7 @@ export default function HeroShowcase() {
         }
         @keyframes zoomIn {
           from { transform: scale(1); }
-          to { transform: scale(1.12); }
+          to { transform: scale(1.14); }
         }
         .img-zoom-in {
           animation: zoomIn 6s ease-out forwards;
