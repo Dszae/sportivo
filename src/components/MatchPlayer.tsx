@@ -33,6 +33,10 @@ export default function MatchPlayer({ match }: Props) {
     currentSource?.source && currentSource.id ? '' : 'No stream sources available for this match.'
   );
 
+  const [streamConnecting, setStreamConnecting] = useState(true);
+  const [connectionStep, setConnectionStep] = useState(0);
+  const [streamTimeoutHint, setStreamTimeoutHint] = useState(false);
+
   const [isFavorite, setIsFavorite] = useState(false);
   const [copiedToast, setCopiedToast] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -224,6 +228,45 @@ export default function MatchPlayer({ match }: Props) {
 
   const url = active ? publicUrl(streamUrl(active)) : null;
 
+  const activeServerIndex = streams.findIndex((s) => s === active);
+  const activeServerLabel =
+    activeServerIndex >= 0
+      ? typeof active === 'string'
+        ? `Server ${activeServerIndex + 1}`
+        : `${active?.language || `Server ${activeServerIndex + 1}`} ${active?.hd ? 'HD' : ''}`.trim()
+      : 'Primary Server';
+
+  // Monitor stream loading and connection progress
+  useEffect(() => {
+    if (!url) {
+      setStreamConnecting(false);
+      setStreamTimeoutHint(false);
+      return;
+    }
+    setStreamConnecting(true);
+    setConnectionStep(0);
+    setStreamTimeoutHint(false);
+
+    const stepInterval = setInterval(() => {
+      setConnectionStep((prev) => (prev < 3 ? prev + 1 : prev));
+    }, 1300);
+
+    const hintTimer = setTimeout(() => {
+      setStreamTimeoutHint(true);
+    }, 5500);
+
+    // Auto-dismiss after 9s to ensure user always has access to player controls
+    const maxTimer = setTimeout(() => {
+      setStreamConnecting(false);
+    }, 9000);
+
+    return () => {
+      clearInterval(stepInterval);
+      clearTimeout(hintTimer);
+      clearTimeout(maxTimer);
+    };
+  }, [url]);
+
   return (
     <div className="space-y-6">
       {/* Player Frame Container */}
@@ -295,22 +338,28 @@ export default function MatchPlayer({ match }: Props) {
         </div>
 
         {/* Video / Iframe Stream Area */}
-        <div className="relative flex aspect-video items-center justify-center bg-black">
+        <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-black">
           {loading ? (
-            <div className="flex flex-col items-center gap-3">
-              <span className="h-8 w-8 animate-spin rounded-full border-2 border-[#c9f36b] border-t-transparent"></span>
-              <p className="font-mono text-xs text-slate-400">Connecting to stream provider broadcast signal...</p>
+            <div className="flex flex-col items-center gap-4 px-6 text-center">
+              <div className="relative flex h-16 w-16 items-center justify-center">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#c9f36b]/30"></span>
+                <span className="h-10 w-10 animate-spin rounded-full border-2 border-[#c9f36b] border-t-transparent shadow-[0_0_15px_rgba(201,243,107,0.3)]"></span>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">Connecting to Broadcast Signal</p>
+                <p className="mt-1 font-mono text-xs text-slate-400">Searching active stream sources for {title}...</p>
+              </div>
             </div>
           ) : error ? (
             <div className="max-w-md px-6 text-center">
-              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-400">
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10 text-amber-400 shadow-lg">
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10"></circle>
                   <line x1="12" y1="8" x2="12" y2="12"></line>
                   <line x1="12" y1="16" x2="12.01" y2="16"></line>
                 </svg>
               </div>
-              <p className="text-sm font-semibold text-amber-300">{error}</p>
+              <p className="text-sm font-bold text-amber-300">{error}</p>
               {sources.length > 1 && (
                 <p className="mt-2 text-xs text-slate-400">
                   Multiple stream sources are available for this fixture. Try switching providers in the top bar.
@@ -318,25 +367,112 @@ export default function MatchPlayer({ match }: Props) {
               )}
             </div>
           ) : !url ? (
-            <p className="font-mono text-sm text-slate-400">Waiting for stream signal...</p>
-          ) : url.includes('.m3u8') ? (
-            <video
-              ref={videoRef}
-              controls
-              autoPlay
-              className="h-full w-full"
-              src={url}
-              playsInline
-            ></video>
+            <div className="flex flex-col items-center gap-2 text-center text-slate-400">
+              <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse"></span>
+              <p className="font-mono text-xs">Waiting for pre-match broadcast feed...</p>
+            </div>
           ) : (
-            <iframe
-              src={url}
-              className="h-full w-full border-0"
-              allowFullScreen
-              allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-              referrerPolicy="no-referrer"
-              title={`${title} live stream`}
-            ></iframe>
+            <>
+              {/* Active Stream Renderer */}
+              {url.includes('.m3u8') ? (
+                <video
+                  ref={videoRef}
+                  controls
+                  autoPlay
+                  className="h-full w-full"
+                  src={url}
+                  playsInline
+                  onLoadedData={() => setStreamConnecting(false)}
+                  onCanPlay={() => setStreamConnecting(false)}
+                  onPlaying={() => setStreamConnecting(false)}
+                  onWaiting={() => setStreamConnecting(true)}
+                  onError={() => setStreamConnecting(false)}
+                ></video>
+              ) : (
+                <iframe
+                  src={url}
+                  className="h-full w-full border-0"
+                  allowFullScreen
+                  allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                  referrerPolicy="no-referrer"
+                  title={`${title} live stream`}
+                  onLoad={() => setStreamConnecting(false)}
+                ></iframe>
+              )}
+
+              {/* High-Tech Animated Loading & Connection Overlay (Replaces Black Screen) */}
+              {streamConnecting && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-gradient-to-b from-[#0a110f]/95 via-[#080d0c]/95 to-[#050807]/98 px-6 text-center backdrop-blur-sm transition-all duration-300">
+                  {/* Glowing Radar Pulse & Rotating Ring */}
+                  <div className="relative mb-5 flex h-20 w-20 items-center justify-center">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#c9f36b]/20 opacity-75"></span>
+                    <div className="absolute h-16 w-16 animate-spin rounded-full border-2 border-dashed border-[#c9f36b]/40 [animation-duration:6s]"></div>
+                    <div className="absolute h-12 w-12 rounded-full border-2 border-[#c9f36b] shadow-[0_0_20px_rgba(201,243,107,0.4)]"></div>
+                    <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-[#c9f36b] text-[#080a0b] shadow-md">
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Status Badge */}
+                  <div className="mb-2.5 inline-flex items-center gap-2 rounded-full border border-[#c9f36b]/30 bg-[#c9f36b]/10 px-3 py-1 text-[11px] font-bold text-[#c9f36b]">
+                    <span className="h-1.5 w-1.5 animate-ping rounded-full bg-[#c9f36b]"></span>
+                    <span>{isLive ? 'LIVE BROADCAST FEED' : 'CONNECTING STREAM'}</span>
+                    <span className="text-white/30">•</span>
+                    <span className="text-white/80">{activeServerLabel}</span>
+                  </div>
+
+                  {/* Match Title */}
+                  <h3 className="line-clamp-1 max-w-md text-sm sm:text-base font-black text-white">
+                    {title}
+                  </h3>
+
+                  {/* Dynamic Step Status */}
+                  <p className="mt-2 text-xs font-semibold text-slate-300 flex items-center justify-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#c9f36b] animate-pulse"></span>
+                    <span>
+                      {connectionStep === 0 && 'Connecting to high-speed stream server...'}
+                      {connectionStep === 1 && 'Negotiating secure broadcast handshake...'}
+                      {connectionStep === 2 && 'Buffering live audio & video packets...'}
+                      {connectionStep >= 3 && 'Finalizing playback stream renderer...'}
+                    </span>
+                  </p>
+
+                  {/* Shimmer Progress Bar */}
+                  <div className="mt-4 h-1 w-56 overflow-hidden rounded-full bg-white/10">
+                    <div className="h-full w-full animate-pulse bg-gradient-to-r from-transparent via-[#c9f36b] to-transparent"></div>
+                  </div>
+
+                  {/* Helpful Quick Switcher if connection takes >5.5s */}
+                  {streamTimeoutHint && streams.length > 1 && (
+                    <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3 max-w-sm transition-all">
+                      <p className="text-[11px] text-slate-300">
+                        Feed taking a moment? Switch to another server:
+                      </p>
+                      <div className="mt-2 flex flex-wrap justify-center gap-1.5">
+                        {streams.map((s, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => {
+                              setActive(s);
+                            }}
+                            className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${
+                              active === s
+                                ? 'bg-[#c9f36b] text-[#080a0b]'
+                                : 'bg-white/10 text-white hover:bg-white/20'
+                            }`}
+                          >
+                            {typeof s === 'string' ? `Server ${idx + 1}` : (s.language || `Server ${idx + 1}`)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
 

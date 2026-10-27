@@ -389,13 +389,22 @@ const homepageJsonLd = {
 
     <!-- Fixture Explorers -->
     <section class="mx-auto max-w-7xl space-y-16 px-6 pb-20" aria-label="Sports fixtures categories">
-      {categories.map((category) => (
-        <MatchExplorer
-          client:load
-          category={category}
-          matches={byCategory[category] || []}
-          exploreUrl={`/${category}/`}
-        />
+      {categories.map((category, idx) => (
+        idx === 0 ? (
+          <MatchExplorer
+            client:load
+            category={category}
+            matches={byCategory[category] || []}
+            exploreUrl={`/${category}/`}
+          />
+        ) : (
+          <MatchExplorer
+            client:visible
+            category={category}
+            matches={byCategory[category] || []}
+            exploreUrl={`/${category}/`}
+          />
+        )
       ))}
     </section>
 
