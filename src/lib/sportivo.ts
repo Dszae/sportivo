@@ -634,6 +634,26 @@ export async function fetchStream(source: string, id: string) {
     ];
   }
 
+  if (source === 'daddy') {
+    return [
+      {
+        embedUrl: `https://thedaddy.pk/stream/stream-${encodeURIComponent(id)}.php`,
+        hd: true,
+        language: 'Server 1',
+      },
+      {
+        embedUrl: `https://thedaddy.pk/cast/stream-${encodeURIComponent(id)}.php`,
+        hd: true,
+        language: 'Server 2 (Cast)',
+      },
+      {
+        embedUrl: `https://thedaddy.pk/player/stream-${encodeURIComponent(id)}.php`,
+        hd: true,
+        language: 'Server 3 (Player)',
+      },
+    ];
+  }
+
   if (source === 'timst') {
     return [
       {
