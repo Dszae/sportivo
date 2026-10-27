@@ -154,7 +154,9 @@ export const nplAdapter: ProviderAdapter = {
     // 1. Query NPL Backend Microservice (if running or configured)
     const backendBase =
       process.env.NPL_BACKEND_URL ||
-      (typeof import.meta !== 'undefined' && import.meta.env?.NPL_BACKEND_URL) ||
+      process.env.PUBLIC_NPL_BACKEND_URL ||
+      (typeof import.meta !== 'undefined' &&
+        (import.meta.env?.NPL_BACKEND_URL || import.meta.env?.PUBLIC_NPL_BACKEND_URL)) ||
       'http://localhost:3000';
 
     if (id.toLowerCase() === 'auto') {
