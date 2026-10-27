@@ -24,18 +24,27 @@ function getSupabaseClient() {
 }
 
 /**
+ * Maps fixture IDs (e.g. "npl26-02") to backend IDs (e.g. "NPL2")
+ */
+function toNplBackendId(id: string): string {
+  const match = id.match(/npl26-0?(\d+)/i);
+  if (match) {
+    return `NPL${match[1]}`;
+  }
+  return id;
+}
+
+/**
  * Convert NplMatch record into NormalizedMatch for Sportivo aggregator
  */
 function toNormalizedMatch(m: NplMatch): NormalizedMatch {
-  const sources = m.broadcast
-    ? [
-        {
-          source: 'npl',
-          id: m.id,
-          label: m.broadcast.provider || 'NPL Official Broadcast',
-        },
-      ]
-    : [];
+  const sources = [
+    {
+      source: 'npl',
+      id: m.id,
+      label: m.broadcast?.provider || 'NPL Live Feed',
+    },
+  ];
 
   return {
     id: m.id,
@@ -132,7 +141,49 @@ export const nplAdapter: ProviderAdapter = {
   },
 
   async resolvePlayback(id: string, signal?: AbortSignal): Promise<PlaybackResolution> {
-    // 1. Check Supabase broadcasts if available
+    // 1. Query NPL Backend Microservice (if running or configured)
+    const backendBase =
+      process.env.NPL_BACKEND_URL ||
+      (typeof import.meta !== 'undefined' && import.meta.env?.NPL_BACKEND_URL) ||
+      'http://localhost:3000';
+
+    const candidateIds = [toNplBackendId(id), id];
+
+    for (const testId of candidateIds) {
+      try {
+        const backendEndpoint = `${backendBase.replace(/\/$/, '')}/api/stream?id=${encodeURIComponent(testId)}`;
+        const res = await fetch(backendEndpoint, {
+          signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(5000)]) : AbortSignal.timeout(5000),
+        });
+
+        if (res.ok) {
+          const body = await res.json();
+          if (body && body.url) {
+            const safeUrl = sanitizePlaybackUrl(body.url);
+            if (safeUrl) {
+              const isNative = safeUrl.endsWith('.m3u8') || safeUrl.endsWith('.mp4');
+              return {
+                status: 'ready',
+                provider: 'NPL Official Stream',
+                streams: [
+                  {
+                    embedUrl: safeUrl,
+                    hd: true,
+                    isNativeVideo: isNative,
+                    isSandboxedIframe: !isNative,
+                    language: 'Nepali / English',
+                  },
+                ],
+              };
+            }
+          }
+        }
+      } catch (backendErr: any) {
+        logDiagnostic('npl', 'debug', `Backend microservice check for ${testId}: ${backendErr?.message}`);
+      }
+    }
+
+    // 2. Check Supabase broadcasts if available
     try {
       const supabase = getSupabaseClient();
       if (supabase) {
@@ -166,7 +217,7 @@ export const nplAdapter: ProviderAdapter = {
       }
     } catch {}
 
-    // 2. Check Static/Verified Data Model
+    // 3. Check Static/Verified Data Model
     const fixture = NPL_FIXTURES_2026.find((m) => m.id === id);
     if (!fixture || !fixture.broadcast) {
       return {

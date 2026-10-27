@@ -92,3 +92,4 @@ CREATE POLICY "Service role manages NPL broadcasts"
     TO service_role
     USING (true)
     WITH CHECK (true);
+

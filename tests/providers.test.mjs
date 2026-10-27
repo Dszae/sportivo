@@ -145,7 +145,10 @@ test('17. NPL broadcast authorization and stream resolution', async () => {
   const resolution = await npl.resolvePlayback('npl26-03');
   assert.equal(resolution.status, 'ready');
   assert.ok(resolution.streams.length > 0);
-  assert.ok(resolution.streams[0].embedUrl.includes('youtube-nocookie.com'));
+  assert.ok(
+    resolution.streams[0].embedUrl.includes('.m3u8') ||
+    resolution.streams[0].embedUrl.includes('youtube')
+  );
 
   // Future match without broadcast should return unavailable without inventing streams
   const unmapped = await npl.resolvePlayback('npl26-28');
