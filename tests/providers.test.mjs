@@ -19,7 +19,7 @@ test('1. Successful match-list response from Demo provider', async () => {
 
 test('2. Empty match list handling on unknown category', async () => {
   const espn = new EspnAdapter();
-  const matches = await espn.fetchMatches('cricket');
+  const matches = await espn.fetchMatches('unknown-category');
   assert.ok(Array.isArray(matches));
   assert.equal(matches.length, 0);
 });

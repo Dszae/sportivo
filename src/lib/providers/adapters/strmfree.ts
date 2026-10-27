@@ -110,7 +110,7 @@ export class StrmFreeAdapter implements ProviderAdapter {
       if (res.ok) {
         const data = (await res.json()) as any;
         const fixturesObj = data?.fixtures || {};
-        const dateKeys = Object.keys(fixturesObj).slice(0, 2);
+        const dateKeys = Object.keys(fixturesObj).slice(0, 8);
         const now = Date.now();
 
         for (const dateKey of dateKeys) {

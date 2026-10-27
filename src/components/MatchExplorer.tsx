@@ -194,12 +194,46 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
             {isLive ? 'LIVE' : status === 'Final' ? 'Final' : formattedTime}
           </span>
           <div className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm font-bold text-slate-300">
-            <span>{first}</span>
-            {second && (
-              <>
-                <span className="mx-2 text-[#c9f36b]">vs</span>
-                <span>{second}</span>
-              </>
+            {match.teams && typeof match.teams === 'object' && 'home' in match.teams && match.teams.home?.badge && match.teams.away?.badge ? (
+              <div className="flex items-center justify-center gap-3 w-full px-2">
+                <div className="flex flex-col items-center gap-1 flex-1 max-w-[85px]">
+                  <img
+                    src={getSafeThumbnailUrl(match.teams.home.badge)}
+                    alt=""
+                    width="40"
+                    height="40"
+                    className="h-10 w-10 object-contain drop-shadow"
+                    onError={(e) => ((e.currentTarget as HTMLElement).style.display = 'none')}
+                  />
+                  <span className="line-clamp-1 text-[11px] text-white font-bold text-center">
+                    {match.teams.home.name || first}
+                  </span>
+                </div>
+                <span className="text-xs font-black text-[#c9f36b] shrink-0">VS</span>
+                <div className="flex flex-col items-center gap-1 flex-1 max-w-[85px]">
+                  <img
+                    src={getSafeThumbnailUrl(match.teams.away.badge)}
+                    alt=""
+                    width="40"
+                    height="40"
+                    className="h-10 w-10 object-contain drop-shadow"
+                    onError={(e) => ((e.currentTarget as HTMLElement).style.display = 'none')}
+                  />
+                  <span className="line-clamp-1 text-[11px] text-white font-bold text-center">
+                    {match.teams.away.name || second}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <span>{first}</span>
+                {second && (
+                  <>
+                    <span className="mx-2 text-[#c9f36b]">vs</span>
+                    <span>{second}</span>
+                  </>
+                )}
+              </div>
             )}
           </div>
           {poster && (
