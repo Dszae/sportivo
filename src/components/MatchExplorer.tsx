@@ -167,7 +167,7 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
       <a
         key={`${slug}-${index}`}
         href={`/${category}/match/${encodeURIComponent(slug)}/`}
-        className={`group relative overflow-hidden rounded-2xl border bg-[#111a19] shadow-xl shadow-black/10 transition-all duration-300 hover:-translate-y-1 hover:border-[#e5b94f]/50 focus:outline-none focus:ring-2 focus:ring-[#c9f36b] ${
+        className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border bg-[#0b100f] shadow-xl shadow-black/20 transition-all duration-300 hover:-translate-y-1 hover:border-[#c9f36b]/40 hover:shadow-2xl hover:shadow-[#c9f36b]/10 focus:outline-none focus:ring-2 focus:ring-[#c9f36b] ${
           isLive ? 'border-red-500/50 ring-1 ring-red-500/30' : 'border-white/10'
         }`}
       >
@@ -176,23 +176,29 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
           type="button"
           onClick={(e) => toggleFavorite(slug, e)}
           aria-label={isFav ? `Remove ${title} from watchlist` : `Add ${title} to watchlist`}
-          className="absolute right-2.5 top-2.5 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-[#0a0f0e]/80 border border-white/10 text-white backdrop-blur-sm transition-transform hover:scale-110 focus:outline-none"
+          className="absolute right-2.5 top-2.5 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-[#060a09]/80 border border-white/10 text-white backdrop-blur-sm transition-transform hover:scale-110 focus:outline-none"
         >
-          <span aria-hidden="true" className={`text-sm ${isFav ? 'text-amber-400' : 'text-slate-300 hover:text-white'}`}>
+          <span aria-hidden="true" className={`text-xs ${isFav ? 'text-amber-400' : 'text-slate-400 hover:text-white'}`}>
             {isFav ? '★' : '☆'}
           </span>
         </button>
 
-        <div className="relative flex h-36 w-full items-center justify-center overflow-hidden bg-[#111a19]">
+        {/* Top Split: Match Badges & Action Stage */}
+        <div className="relative flex h-36 w-full items-center justify-center overflow-hidden bg-gradient-to-b from-[#162320] via-[#0f1715] to-[#0a0f0e]">
+          {/* Subtle Ambient Radial Glow */}
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(201,243,107,0.12)_0%,transparent_70%)]"></div>
+
+          {/* Status Badge */}
           <span
             suppressHydrationWarning
-            className={`absolute left-2 top-2 z-10 flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-bold text-white shadow-md ${
-              isLive ? 'bg-red-600 font-black tracking-wider' : 'bg-[#0a0f0e]/95 border border-white/10'
+            className={`absolute left-2.5 top-2.5 z-20 flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-bold shadow-md ${
+              isLive ? 'bg-red-600 font-black tracking-wider text-white' : 'bg-[#060a09]/90 border border-white/10 text-slate-300 backdrop-blur-sm'
             }`}
           >
             {isLive && <span className="inline-block h-1.5 w-1.5 animate-ping rounded-full bg-white" aria-hidden="true"></span>}
             {isLive ? 'LIVE' : status === 'Final' ? 'Final' : formattedTime}
           </span>
+
           {/* Background Poster (subtle backdrop if teams present, otherwise primary card poster) */}
           {poster && (
             <img
@@ -208,25 +214,26 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
               }}
               className={
                 match.teams && typeof match.teams === 'object' && ('home' in match.teams || 'away' in match.teams)
-                  ? 'absolute inset-0 h-full w-full object-cover opacity-20 pointer-events-none'
+                  ? 'absolute inset-0 h-full w-full object-cover opacity-15 pointer-events-none'
                   : 'relative z-[5] h-full w-full object-cover transition-transform duration-300 group-hover:scale-105'
               }
             />
           )}
 
+          {/* Team Crests Layout */}
           <div className="absolute inset-0 z-10 flex items-center justify-center px-4 text-center text-sm font-bold text-slate-300">
             {match.teams && typeof match.teams === 'object' && ('home' in match.teams || 'away' in match.teams) ? (
               <div className="flex items-center justify-center gap-3 w-full px-2">
                 {/* Home Team */}
                 <div className="flex flex-col items-center gap-1.5 flex-1 max-w-[95px]">
                   {match.teams.home?.badge ? (
-                    <div className="relative flex h-11 w-11 items-center justify-center">
+                    <div className="relative flex h-12 w-12 items-center justify-center">
                       <img
                         src={getSafeThumbnailUrl(match.teams.home.badge)}
                         alt={match.teams.home.name || first}
-                        width="44"
-                        height="44"
-                        className="h-11 w-11 object-contain drop-shadow"
+                        width="48"
+                        height="48"
+                        className="h-12 w-12 object-contain drop-shadow-md"
                         onError={(e) => {
                           const el = e.currentTarget as HTMLElement;
                           el.style.display = 'none';
@@ -249,20 +256,20 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
                 </div>
 
                 {/* VS Badge */}
-                <span className="text-xs font-black text-[#c9f36b] shrink-0 px-1 py-0.5 rounded bg-black/40 border border-white/5">
+                <span className="text-[11px] font-black text-[#c9f36b] shrink-0 px-2 py-0.5 rounded-full bg-black/60 border border-white/10 shadow-sm">
                   VS
                 </span>
 
                 {/* Away Team */}
                 <div className="flex flex-col items-center gap-1.5 flex-1 max-w-[95px]">
                   {match.teams.away?.badge ? (
-                    <div className="relative flex h-11 w-11 items-center justify-center">
+                    <div className="relative flex h-12 w-12 items-center justify-center">
                       <img
                         src={getSafeThumbnailUrl(match.teams.away.badge)}
                         alt={match.teams.away.name || second}
-                        width="44"
-                        height="44"
-                        className="h-11 w-11 object-contain drop-shadow"
+                        width="48"
+                        height="48"
+                        className="h-12 w-12 object-contain drop-shadow-md"
                         onError={(e) => {
                           const el = e.currentTarget as HTMLElement;
                           el.style.display = 'none';
@@ -297,29 +304,28 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
             )}
           </div>
         </div>
-        <div className="p-3">
-          <h3 className="line-clamp-2 text-sm font-bold text-slate-100 group-hover:text-[#e5b94f]">{title}</h3>
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
-            <span>{match.category || category}</span>
-            {matchLeague && (
-              <>
-                <span aria-hidden="true">•</span>
-                <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-bold tracking-normal text-[#e5b94f]">
-                  {matchLeague}
-                </span>
-              </>
-            )}
+
+        {/* Bottom Split: Match Metadata */}
+        <div className="p-3.5 bg-[#070b0a] border-t border-white/5">
+          <h3 className="line-clamp-1 text-sm font-black text-slate-100 group-hover:text-[#c9f36b] transition-colors">{title}</h3>
+          <p className="mt-1 line-clamp-1 text-xs text-slate-400 font-medium">
+            {match.competition || matchLeague || `${categoryLabel} Broadcast`}
+          </p>
+
+          <div className="mt-2.5 flex items-center justify-between text-[10px] font-bold">
+            <span className="rounded bg-white/5 px-2 py-0.5 uppercase tracking-wider text-slate-300 border border-white/5">
+              {matchLeague || category}
+            </span>
             {isLive ? (
-              <>
-                <span aria-hidden="true">•</span>
-                <span className="font-black text-red-400">Broadcasting Now</span>
-              </>
-            ) : status === 'Final' ? (
-              <>
-                <span aria-hidden="true">•</span>
-                <span className="text-slate-400">Final</span>
-              </>
-            ) : null}
+              <span className="flex items-center gap-1 font-black text-red-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                <span>Broadcasting</span>
+              </span>
+            ) : (
+              <span className="text-slate-400 font-medium">
+                {formattedTime}
+              </span>
+            )}
           </div>
         </div>
       </a>
@@ -556,14 +562,11 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
           <div>
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <span className="relative flex h-3 w-3">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500"></span>
-                </span>
-                <h3 className="text-base font-black text-white sm:text-lg">
+                <span className="h-5 w-1.5 rounded-full bg-red-500 shadow-sm shadow-red-500/50" aria-hidden="true"></span>
+                <h3 className="text-base font-black uppercase tracking-wider text-white sm:text-lg">
                   {selectedLeague !== 'All'
-                    ? `Live — ${selectedLeague}`
-                    : 'Live Matches'}
+                    ? `LIVE · ${selectedLeague}`
+                    : 'LIVE MATCHES'}
                 </h3>
               </div>
               {liveMatches.length > 0 && (
@@ -600,11 +603,11 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
             <div>
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#c9f36b]" aria-hidden="true"></span>
-                  <h3 className="text-base font-black text-white sm:text-lg">
+                  <span className="h-5 w-1.5 rounded-full bg-[#c9f36b] shadow-sm shadow-[#c9f36b]/50" aria-hidden="true"></span>
+                  <h3 className="text-base font-black uppercase tracking-wider text-white sm:text-lg">
                     {selectedLeague !== 'All'
-                      ? `Upcoming — ${selectedLeague}`
-                      : 'Upcoming Matches'}
+                      ? `SCHEDULED · ${selectedLeague}`
+                      : 'UPCOMING FIXTURES'}
                   </h3>
                 </div>
                 <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs font-semibold text-slate-400">
