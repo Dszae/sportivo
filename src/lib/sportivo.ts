@@ -323,6 +323,15 @@ export function generateIcsCalendarContent(match: Match): string {
   ].join('\r\n');
 }
 
+export function getSafeThumbnailUrl(url: string | undefined): string | undefined {
+  if (!url || typeof url !== 'string') return undefined;
+  if (url.startsWith('/api/thumbnail')) return url;
+  if (url.includes('strmfree.st')) {
+    return `/api/thumbnail?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+}
+
 export function publicUrl(value: string | undefined): string | null {
   return sanitizePlaybackUrl(value);
 }

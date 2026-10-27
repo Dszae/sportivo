@@ -8,6 +8,7 @@ import {
   generateGoogleCalendarUrl,
   generateIcsCalendarContent,
   getMatchTimestamp,
+  getSafeThumbnailUrl,
   publicUrl,
   slugify,
   statusOf,
@@ -284,7 +285,7 @@ export default function PersonalDashboard({ allMatchesByCategory }: Props) {
 
             {poster && (
               <img
-                src={poster}
+                src={getSafeThumbnailUrl(poster)}
                 alt=""
                 width="288"
                 height="144"

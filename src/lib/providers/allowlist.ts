@@ -47,14 +47,24 @@ export function sanitizePlaybackUrl(rawUrl: string | undefined | null): string |
 
 /**
  * Validates identifier inputs for source and ID parameters to prevent path traversal or injection.
+ * Supports alphanumeric characters, spaces, parentheses, dashes, underscores, and unicode match names.
  */
 export function sanitizeIdentifier(value: string | undefined | null): string | null {
   if (!value || typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  // Allow alphanumeric, dashes, underscores, and dots, up to 120 chars
-  if (!/^[a-zA-Z0-9_\-.]{1,120}$/.test(trimmed)) {
+  let decoded = value.trim();
+  try {
+    decoded = decodeURIComponent(decoded).trim();
+  } catch {}
+
+  // Reject path traversal and dangerous script injection characters
+  if (
+    !decoded ||
+    decoded.length > 250 ||
+    decoded.includes('..') ||
+    /[<>"'`\\;\0]/.test(decoded)
+  ) {
     return null;
   }
-  return trimmed;
+  return decoded;
 }
 

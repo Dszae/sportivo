@@ -7,6 +7,7 @@ import {
   generateGoogleCalendarUrl,
   generateIcsCalendarContent,
   getMatchTimestamp,
+  getSafeThumbnailUrl,
   publicUrl,
   slugify,
   statusOf,
@@ -295,7 +296,7 @@ export default function MatchPlayer({ match }: Props) {
               {/* Match Poster / Thumbnail Backdrop */}
               {match.poster && (
                 <img
-                  src={match.poster}
+                  src={getSafeThumbnailUrl(match.poster)}
                   alt=""
                   width="800"
                   height="450"

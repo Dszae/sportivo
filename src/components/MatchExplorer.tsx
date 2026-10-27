@@ -3,6 +3,7 @@ import type { Category, FootballLeague, Match } from '../lib/sportivo';
 import {
   FOOTBALL_LEAGUES,
   detectFootballLeague,
+  getSafeThumbnailUrl,
   isMatchOnDate,
   publicUrl,
   slugify,
@@ -202,7 +203,7 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
           </div>
           {poster && (
             <img
-              src={poster}
+              src={getSafeThumbnailUrl(poster)}
               alt=""
               width="288"
               height="144"
