@@ -17,8 +17,8 @@ const data = await Promise.all(
 );
 const byCategory = Object.fromEntries(data) as Record<string, Match[]>;
 
-const title = 'Sportivo — Live Sports Scores, Fixtures & Streams Nepal (NST)';
-const description = 'Follow live football, cricket, and basketball schedules in Nepal Standard Time (NST) with real-time score updates, match companions, and verified multi-server streams.';
+const title = 'Sportivo — NPL Live Match, Cricket Scores & Sports Streaming Nepal (NST)';
+const description = 'Watch NPL live match streaming online, follow real-time Nepal Premier League 2026 cricket scores, football fixtures, and basketball schedules in Nepal Standard Time (NST) on Sportivo by Dipesh Sapkota.';
 const canonical = 'https://sportivo.dipeshsapkota7.com.np/';
 
 const faqs = [
@@ -79,6 +79,9 @@ const homepageJsonLd = {
         'https://facebook.com/dsz.ae'
       ],
       'knowsAbout': [
+        'Sportivo',
+        'NPL Live Match',
+        'Nepal Premier League 2026',
         'Football Fixtures & Live Streams',
         'Cricket Schedules & Scores',
         'Basketball & NBA Fixtures',
@@ -143,6 +146,13 @@ const homepageJsonLd = {
         'query-input': 'required name=search_term_string'
       },
       'hasPart': [
+        {
+          '@type': 'WebPage',
+          '@id': 'https://sportivo.dipeshsapkota7.com.np/npl/#webpage',
+          'url': 'https://sportivo.dipeshsapkota7.com.np/npl/',
+          'name': 'NPL 2026 Live Match & Schedule',
+          'description': 'Watch Nepal Premier League 2026 live matches online, live scores, teams, and fixtures in Nepal Standard Time.'
+        },
         {
           '@type': 'WebPage',
           '@id': 'https://sportivo.dipeshsapkota7.com.np/football/#webpage',
@@ -258,6 +268,18 @@ const homepageJsonLd = {
         {
           '@type': 'ListItem',
           'position': 1,
+          'name': 'NPL 2026 Live Match & Schedule',
+          'item': {
+            '@type': 'WebPage',
+            '@id': 'https://sportivo.dipeshsapkota7.com.np/npl/#webpage',
+            'url': 'https://sportivo.dipeshsapkota7.com.np/npl/',
+            'name': 'NPL 2026 Live Match & Schedule',
+            'description': 'Watch Nepal Premier League (NPL) live matches, live scores, and full tournament schedule in Nepal Standard Time.'
+          }
+        },
+        {
+          '@type': 'ListItem',
+          'position': 2,
           'name': 'Football Fixtures',
           'item': {
             '@type': 'WebPage',
@@ -269,7 +291,7 @@ const homepageJsonLd = {
         },
         {
           '@type': 'ListItem',
-          'position': 2,
+          'position': 3,
           'name': 'Cricket Fixtures',
           'item': {
             '@type': 'WebPage',
@@ -281,7 +303,7 @@ const homepageJsonLd = {
         },
         {
           '@type': 'ListItem',
-          'position': 3,
+          'position': 4,
           'name': 'Basketball Fixtures',
           'item': {
             '@type': 'WebPage',
@@ -293,7 +315,19 @@ const homepageJsonLd = {
         },
         {
           '@type': 'ListItem',
-          'position': 4,
+          'position': 5,
+          'name': 'Dipesh Sapkota Portfolio & Profile',
+          'item': {
+            '@type': 'WebPage',
+            '@id': 'https://www.dipeshsapkota7.com.np/#portfolio',
+            'url': 'https://www.dipeshsapkota7.com.np/',
+            'name': 'Dipesh Sapkota Portfolio',
+            'description': 'Official personal portfolio, projects, and contact page of software engineer Dipesh Sapkota.'
+          }
+        },
+        {
+          '@type': 'ListItem',
+          'position': 6,
           'name': 'About the Creator',
           'item': {
             '@type': 'WebPage',
@@ -301,18 +335,6 @@ const homepageJsonLd = {
             'url': 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/',
             'name': 'About the Creator',
             'description': 'Official profile and biography of the creator and publisher of Sportivo'
-          }
-        },
-        {
-          '@type': 'ListItem',
-          'position': 5,
-          'name': 'Developer API',
-          'item': {
-            '@type': 'WebPage',
-            '@id': 'https://sportivo.dipeshsapkota7.com.np/api-docs/#webpage',
-            'url': 'https://sportivo.dipeshsapkota7.com.np/api-docs/',
-            'name': 'Developer API',
-            'description': 'Sportivo public fixture API documentation'
           }
         }
       ]
@@ -324,7 +346,7 @@ const homepageJsonLd = {
   title={title}
   description={description}
   canonical={canonical}
-  keywords="Sportivo, live sports fixtures, Nepal Standard Time kickoff, football fixtures, cricket schedules, basketball scores, Nepal sports streaming"
+  keywords="Sportivo, sportivo, NPL live match, npl live match, npl live streaming, watch npl live, Nepal Premier League 2026, NPL schedule, live sports fixtures, Nepal Standard Time kickoff, football fixtures, cricket schedules, Dipesh Sapkota, dipeshsapkota7.com.np"
 >
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(homepageJsonLd)} />

@@ -37,6 +37,17 @@ const staticRoutes = [
     },
   },
   {
+    url: `${siteUrl}/npl/`,
+    priority: '0.95',
+    changefreq: 'hourly',
+    image: {
+      loc: `${siteUrl}/sportivo-preview.png`,
+      title: 'Nepal Premier League (NPL) 2026 - Schedule, Scores & Live Stream',
+      caption: 'Official Nepal Premier League 2026 live streaming, scores, and schedule in Nepal Standard Time (NST).',
+      license: `${siteUrl}/npl/`,
+    },
+  },
+  {
     url: `${siteUrl}/football/`,
     priority: '0.90',
     changefreq: 'daily',

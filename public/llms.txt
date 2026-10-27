@@ -6,7 +6,8 @@ Sportivo aggregates real-time sports fixtures, kickoff times calibrated for Nepa
 
 ## Canonical Pages
 
-- [Sportivo Home](https://sportivo.dipeshsapkota7.com.np/): Live sports fixture desk and real-time schedules.
+- [Sportivo Home](https://sportivo.dipeshsapkota7.com.np/): Live sports fixture desk, NPL live match coverage, and real-time schedules in Nepal Standard Time (NST).
+- [NPL 2026 Live Match & Schedule](https://sportivo.dipeshsapkota7.com.np/npl/): Official Nepal Premier League 2026 live streaming, scores, and schedule.
 - [Football Fixtures](https://sportivo.dipeshsapkota7.com.np/football/): Premier League, Champions League, La Liga, and global football fixtures.
 - [Cricket Schedules](https://sportivo.dipeshsapkota7.com.np/cricket/): Live cricket matches, ICC events, IPL, and bilateral series in NST.
 - [Basketball Fixtures](https://sportivo.dipeshsapkota7.com.np/basketball/): NBA schedules, EuroLeague, and international basketball.
