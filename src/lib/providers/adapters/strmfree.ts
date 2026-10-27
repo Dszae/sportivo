@@ -61,14 +61,21 @@ export class StrmFreeAdapter implements ProviderAdapter {
               ? team2.logo
               : undefined;
 
+            const matchTimeMs = typeof item.match_timestamp === 'number' ? item.match_timestamp * 1000 : 0;
+            const nowSec = Math.floor(Date.now() / 1000);
+            const startSec = typeof item.match_timestamp === 'number' ? item.match_timestamp : 0;
+            const isLiveNow = startSec > 0 && nowSec >= startSec - 600 && nowSec <= startSec + 12600;
+            const isPast = startSec > 0 && nowSec > startSec + 12600;
+            const status = startSec === 0 ? 'Live' : isLiveNow ? 'Live' : isPast ? 'Final' : 'Upcoming';
+
             matches.push({
               id: item.stream_key || slug,
               title,
               category,
               competition: item.league || undefined,
               league: item.league || undefined,
-              status: 'Live',
-              date: typeof item.match_timestamp === 'number' ? item.match_timestamp * 1000 : Date.now(),
+              status,
+              date: matchTimeMs > 0 ? matchTimeMs : undefined,
               poster,
               teams:
                 team1?.name && team2?.name

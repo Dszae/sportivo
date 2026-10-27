@@ -231,12 +231,12 @@ export default function MatchPlayer({ match }: Props) {
           <div>
             <div className="flex items-center gap-2">
               <span
-                className={`flex items-center gap-1.5 rounded px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white ${
-                  isLive ? 'bg-red-600' : 'bg-slate-800'
+                className={`flex items-center gap-1.5 rounded px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white ${
+                  isLive ? 'bg-red-600' : 'border border-amber-400/40 bg-amber-400/10 text-amber-300'
                 }`}
               >
                 {isLive && <span className="h-1.5 w-1.5 animate-ping rounded-full bg-white"></span>}
-                {isLive ? 'LIVE' : status}
+                {isLive ? 'LIVE' : status === 'Final' ? 'FINAL' : 'SCHEDULED'}
               </span>
               <h2 className="text-base font-bold text-slate-100">{title}</h2>
             </div>
@@ -388,29 +388,73 @@ export default function MatchPlayer({ match }: Props) {
                 )}
 
                 <h3 className="mt-1 text-xl sm:text-2xl font-black text-white">{title}</h3>
-                <p className="mt-2 text-xs font-semibold text-slate-400">
-                  {isLive ? 'Broadcasting live now' : `Kickoff: ${timeOf(match, 'Asia/Kathmandu')}`}
+                <p className="mt-2 text-xs font-semibold text-slate-300">
+                  {isLive ? 'Broadcasting live now' : `Kickoff: ${timeOf(match, 'Asia/Kathmandu')} (Nepal Standard Time)`}
                 </p>
               </div>
 
-              {/* Predictable, Accessible Play Button */}
-              <button
-                type="button"
-                onClick={resolvePlayback}
-                aria-label={`Start broadcast stream for ${title}`}
-                className="relative z-10 group inline-flex items-center gap-3 rounded-2xl bg-[#c9f36b] px-6 py-3.5 text-sm font-black text-[#0a1110] shadow-lg shadow-[#c9f36b]/20 hover:bg-[#b8e25d] focus:outline-none focus:ring-4 focus:ring-[#c9f36b]/40 transition-all hover:scale-105 active:scale-95"
-              >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0a1110] text-[#c9f36b] transition-transform group-hover:scale-110">
-                  <svg className="h-4 w-4 ml-0.5" viewBox="0 0 24 24" fill="currentColor">
-                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                  </svg>
-                </span>
-                <span>Play Broadcast Stream</span>
-              </button>
+              {/* DYNAMIC ACTION: Live Play vs Scheduled Future Notice */}
+              {isLive ? (
+                <button
+                  type="button"
+                  onClick={resolvePlayback}
+                  aria-label={`Start broadcast stream for ${title}`}
+                  className="relative z-10 group inline-flex items-center gap-3 rounded-2xl bg-[#c9f36b] px-6 py-3.5 text-sm font-black text-[#0a1110] shadow-lg shadow-[#c9f36b]/20 hover:bg-[#b8e25d] focus:outline-none focus:ring-4 focus:ring-[#c9f36b]/40 transition-all hover:scale-105 active:scale-95"
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0a1110] text-[#c9f36b] transition-transform group-hover:scale-110">
+                    <svg className="h-4 w-4 ml-0.5" viewBox="0 0 24 24" fill="currentColor">
+                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                  </span>
+                  <span>Play Live Broadcast Stream</span>
+                </button>
+              ) : (
+                <div className="relative z-10 flex flex-col items-center max-w-md rounded-2xl border border-white/10 bg-black/75 p-5 backdrop-blur-md shadow-2xl">
+                  <div className="flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3.5 py-1 text-xs font-bold text-amber-300">
+                    <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    <span>UPCOMING FIXTURE</span>
+                  </div>
 
-              <p className="relative z-10 mt-4 text-[11px] text-slate-400">
-                Sandboxed Secure Embed · Top-level ad-redirects blocked
-              </p>
+                  <p className="mt-3 text-base sm:text-lg font-black text-white">
+                    Kickoff: {timeOf(match, 'Asia/Kathmandu')}
+                  </p>
+                  <p className="text-xs font-bold text-[#c9f36b] mt-0.5">
+                    Nepal Standard Time (NST) {ts && `· ${formatCountdown(ts)}`}
+                  </p>
+
+                  <p className="mt-3 text-xs leading-relaxed text-slate-300 text-center">
+                    This match is scheduled for the future. The live broadcast feed will activate on this page approximately 10–15 minutes prior to kickoff.
+                  </p>
+
+                  <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={toggleFavorite}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3.5 py-2 text-xs font-bold text-white hover:bg-white/20 transition"
+                    >
+                      <span>{isFavorite ? '★ In Watchlist' : '☆ Add to Watchlist'}</span>
+                    </button>
+                    <a
+                      href={generateGoogleCalendarUrl(match, title, league)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3.5 py-2 text-xs font-bold text-white hover:bg-white/20 transition"
+                    >
+                      <span>📅 Google Calendar</span>
+                    </a>
+                  </div>
+
+                  <div className="mt-3.5 border-t border-white/10 pt-3 w-full text-center">
+                    <button
+                      type="button"
+                      onClick={resolvePlayback}
+                      className="text-[11px] font-semibold text-slate-400 hover:text-[#c9f36b] transition underline"
+                    >
+                      Check pre-match stream feed now &rarr;
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

@@ -245,11 +245,11 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
           <span
             suppressHydrationWarning
             className={`absolute left-2.5 top-2.5 z-20 flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-bold shadow-md ${
-              isLive ? 'bg-red-600 font-black tracking-wider text-white' : 'bg-[#060a09]/90 border border-white/10 text-slate-300 backdrop-blur-sm'
+              isLive ? 'bg-red-600 font-black tracking-wider text-white' : 'bg-[#060a09]/90 border border-white/10 text-slate-200 backdrop-blur-sm'
             }`}
           >
             {isLive && <span className="inline-block h-1.5 w-1.5 animate-ping rounded-full bg-white" aria-hidden="true"></span>}
-            {isLive ? 'LIVE' : status === 'Final' ? 'Final' : formattedTime}
+            {isLive ? 'LIVE' : status === 'Final' ? 'Final' : `${formattedTime} NST`}
           </span>
 
           {/* Team Crests Overlaid on Thumbnail if Home/Away Present */}
@@ -334,11 +334,11 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
             {isLive ? (
               <span className="flex items-center gap-1 font-black text-red-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                <span>Broadcasting</span>
+                <span>Broadcasting Live</span>
               </span>
             ) : (
-              <span className="text-slate-400 font-medium">
-                {formattedTime}
+              <span className="font-mono text-[11px] font-bold text-[#c9f36b]">
+                {formattedTime} (NST)
               </span>
             )}
           </div>
