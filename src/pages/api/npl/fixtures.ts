@@ -16,6 +16,83 @@ function getSupabaseClient() {
   }
 }
 
+let lastUpstreamSync = 0;
+let cachedUpstreamUpdates: Map<string, Partial<NplMatch>> = new Map();
+
+/**
+ * Automatically scrapes live scores, overs, and match statuses from official NPL feed
+ */
+async function fetchOfficialScoreUpdates(): Promise<Map<string, Partial<NplMatch>>> {
+  const now = Date.now();
+  if (now - lastUpstreamSync < 30000 && cachedUpstreamUpdates.size > 0) {
+    return cachedUpstreamUpdates;
+  }
+
+  try {
+    const res = await fetch('https://nepalpremierleague.org/fixtures', {
+      headers: { 'User-Agent': 'Sportivo-LiveDesk/1.0' },
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!res.ok) return cachedUpstreamUpdates;
+
+    const html = await res.text();
+    const updates = new Map<string, Partial<NplMatch>>();
+
+    const matchIdRegex = /href="\/matches\/(npl26-\d+)"/g;
+    let m: RegExpExecArray | null;
+    const matchIds: string[] = [];
+    while ((m = matchIdRegex.exec(html)) !== null) {
+      if (!matchIds.includes(m[1])) matchIds.push(m[1]);
+    }
+
+    for (const id of matchIds) {
+      const idx = html.indexOf(`href="/matches/${id}"`);
+      if (idx === -1) continue;
+      const snippet = html.substring(idx, idx + 2000);
+
+      const isLive = snippet.includes('Live</span>') || snippet.includes('>Live<');
+      const isConcluded = snippet.includes('won by');
+      const wonMatch = snippet.match(/([A-Za-z\s]+won by[^\n<]+)/);
+
+      const scoreMatches = [
+        ...snippet.matchAll(
+          /tabular-nums">(\d+)(?:<!-- -->)?\/(?:<!-- -->)?(\d+)<span[^>]*>\((?:<!-- -->)?([\d.]+)/g
+        ),
+      ];
+
+      const partial: Partial<NplMatch> = {};
+      if (isConcluded) {
+        partial.status = 'COMPLETED';
+      } else if (isLive) {
+        partial.status = 'LIVE';
+      }
+
+      if (scoreMatches.length >= 2) {
+        partial.homeScore = `${scoreMatches[0][1]}/${scoreMatches[0][2]} (${scoreMatches[0][3]} ov)`;
+        partial.awayScore = `${scoreMatches[1][1]}/${scoreMatches[1][2]} (${scoreMatches[1][3]} ov)`;
+      } else if (scoreMatches.length === 1) {
+        partial.homeScore = `${scoreMatches[0][1]}/${scoreMatches[0][2]} (${scoreMatches[0][3]} ov)`;
+      }
+
+      if (wonMatch) {
+        partial.summary = wonMatch[1].replace(/\\/g, '').trim();
+      }
+
+      if (Object.keys(partial).length > 0) {
+        updates.set(id, partial);
+      }
+    }
+
+    if (updates.size > 0) {
+      cachedUpstreamUpdates = updates;
+      lastUpstreamSync = now;
+    }
+    return cachedUpstreamUpdates;
+  } catch {
+    return cachedUpstreamUpdates;
+  }
+}
+
 export const GET: APIRoute = async () => {
   let fixtures: NplMatch[] = NPL_FIXTURES_2026;
 
@@ -66,6 +143,29 @@ export const GET: APIRoute = async () => {
           };
         });
       }
+    }
+  } catch {}
+
+  // 2. Overlay live official score & overs updates
+  try {
+    const liveUpdates = await fetchOfficialScoreUpdates();
+    if (liveUpdates.size > 0) {
+      fixtures = fixtures.map((f) => {
+        const update = liveUpdates.get(f.id);
+        if (update) {
+          // Never regress an explicitly COMPLETED match back to LIVE
+          const newStatus =
+            f.status === 'COMPLETED' ? 'COMPLETED' : update.status || f.status;
+
+          return {
+            ...f,
+            ...update,
+            status: newStatus,
+            broadcast: newStatus === 'COMPLETED' ? undefined : f.broadcast,
+          };
+        }
+        return f;
+      });
     }
   } catch {}
 
