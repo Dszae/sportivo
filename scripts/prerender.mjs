@@ -52,59 +52,15 @@ const normalize = (match, category) => ({
 
 async function fetchCategory(category) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  const timeout = setTimeout(() => controller.abort(), 10000);
   try {
-    const fixCat = category === 'football' ? 'soccer' : category;
-    const [streamRes, fixRes] = await Promise.allSettled([
-      fetch('https://strmfree.st/streams', {
-        headers: { 'User-Agent': 'Mozilla/5.0', accept: 'application/json' },
-        signal: controller.signal,
-      }),
-      fetch(`https://strmfree.st/fixtures/${fixCat}`, {
-        headers: { 'User-Agent': 'Mozilla/5.0', accept: 'application/json' },
-        signal: controller.signal,
-      }),
-    ]);
-
-    const matches = [];
-    const seen = new Set();
-    const add = (m) => {
-      const slug = slugify(titleOf(m));
-      if (!slug || seen.has(slug)) return;
-      seen.add(slug);
-      matches.push(normalize(m, category));
-    };
-
-    if (streamRes.status === 'fulfilled' && streamRes.value.ok) {
-      const data = await streamRes.value.json().catch(() => ({}));
-      const items = data?.streams?.[fixCat] || [];
-      for (const item of items) {
-        add({
-          id: item.stream_key || item.id,
-          title: item.name,
-          category,
-          status: 'live',
-          date: item.match_timestamp ? item.match_timestamp * 1000 : Date.now(),
-        });
-      }
-    }
-
-    if (fixRes.status === 'fulfilled' && fixRes.value.ok) {
-      const data = await fixRes.value.json().catch(() => ({}));
-      for (const d of Object.keys(data?.fixtures || {})) {
-        for (const item of data.fixtures[d]?.fixtures || []) {
-          add({
-            id: slugify(item.event_name),
-            title: item.event_name.replace(' at ', ' vs '),
-            category,
-            status: item.date_unix && item.date_unix * 1000 <= Date.now() ? 'live' : 'upcoming',
-            date: item.date_unix ? item.date_unix * 1000 : d,
-          });
-        }
-      }
-    }
-
-    return matches.slice(0, maxMatches);
+    const response = await fetch(`https://streamed.pk/api/matches/${category}`, {
+      headers: { accept: 'application/json' },
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    return Array.isArray(data) ? data.slice(0, maxMatches).map((match) => normalize(match, category)) : [];
   } catch (error) {
     console.warn(`[prerender] ${category}: ${error.message}`);
     return [];

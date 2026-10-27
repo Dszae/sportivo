@@ -165,8 +165,7 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
       <a
         key={`${slug}-${index}`}
         href={`/${category}/match/${encodeURIComponent(slug)}/`}
-        style={{ contentVisibility: 'auto', containIntrinsicSize: '280px 220px' }}
-        className={`group relative overflow-hidden rounded-2xl border bg-[#111a19] shadow-xl shadow-black/10 transition-transform duration-200 transform-gpu hover:-translate-y-1 hover:border-[#e5b94f]/50 focus:outline-none focus:ring-2 focus:ring-[#c9f36b] ${
+        className={`group relative overflow-hidden rounded-2xl border bg-[#111a19] shadow-xl shadow-black/10 transition-all duration-300 hover:-translate-y-1 hover:border-[#e5b94f]/50 focus:outline-none focus:ring-2 focus:ring-[#c9f36b] ${
           isLive ? 'border-red-500/50 ring-1 ring-red-500/30' : 'border-white/10'
         }`}
       >
@@ -200,10 +199,7 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
               height="144"
               loading="lazy"
               decoding="async"
-              onError={(e) => {
-                (e.currentTarget as HTMLElement).style.display = 'none';
-              }}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
             <div className="px-4 text-center text-sm font-bold text-slate-300">

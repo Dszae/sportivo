@@ -399,11 +399,13 @@ export async function fetchMatches(category: Category, signal?: AbortSignal): Pr
       });
       if (!res.ok) return;
       const data: any = await res.json();
-      const dates = Object.keys(data?.fixtures || {});
+      const dates = Object.keys(data?.fixtures || {}).slice(0, 2); // today & tomorrow
       const now = Date.now();
       for (const dateKey of dates) {
-        const list = data.fixtures[dateKey]?.fixtures || [];
+        if (matches.length >= 25) break;
+        const list = (data.fixtures[dateKey]?.fixtures || []).slice(0, 15);
         for (const item of list) {
+          if (matches.length >= 25) break;
           const rawName: string = item.event_name || '';
           const title = rawName.includes(' at ') ? rawName.replace(' at ', ' vs ') : rawName;
           const matchTimeMs = item.date_unix ? item.date_unix * 1000 : new Date(dateKey).getTime();
@@ -556,7 +558,7 @@ export async function fetchMatches(category: Category, signal?: AbortSignal): Pr
   ]);
 
   // Sort: Live first, upcoming ordered by kickoff time, 24/7 feeds, completed matches last
-  return matches.sort((a, b) => {
+  matches.sort((a, b) => {
     const statusA = statusOf(a);
     const statusB = statusOf(b);
     if (statusA === 'Live' && statusB !== 'Live') return -1;
@@ -574,6 +576,8 @@ export async function fetchMatches(category: Category, signal?: AbortSignal): Pr
 
     return tsA - tsB;
   });
+
+  return matches.slice(0, 30);
 }
 
 export async function fetchLiveMatches(signal?: AbortSignal): Promise<Match[]> {

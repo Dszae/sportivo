@@ -16,13 +16,16 @@ export const GET: APIRoute = async ({ params }) => {
         },
       });
     } catch {
-      return Response.json([], {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-      });
+      return Response.json(
+        { error: 'Live fixtures are temporarily unavailable' },
+        {
+          status: 502,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      );
     }
   }
 
@@ -49,13 +52,16 @@ export const GET: APIRoute = async ({ params }) => {
       },
     });
   } catch {
-    return Response.json([], {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Retry-After': '60',
-        'Access-Control-Allow-Origin': '*',
-      },
-    });
+    return Response.json(
+      { error: 'Fixture data is temporarily unavailable' },
+      {
+        status: 502,
+        headers: {
+          'Content-Type': 'application/json',
+          'Retry-After': '60',
+          'Access-Control-Allow-Origin': '*',
+        },
+      }
+    );
   }
 };
