@@ -5,10 +5,11 @@ export type Category = (typeof categories)[number];
 
 export const FOOTBALL_LEAGUES = [
   'All',
-  'Champions League',
   'Premier League',
   'La Liga',
+  'Champions League',
   'Bundesliga',
+  'Ligue 1',
   'Serie A',
   'MLS',
   'Other Leagues',
@@ -41,6 +42,14 @@ const BUNDESLIGA_CLUBS = [
   'st. pauli', 'stuttgart', 'union berlin', 'werder bremen', 'wolfsburg', 'hamburg', 'hertha bsc',
   'hertha berlin', 'schalke', 'hannover', 'nurnberg', 'fortuna dusseldorf', 'kaiserslautern',
   'karlsruher', 'paderborn', 'greuther furth', 'darmstadt', 'cologne', 'koln'
+];
+
+const LIGUE_1_CLUBS = [
+  'psg', 'paris saint-germain', 'paris sg', 'paris', 'marseille', 'om', 'olympique de marseille',
+  'monaco', 'as monaco', 'lyon', 'olympique lyonnais', 'ol', 'lille', 'losc', 'nice', 'ogc nice',
+  'rennes', 'stade rennais', 'lens', 'rc lens', 'strasbourg', 'brest', 'stade brestois',
+  'toulouse', 'reims', 'stade de reims', 'nantes', 'fc nantes', 'montpellier', 'auxerre',
+  'angers', 'le havre', 'saint-etienne', 'as saint-etienne', 'st etienne', 'lorient', 'metz'
 ];
 
 const SERIE_A_CLUBS = [
@@ -96,45 +105,64 @@ export function detectFootballLeague(match: Match): Exclude<FootballLeague, 'All
   const text = normalizeText(raw);
 
   // 1. Champions League
-  if (text.includes('champions-league') || text.includes('champions league') || text.includes('uefa champions') || text.includes('-ucl-')) {
+  if (
+    text.includes('champions-league') ||
+    text.includes('champions league') ||
+    text.includes('uefa champions') ||
+    text.includes('-ucl-')
+  ) {
     return 'Champions League';
   }
 
-  // 2. MLS
-  if (text.includes('major-league-soccer') || text.includes(' mls') || text.includes('-mls-')) {
+  // 2. Explicit League Names in title or competition metadata
+  if (text.includes('premier-league') || text.includes('premier league') || text.includes('premierleague') || text.includes('epl')) {
+    return 'Premier League';
+  }
+  if (text.includes('la-liga') || text.includes('la liga') || text.includes('laliga') || text.includes('primera-division')) {
+    return 'La Liga';
+  }
+  if (text.includes('bundesliga')) {
+    return 'Bundesliga';
+  }
+  if (text.includes('ligue 1') || text.includes('ligue-1') || text.includes('ligue1') || text.includes('french ligue')) {
+    return 'Ligue 1';
+  }
+  if (text.includes('serie-a') || text.includes('serie a') || text.includes('seriea')) {
+    return 'Serie A';
+  }
+  if (text.includes('major-league-soccer') || text.includes('mls') || text.includes('-mls-')) {
     return 'MLS';
   }
 
+  // 3. Match against known league clubs
   const titleNorm = normalizeText(match.title || match.name || '');
   const parts = titleNorm.split(/\s+vs\.?\s+|\s+-\s+/i);
   const t1 = parts[0]?.trim() || '';
   const t2 = parts[1]?.trim() || '';
 
-  const isMls1 = MLS_CLUBS.some((c) => t1.includes(c));
-  const isMls2 = MLS_CLUBS.some((c) => t2.includes(c));
-  if (isMls1 || isMls2) return 'MLS';
-
   const isEpl1 = PREMIER_LEAGUE_CLUBS.some((c) => t1.includes(c));
   const isEpl2 = PREMIER_LEAGUE_CLUBS.some((c) => t2.includes(c));
-  if (isEpl1 && isEpl2) return 'Premier League';
+  if (isEpl1 || isEpl2) return 'Premier League';
 
   const isLaLiga1 = LA_LIGA_CLUBS.some((c) => t1.includes(c));
   const isLaLiga2 = LA_LIGA_CLUBS.some((c) => t2.includes(c));
-  if (isLaLiga1 && isLaLiga2) return 'La Liga';
+  if (isLaLiga1 || isLaLiga2) return 'La Liga';
 
   const isBunde1 = BUNDESLIGA_CLUBS.some((c) => t1.includes(c));
   const isBunde2 = BUNDESLIGA_CLUBS.some((c) => t2.includes(c));
-  if (isBunde1 && isBunde2) return 'Bundesliga';
+  if (isBunde1 || isBunde2) return 'Bundesliga';
+
+  const isLigue1_1 = LIGUE_1_CLUBS.some((c) => t1.includes(c));
+  const isLigue1_2 = LIGUE_1_CLUBS.some((c) => t2.includes(c));
+  if (isLigue1_1 || isLigue1_2) return 'Ligue 1';
 
   const isSerieA1 = SERIE_A_CLUBS.some((c) => t1.includes(c));
   const isSerieA2 = SERIE_A_CLUBS.some((c) => t2.includes(c));
-  if (isSerieA1 && isSerieA2) return 'Serie A';
+  if (isSerieA1 || isSerieA2) return 'Serie A';
 
-  // Explicit league strings in source / URL
-  if (text.includes('premier-league') || text.includes('premierleague') || text.includes('epl')) return 'Premier League';
-  if (text.includes('la-liga') || text.includes('laliga') || text.includes('primera-division')) return 'La Liga';
-  if (text.includes('bundesliga')) return 'Bundesliga';
-  if (text.includes('serie-a') || text.includes('seriea')) return 'Serie A';
+  const isMls1 = MLS_CLUBS.some((c) => t1.includes(c));
+  const isMls2 = MLS_CLUBS.some((c) => t2.includes(c));
+  if (isMls1 || isMls2) return 'MLS';
 
   return 'Other Leagues';
 }
@@ -326,14 +354,24 @@ export function generateIcsCalendarContent(match: Match): string {
 export function getSafeThumbnailUrl(url: string | undefined): string | undefined {
   if (!url || typeof url !== 'string') return undefined;
   if (url.startsWith('/api/thumbnail')) return url;
-  if (url.includes('strmfree.st')) {
+  if (/^https?:\/\//i.test(url)) {
     return `/api/thumbnail?url=${encodeURIComponent(url)}`;
   }
   return url;
 }
 
 export function publicUrl(value: string | undefined): string | null {
-  return sanitizePlaybackUrl(value);
+  if (!value || typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (/^https?:\/\//i.test(trimmed)) {
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+        return parsed.toString();
+      }
+    } catch {}
+  }
+  return null;
 }
 
 export async function fetchMatches(category: Category, signal?: AbortSignal): Promise<Match[]> {

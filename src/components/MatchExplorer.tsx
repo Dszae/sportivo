@@ -94,10 +94,11 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
     if (category !== 'football') return {} as Record<FootballLeague, number>;
     const counts: Record<FootballLeague, number> = {
       All: matches.length,
-      'Champions League': 0,
       'Premier League': 0,
       'La Liga': 0,
+      'Champions League': 0,
       'Bundesliga': 0,
+      'Ligue 1': 0,
       'Serie A': 0,
       MLS: 0,
       'Other Leagues': 0,
@@ -382,7 +383,15 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
         <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none" role="tablist" aria-label="Football league filters">
           {FOOTBALL_LEAGUES.map((league) => {
             const count = leagueCounts[league] || 0;
-            if (league !== 'All' && count === 0) return null;
+            const isPrimary = [
+              'All',
+              'Premier League',
+              'La Liga',
+              'Champions League',
+              'Bundesliga',
+              'Ligue 1',
+            ].includes(league);
+            if (!isPrimary && count === 0) return null;
             const isSelected = selectedLeague === league;
             return (
               <button

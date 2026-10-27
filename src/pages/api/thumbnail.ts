@@ -8,16 +8,29 @@ const TRANSPARENT_PNG = Buffer.from(
   'base64'
 );
 
-const ALLOWED_THUMBNAIL_HOSTS = [
-  'strmfree.st',
-  'timst.top',
-  'a.espncdn.com',
-  'i.ibb.co',
-  'e0.365dm.com',
-  'cdn.jsdelivr.net',
-  'd229kpbsb5jevy.cloudfront.net',
-  'mgpindia.com',
-];
+function isSafePublicHost(hostname: string): boolean {
+  const host = hostname.toLowerCase().trim();
+  if (!host) return false;
+
+  // Reject loopbacks, private subnets, and cloud metadata
+  if (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '0.0.0.0' ||
+    host === '::1' ||
+    host.endsWith('.local') ||
+    host.endsWith('.internal') ||
+    host === '169.254.169.254' ||
+    /^10\./.test(host) ||
+    /^192\.168\./.test(host) ||
+    /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host)
+  ) {
+    return false;
+  }
+
+  // Must have valid public domain format
+  return /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(host);
+}
 
 export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
@@ -40,11 +53,7 @@ export const GET: APIRoute = async ({ request }) => {
     });
   }
 
-  const isAllowed = ALLOWED_THUMBNAIL_HOSTS.some(
-    (host) => parsed.hostname === host || parsed.hostname.endsWith(`.${host}`)
-  );
-
-  if (!isAllowed || parsed.protocol !== 'https:') {
+  if (parsed.protocol !== 'https:' || !isSafePublicHost(parsed.hostname)) {
     return new Response(TRANSPARENT_PNG, {
       status: 200,
       headers: { 'Content-Type': 'image/png' },
@@ -54,10 +63,10 @@ export const GET: APIRoute = async ({ request }) => {
   try {
     const upstreamRes = await fetch(parsed.toString(), {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
       },
-      signal: AbortSignal.timeout(3500),
+      signal: AbortSignal.timeout(4500),
     });
 
     if (!upstreamRes.ok) {
@@ -68,6 +77,13 @@ export const GET: APIRoute = async ({ request }) => {
     }
 
     const contentType = upstreamRes.headers.get('content-type') || 'image/jpeg';
+    if (!contentType.toLowerCase().startsWith('image/')) {
+      return new Response(TRANSPARENT_PNG, {
+        status: 200,
+        headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600' },
+      });
+    }
+
     const buffer = await upstreamRes.arrayBuffer();
 
     return new Response(buffer, {
@@ -85,4 +101,3 @@ export const GET: APIRoute = async ({ request }) => {
     });
   }
 };
-
