@@ -141,6 +141,16 @@ export const nplAdapter: ProviderAdapter = {
   },
 
   async resolvePlayback(id: string, signal?: AbortSignal): Promise<PlaybackResolution> {
+    // 0. If known fixture is upcoming/completed without active broadcast, do not return stream
+    const knownFixture = NPL_FIXTURES_2026.find((m) => m.id.toLowerCase() === id.toLowerCase());
+    if (knownFixture && knownFixture.status !== 'LIVE' && !knownFixture.broadcast) {
+      return {
+        status: 'unavailable',
+        provider: 'NPL Broadcast Desk',
+        streams: [],
+      };
+    }
+
     // 1. Query NPL Backend Microservice (if running or configured)
     const backendBase =
       process.env.NPL_BACKEND_URL ||
@@ -184,42 +194,76 @@ export const nplAdapter: ProviderAdapter = {
     }
 
     // 2. Direct upstream resolution (Cloud / Vercel fallback matching npl microservice)
-    for (const testId of candidateIds) {
-      try {
-        const directRes = await fetch(`https://yonotv.pages.dev/LINK?id=${encodeURIComponent(testId)}`, {
-          signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(4000)]) : AbortSignal.timeout(4000),
-        });
-        if (directRes.ok) {
-          const html = await directRes.text();
-          const pattern = new RegExp(`${testId}:\\s*["']([^"']+)["']`, 'i');
-          const match = html.match(pattern);
-          if (match && match[1]) {
-            let streamUrl = match[1];
-            const srcMatch = streamUrl.match(/src=([^&"']+)/i);
-            if (srcMatch && srcMatch[1]) {
-              streamUrl = decodeURIComponent(srcMatch[1]);
-            }
-            const safeUrl = sanitizePlaybackUrl(streamUrl);
-            if (safeUrl && (safeUrl.endsWith('.m3u8') || safeUrl.endsWith('.mp4'))) {
-              return {
-                status: 'ready',
-                provider: 'NPL Live Stream (NetTV)',
-                streams: [
-                  {
-                    embedUrl: safeUrl,
-                    hd: true,
-                    isNativeVideo: true,
-                    isSandboxedIframe: false,
-                    language: 'Nepali / English',
-                  },
-                ],
-              };
-            }
+    try {
+      const directRes = await fetch('https://yonotv.pages.dev/LINK', {
+        signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(4000)]) : AbortSignal.timeout(4000),
+      });
+      if (directRes.ok) {
+        const html = await directRes.text();
+        const regex = /(NPL\w*)\s*:\s*["']([^"']+)["']/gi;
+        let m: RegExpExecArray | null;
+        const discovered: { key: string; url: string; isRumble: boolean; isNetTv: boolean; label: string }[] = [];
+
+        while ((m = regex.exec(html)) !== null) {
+          const key = m[1];
+          let streamUrl = m[2];
+          const srcMatch = streamUrl.match(/src=([^&"']+)/i);
+          if (srcMatch && srcMatch[1]) {
+            streamUrl = decodeURIComponent(srcMatch[1]);
+          }
+          const safeUrl = sanitizePlaybackUrl(streamUrl);
+          if (safeUrl && (safeUrl.endsWith('.m3u8') || safeUrl.endsWith('.mp4'))) {
+            const isRumble = safeUrl.includes('rumble');
+            const isNetTv = safeUrl.includes('nettvstreamz');
+            discovered.push({
+              key,
+              url: safeUrl,
+              isRumble,
+              isNetTv,
+              label: isRumble ? 'Rumble Cloud HD' : isNetTv ? 'NetTV Action Sports HD' : `${key} Stream`,
+            });
           }
         }
-      } catch (err: any) {
-        logDiagnostic('npl', 'debug', `Direct upstream resolution for ${testId}: ${err?.message}`);
+
+        if (discovered.length > 0) {
+          const numMatch = id.match(/\d+/);
+          const num = numMatch ? numMatch[0] : null;
+
+          discovered.sort((a, b) => {
+            if (num) {
+              const aMatch = a.key.includes(num);
+              const bMatch = b.key.includes(num);
+              if (aMatch && !bMatch) return -1;
+              if (!aMatch && bMatch) return 1;
+            }
+            return 0;
+          });
+
+          // Deduplicate by URL
+          const uniqueStreams: typeof discovered = [];
+          const seen = new Set<string>();
+          for (const s of discovered) {
+            if (!seen.has(s.url)) {
+              seen.add(s.url);
+              uniqueStreams.push(s);
+            }
+          }
+
+          return {
+            status: 'ready',
+            provider: 'NPL Live Broadcast Feed',
+            streams: uniqueStreams.map((s) => ({
+              embedUrl: s.url,
+              hd: true,
+              isNativeVideo: true,
+              isSandboxedIframe: false,
+              language: s.label,
+            })),
+          };
+        }
       }
+    } catch (err: any) {
+      logDiagnostic('npl', 'debug', `Direct upstream resolution error: ${err?.message}`);
     }
 
     // 2. Check Supabase broadcasts if available
