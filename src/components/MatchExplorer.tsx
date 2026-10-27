@@ -637,24 +637,7 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
             </div>
           )}
 
-          {/* Section 3: Completed / Final Matches (if any) */}
-          {finalMatches.length > 0 && (
-            <div>
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-slate-500"></span>
-                  <h3 className="text-base font-black text-slate-400 sm:text-lg">Recent Results</h3>
-                </div>
-                <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">
-                  {finalMatches.length} Final
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 opacity-75 sm:grid-cols-2 lg:grid-cols-4">
-                {finalMatches.map((match, index) => renderCard(match, index))}
-              </div>
-            </div>
-          )}
+          {/* Section 3: Completed / Final Matches — hidden per user request */}
         </div>
       )}
     </section>

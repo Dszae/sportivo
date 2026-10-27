@@ -1,201 +1,136 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 
-interface Slide {
-  id: string;
-  sport: 'football' | 'cricket';
-  tag: string;
-  badgeColor: string;
-  title: string;
-  highlight: string;
-  description: string;
-  imageUrl: string;
-  accentGradient: string;
-  actionText: string;
-  actionHref: string;
-}
+// Sports backgrounds that cycle continuously 24/7
+const BG_IMAGES = [
+  // Football
+  'https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=1600&auto=format&fit=crop',
+  // Cricket
+  'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=1600&auto=format&fit=crop',
+  // Basketball
+  'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=1600&auto=format&fit=crop',
+  // Football stadium aerial
+  'https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=1600&auto=format&fit=crop',
+  // Cricket bowl
+  'https://images.unsplash.com/photo-1518091043644-c1d4457512c6?q=80&w=1600&auto=format&fit=crop',
+  // Tennis
+  'https://images.unsplash.com/photo-1611791484670-ce19b801d192?q=80&w=1600&auto=format&fit=crop',
+  // Stadium lights
+  'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1600&auto=format&fit=crop',
+];
 
-const HERO_SLIDES: Slide[] = [
-  {
-    id: 'football-ucl',
-    sport: 'football',
-    tag: 'PREMIER LEAGUE & CHAMPIONS LEAGUE',
-    badgeColor: 'text-[#c9f36b] bg-[#c9f36b]/10 border-[#c9f36b]/30',
-    title: 'European Nights & Premier League',
-    highlight: 'Showdowns.',
-    description: 'Track high-stakes football fixtures in Nepal Standard Time (NST) with multi-server HD streaming, team crests, and live kickoff synchronization.',
-    imageUrl: 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=1600&auto=format&fit=crop',
-    accentGradient: 'from-emerald-950/90 via-[#0a1412]/80 to-[#080d0c]',
-    actionText: 'Watch Football Live',
-    actionHref: '/football/',
-  },
-  {
-    id: 'cricket-nepal',
-    sport: 'cricket',
-    tag: 'ICC CWC LEAGUE 2 & NPL 2026',
-    badgeColor: 'text-amber-400 bg-amber-400/10 border-amber-400/30',
-    title: 'Nepal National Cricket & NPL',
-    highlight: 'T20 Battles.',
-    description: 'Follow Nepal vs UAE, Janakpur Bolts vs Pokhara Avengers, and international bilateral series with ball-by-ball updates and verified feeds.',
-    imageUrl: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=1600&auto=format&fit=crop',
-    accentGradient: 'from-amber-950/80 via-[#14120a]/80 to-[#080d0c]',
-    actionText: 'Watch Cricket Live',
-    actionHref: '/cricket/',
-  },
-  {
-    id: 'football-derby',
-    sport: 'football',
-    tag: 'LA LIGA, BUNDESLIGA & SERIE A',
-    badgeColor: 'text-rose-400 bg-rose-400/10 border-rose-400/30',
-    title: 'World Derbies & Top Table',
-    highlight: 'Clashes.',
-    description: 'El Clásico, Der Klassiker, and Serie A showdowns with real-time scoreboards, live status trackers, and head-to-head team badges.',
-    imageUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=1600&auto=format&fit=crop',
-    accentGradient: 'from-rose-950/80 via-[#140a0e]/80 to-[#080d0c]',
-    actionText: 'Explore League Fixtures',
-    actionHref: '/football/',
-  },
-  {
-    id: 'cricket-world',
-    sport: 'cricket',
-    tag: 'INTERNATIONAL TEST & T20I SERIES',
-    badgeColor: 'text-cyan-400 bg-cyan-400/10 border-cyan-400/30',
-    title: 'India vs NZ, Ashes & Global',
-    highlight: 'Series.',
-    description: 'Comprehensive cricket schedules across Today, Tomorrow, and This Week. Kickoffs calculated accurately for fans in Nepal.',
-    imageUrl: 'https://images.unsplash.com/photo-1518091043644-c1d4457512c6?q=80&w=1600&auto=format&fit=crop',
-    accentGradient: 'from-cyan-950/80 via-[#0a1214]/80 to-[#080d0c]',
-    actionText: 'Explore Cricket Schedule',
-    actionHref: '/cricket/',
-  },
+// Generic Sportivo slogans — sport-neutral, rotating
+const SLOGANS = [
+  { headline: 'Every Match.', sub: 'Every Sport.', description: 'Live kickoffs, real-time scores, and multi-server HD streams — all in Nepal Standard Time.' },
+  { headline: 'Live. Now.', sub: 'From Anywhere.', description: 'Track football, cricket, and basketball from top leagues worldwide, synced to NST.' },
+  { headline: 'Your Sports.', sub: 'Your Schedule.', description: 'Personalise your watchlist, get live match alerts, and never miss a kickoff again.' },
+  { headline: 'Stream.', sub: 'Without Limits.', description: 'Multi-provider HD streams with team crests, live scoreboards, and zero friction.' },
 ];
 
 export default function HeroShowcase() {
-  const [current, setCurrent] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [bgIndex, setBgIndex] = useState(0);
+  const [sloganIndex, setSloganIndex] = useState(0);
+  const [fadeOut, setFadeOut] = useState(false);
 
+  // Cycle backgrounds every 5 seconds continuously — sport-neutral auto-rotation
   useEffect(() => {
-    if (isPaused) return;
+    const interval = setInterval(() => {
+      setFadeOut(true);
+      setTimeout(() => {
+        setBgIndex((prev) => (prev + 1) % BG_IMAGES.length);
+        setSloganIndex((prev) => (prev + 1) % SLOGANS.length);
+        setFadeOut(false);
+      }, 700);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
-    timerRef.current = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % HERO_SLIDES.length);
-    }, 5500);
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isPaused]);
-
-  const slide = HERO_SLIDES[current];
+  const slogan = SLOGANS[sloganIndex];
 
   return (
     <section
-      aria-label="Featured Sports Showcase"
-      className="relative mx-auto mb-12 max-w-7xl overflow-hidden rounded-3xl border border-white/10 bg-[#080c0b] shadow-2xl transition-all"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
+      aria-label="Sportivo — Live Sports Streaming"
+      className="relative mx-auto mb-12 max-w-7xl overflow-hidden rounded-3xl border border-white/10 bg-[#080c0b] shadow-2xl"
     >
-      {/* Background Slides with Crossfade */}
-      <div className="relative min-h-[460px] w-full sm:min-h-[500px] lg:min-h-[540px]">
-        {HERO_SLIDES.map((s, idx) => (
+      <div className="relative min-h-[440px] w-full sm:min-h-[480px] lg:min-h-[520px]">
+        {/* All backgrounds pre-rendered; active one is visible */}
+        {BG_IMAGES.map((url, idx) => (
           <div
-            key={s.id}
-            aria-hidden={idx !== current}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-              idx === current ? 'opacity-100 z-0' : 'opacity-0 -z-10 pointer-events-none'
-            }`}
+            key={idx}
+            aria-hidden="true"
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${idx === bgIndex ? 'opacity-100 z-0' : 'opacity-0 -z-10'}`}
           >
-            {/* Background Image - Clean, High Contrast & Fully Visible */}
             <img
-              src={s.imageUrl}
-              alt={s.title}
+              src={url}
+              alt=""
               width="1600"
               height="800"
-              loading="eager"
+              loading={idx === 0 ? 'eager' : 'lazy'}
               decoding="async"
-              className="h-full w-full object-cover object-center filter brightness-[0.85] contrast-[1.08]"
+              className="h-full w-full object-cover object-center"
+              style={{ filter: 'brightness(0.8) contrast(1.05)' }}
             />
-
-            {/* Clean Vignette to ensure text readability without hiding the sports action */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#080c0b]/90 via-[#080c0b]/40 to-transparent"></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-[#080c0b] via-transparent to-transparent"></div>
           </div>
         ))}
 
-        {/* Content Layer */}
-        <div className="relative z-10 flex min-h-[460px] sm:min-h-[500px] lg:min-h-[540px] flex-col justify-between p-6 sm:p-10 lg:p-14">
-          {/* Top Meta Header */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-widest ${slide.badgeColor}`}>
-                <span className="h-1.5 w-1.5 animate-ping rounded-full bg-current"></span>
-                {slide.tag}
-              </span>
-              <span className="rounded-full border border-white/10 bg-black/40 px-3 py-1 text-[11px] font-bold text-slate-300 backdrop-blur-sm">
-                Nepal Standard Time (NST)
-              </span>
-            </div>
+        {/* Gradient overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#080c0b]/92 via-[#080c0b]/50 to-transparent" aria-hidden="true" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#080c0b]/95 via-transparent to-transparent" aria-hidden="true" />
 
-            {/* Sport Indicator Switcher Pills */}
-            <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/50 p-1 backdrop-blur-md">
-              <button
-                type="button"
-                onClick={() => setCurrent(0)}
-                className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all ${
-                  slide.sport === 'football'
-                    ? 'bg-[#c9f36b] text-[#080c0b] shadow-sm'
-                    : 'text-slate-400 hover:text-white'
-                }`}
+        {/* Content Layer */}
+        <div className="relative z-10 flex min-h-[440px] sm:min-h-[480px] lg:min-h-[520px] flex-col justify-between p-6 sm:p-10 lg:p-14">
+
+          {/* Top Badge */}
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#c9f36b]/30 bg-[#c9f36b]/10 px-3.5 py-1.5 text-[11px] font-black uppercase tracking-widest text-[#c9f36b]">
+              <span className="h-1.5 w-1.5 animate-ping rounded-full bg-[#c9f36b]" aria-hidden="true" />
+              Sportivo
+            </span>
+            <span className="rounded-full border border-white/10 bg-black/40 px-3 py-1 text-[11px] font-bold text-slate-300 backdrop-blur-sm">
+              Nepal Standard Time (NST · UTC+5:45)
+            </span>
+          </div>
+
+          {/* Centre Headline */}
+          <div className="max-w-2xl py-6">
+            <h2
+              key={`slogan-${sloganIndex}`}
+              className="text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl"
+              style={{ animation: 'fadeUp 0.7s ease both' }}
+            >
+              {slogan.headline}{' '}
+              <span className="text-[#c9f36b]">{slogan.sub}</span>
+            </h2>
+
+            <p
+              key={`desc-${sloganIndex}`}
+              className="mt-4 max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base"
+              style={{ animation: 'fadeUp 0.9s ease both' }}
+            >
+              {slogan.description}
+            </p>
+
+            <div className="mt-7 flex flex-wrap items-center gap-3">
+              <a
+                href="/football/"
+                className="inline-flex items-center gap-2 rounded-full bg-[#c9f36b] px-6 py-2.5 text-xs font-black uppercase tracking-wider text-[#080c0b] shadow-lg shadow-[#c9f36b]/20 transition-all hover:bg-[#b5e056] hover:scale-105 active:scale-95"
               >
                 <span>⚽</span>
                 <span>Football</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setCurrent(1)}
-                className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all ${
-                  slide.sport === 'cricket'
-                    ? 'bg-amber-400 text-[#080c0b] shadow-sm'
-                    : 'text-slate-400 hover:text-white'
-                }`}
+              </a>
+              <a
+                href="/cricket/"
+                className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-xs font-bold text-white backdrop-blur-sm transition-all hover:border-white/40 hover:bg-white/10"
               >
                 <span>🏏</span>
                 <span>Cricket</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Center Showcase Headline & CTA */}
-          <div className="max-w-2xl py-6">
-            <h2 className="text-3xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
-              {slide.title} <span className="text-[#c9f36b]">{slide.highlight}</span>
-            </h2>
-
-            <p className="mt-4 max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base">
-              {slide.description}
-            </p>
-
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <a
-                href={slide.actionHref}
-                className="inline-flex items-center gap-2 rounded-full bg-[#c9f36b] px-6 py-2.5 text-xs font-black uppercase tracking-wider text-[#080c0b] shadow-lg shadow-[#c9f36b]/20 transition-all hover:bg-[#b5e056] hover:scale-105 active:scale-95"
-              >
-                <span>⚡</span>
-                <span>{slide.actionText}</span>
-                <span aria-hidden="true">&rarr;</span>
               </a>
-
               <a
-                href="#live-matches"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.querySelector('[id*="schedule-title"]')?.scrollIntoView({ behavior: 'smooth' });
-                }}
+                href="/basketball/"
                 className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-xs font-bold text-white backdrop-blur-sm transition-all hover:border-white/40 hover:bg-white/10"
               >
-                <span>View Live Fixtures</span>
+                <span>🏀</span>
+                <span>Basketball</span>
               </a>
-
               <a
                 href="/dashboard/"
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-4 py-2.5 text-xs font-bold text-amber-300 backdrop-blur-sm transition-all hover:bg-white/5"
@@ -206,55 +141,28 @@ export default function HeroShowcase() {
             </div>
           </div>
 
-          {/* Bottom Bar: Carousel Pagination Dots & Nav Controls */}
-          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
-            {/* Pagination Dots */}
-            <div className="flex items-center gap-2" role="tablist" aria-label="Hero slides">
-              {HERO_SLIDES.map((s, idx) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={idx === current}
-                  aria-label={`Slide ${idx + 1}: ${s.title}`}
-                  onClick={() => setCurrent(idx)}
-                  className={`group relative flex h-2.5 items-center transition-all ${
-                    idx === current ? 'w-8' : 'w-2.5'
-                  }`}
-                >
-                  <span
-                    className={`h-2.5 w-full rounded-full transition-all duration-300 ${
-                      idx === current
-                        ? 'bg-[#c9f36b] shadow-sm shadow-[#c9f36b]/50'
-                        : 'bg-white/30 group-hover:bg-white/60'
-                    }`}
-                  ></span>
-                </button>
-              ))}
-            </div>
-
-            {/* Prev / Next Chevrons */}
-            <div className="flex items-center gap-2">
+          {/* Bottom progress dots */}
+          <div className="flex items-center gap-1.5 pt-4 border-t border-white/10">
+            {BG_IMAGES.map((_, idx) => (
               <button
+                key={idx}
                 type="button"
-                onClick={() => setCurrent((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)}
-                aria-label="Previous slide"
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-black/40 text-sm text-slate-300 backdrop-blur-sm transition-all hover:border-[#c9f36b] hover:text-[#c9f36b]"
-              >
-                ‹
-              </button>
-              <button
-                type="button"
-                onClick={() => setCurrent((prev) => (prev + 1) % HERO_SLIDES.length)}
-                aria-label="Next slide"
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-black/40 text-sm text-slate-300 backdrop-blur-sm transition-all hover:border-[#c9f36b] hover:text-[#c9f36b]"
-              >
-                ›
-              </button>
-            </div>
+                aria-label={`Background image ${idx + 1}`}
+                onClick={() => { setBgIndex(idx); setSloganIndex(idx % SLOGANS.length); }}
+                className={`block rounded-full transition-all duration-500 focus:outline-none ${idx === bgIndex ? 'h-2 w-7 bg-[#c9f36b]' : 'h-2 w-2 bg-white/20 hover:bg-white/50'}`}
+                aria-current={idx === bgIndex ? 'true' : undefined}
+              />
+            ))}
           </div>
         </div>
       </div>
+
+      <style>{`
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </section>
   );
 }

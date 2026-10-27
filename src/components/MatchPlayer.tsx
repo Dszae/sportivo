@@ -36,7 +36,7 @@ export default function MatchPlayer({ match }: Props) {
   const [streams, setStreams] = useState<StreamItem[]>([]);
   const [activeStream, setActiveStream] = useState<StreamItem | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
-  const [useSandbox, setUseSandbox] = useState(true);
+  const [useSandbox, setUseSandbox] = useState(false);
 
   const [isFavorite, setIsFavorite] = useState(false);
   const [copiedToast, setCopiedToast] = useState(false);
@@ -481,9 +481,6 @@ export default function MatchPlayer({ match }: Props) {
                   className="h-full w-full border-0"
                   allowFullScreen
                   allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-                  {...(useSandbox
-                    ? { sandbox: 'allow-scripts allow-same-origin allow-forms allow-presentation allow-popups' }
-                    : {})}
                   referrerPolicy="strict-origin-when-cross-origin"
                   title={`${title} live stream`}
                   onLoad={() => setPlayerState('playing')}
@@ -495,39 +492,22 @@ export default function MatchPlayer({ match }: Props) {
 
         {/* Security & Server Selection Toolbar */}
         {streams.length > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/5 bg-[#0b100f] p-3 text-xs">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="mr-1 font-bold text-slate-500">Servers:</span>
-              {streams.map((stream, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => handleServerSelect(stream)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                    activeStream === stream
-                      ? 'bg-[#c9f36b] text-[#0a1110] font-black shadow-sm'
-                      : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
-                  }`}
-                >
-                  {stream.language || `Server ${index + 1}`} {stream.hd ? 'HD' : ''}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 border-t border-white/5 bg-[#0b100f] p-3 text-xs">
+            <span className="mr-1 font-bold text-slate-500">Servers:</span>
+            {streams.map((stream, index) => (
               <button
+                key={index}
                 type="button"
-                onClick={() => setUseSandbox(!useSandbox)}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${
-                  useSandbox
-                    ? 'border border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
-                    : 'border border-amber-500/40 bg-amber-500/10 text-amber-300'
+                onClick={() => handleServerSelect(stream)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  activeStream === stream
+                    ? 'bg-[#c9f36b] text-[#0a1110] font-black shadow-sm'
+                    : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
                 }`}
-                title={useSandbox ? 'Anti-Popup Shield active. Popups and redirects are blocked. Click for direct mode.' : 'Direct playback mode. Click to enable Anti-Popup Shield.'}
               >
-                <span>{useSandbox ? '🛡️ Anti-Popup Shield: ON' : '⚡ Direct Play: ON'}</span>
+                {stream.language || `Server ${index + 1}`} {stream.hd ? 'HD' : ''}
               </button>
-            </div>
+            ))}
           </div>
         )}
       </div>
