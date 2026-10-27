@@ -92,6 +92,7 @@ test('11. Unauthorized DaddyLive provider configuration without secret key', asy
 });
 
 test('12. Provider registry lookup', () => {
+  assert.ok(getProvider('ppv'));
   assert.ok(getProvider('strmfree'));
   assert.ok(getProvider('espn'));
   assert.ok(getProvider('timst'));
@@ -111,5 +112,14 @@ test('14. Risk assessment of allow-popups in sandbox', () => {
   // allow-popups is intentionally omitted from the default production sandbox because it enables ad networks
   // to spawn new tabs on user gesture
   assert.equal(defaultSandboxPolicy.includes('allow-popups'), false);
+});
+
+test('15. PPV Provider allowlist and domain validation', () => {
+  assert.equal(isAllowedPlaybackDomain('taifood-blog.asia'), true);
+  assert.equal(isAllowedPlaybackDomain('ppv.st'), true);
+  assert.equal(
+    sanitizePlaybackUrl('https://taifood-blog.asia/embed/seriea/2026-10-27/sas-laz'),
+    'https://taifood-blog.asia/embed/seriea/2026-10-27/sas-laz'
+  );
 });
 

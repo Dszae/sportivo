@@ -36,7 +36,7 @@ export default function MatchPlayer({ match }: Props) {
   const [streams, setStreams] = useState<StreamItem[]>([]);
   const [activeStream, setActiveStream] = useState<StreamItem | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
-  const [useSandbox, setUseSandbox] = useState(false);
+  const [useSandbox, setUseSandbox] = useState(true);
 
   const [isFavorite, setIsFavorite] = useState(false);
   const [copiedToast, setCopiedToast] = useState(false);
@@ -482,7 +482,7 @@ export default function MatchPlayer({ match }: Props) {
                   allowFullScreen
                   allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
                   {...(useSandbox
-                    ? { sandbox: 'allow-scripts allow-same-origin allow-forms allow-presentation allow-popups' }
+                    ? { sandbox: 'allow-scripts allow-same-origin allow-forms allow-presentation' }
                     : {})}
                   referrerPolicy="strict-origin-when-cross-origin"
                   title={`${title} live stream`}
@@ -523,9 +523,9 @@ export default function MatchPlayer({ match }: Props) {
                     ? 'border border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
                     : 'border border-amber-500/40 bg-amber-500/10 text-amber-300'
                 }`}
-                title={useSandbox ? 'Sandbox enabled. Click for direct compatibility mode.' : 'Direct playback mode. Click to enable sandboxing.'}
+                title={useSandbox ? 'Anti-Popup Shield active. Popups and redirects are blocked. Click for direct mode.' : 'Direct playback mode. Click to enable Anti-Popup Shield.'}
               >
-                <span>{useSandbox ? '🛡️ Shielded Mode' : '⚡ Direct Play (No Sandbox)'}</span>
+                <span>{useSandbox ? '🛡️ Anti-Popup Shield: ON' : '⚡ Direct Play: ON'}</span>
               </button>
             </div>
           </div>

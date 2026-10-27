@@ -11,6 +11,14 @@ export const APPROVED_PLAYBACK_DOMAINS = [
   'ehgembxe.cfd',
   'commondatastorage.googleapis.com',
   'stream.mux.com',
+  'taifood-blog.asia',
+  'ppv.st',
+  'ppv.tj',
+  'ppvs.pk',
+  'ppv.rw',
+  'ppv.ms',
+  'ppv.bi',
+  'ppv.ug',
 ] as const;
 
 export function isAllowedPlaybackDomain(hostname: string): boolean {

@@ -2,6 +2,7 @@ import type { Category, NormalizedMatch, PlaybackResolution, ProviderAdapter } f
 import { StrmFreeAdapter } from './adapters/strmfree';
 import { EspnAdapter } from './adapters/espn';
 import { TimstAdapter } from './adapters/timst';
+import { PpvAdapter } from './adapters/ppv';
 import { DaddyLiveAdapter } from './adapters/daddylive';
 import { DemoAdapter } from './adapters/demo';
 import { sanitizeIdentifier } from './allowlist';
@@ -12,6 +13,7 @@ export * from './allowlist';
 export * from './diagnostics';
 
 const adapters: Record<string, ProviderAdapter> = {
+  ppv: new PpvAdapter(),
   strmfree: new StrmFreeAdapter(),
   espn: new EspnAdapter(),
   timst: new TimstAdapter(),
@@ -42,11 +44,13 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
   const timeoutSignal = AbortSignal.timeout(4000);
   const effectiveSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
 
+  const ppv = adapters.ppv;
   const strmfree = adapters.strmfree;
   const espn = adapters.espn;
   const timst = adapters.timst;
 
-  const [strmfreeResults, espnResults, timstResults] = await Promise.allSettled([
+  const [ppvResults, strmfreeResults, espnResults, timstResults] = await Promise.allSettled([
+    ppv.fetchMatches(category, effectiveSignal),
     strmfree.fetchMatches(category, effectiveSignal),
     espn.fetchMatches(category, effectiveSignal),
     timst.fetchMatches(category, effectiveSignal),
@@ -61,7 +65,7 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
     }
     const title = item.title || '';
     // Must be a head-to-head fixture ("Team A vs Team B")
-    if (/\s+vs\.?\s+/i.test(title) || /\s+v\s+/i.test(title)) {
+    if (/\s+vs\.?\s+/i.test(title) || /\s+v\s+/i.test(title) || /\s+at\s+/i.test(title)) {
       return true;
     }
     return false;
@@ -73,23 +77,42 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
       if (!isMatchWise(item)) continue;
 
       const slug = slugify(item.title);
-      if (!slug || seenSlugs.has(slug)) continue;
+      if (!slug) continue;
+
+      const existing = matches.find((m) => slugify(m.title) === slug);
+      if (existing) {
+        // Merge sources so users get PPV + StrmFree fallback options
+        for (const s of item.sources || []) {
+          if (!existing.sources.some((es) => es.id === s.id && es.source === s.source)) {
+            existing.sources.push(s);
+          }
+        }
+        if (!existing.poster && item.poster) existing.poster = item.poster;
+        if (!existing.teams && item.teams) existing.teams = item.teams;
+        continue;
+      }
+
       seenSlugs.add(slug);
       matches.push(item);
     }
   }
 
-  // 1. Ingest StrmFree (primary for live multi-server streams)
+  // 1. Ingest PPV (direct verified feeds)
+  if (ppvResults.status === 'fulfilled') {
+    ingest(ppvResults.value);
+  }
+
+  // 2. Ingest StrmFree (primary for live multi-server streams)
   if (strmfreeResults.status === 'fulfilled') {
     ingest(strmfreeResults.value);
   }
 
-  // 2. Ingest ESPN (official scoreboards & team crests)
+  // 3. Ingest ESPN (official scoreboards & team crests)
   if (espnResults.status === 'fulfilled') {
     ingest(espnResults.value);
   }
 
-  // 3. Ingest 24/7 channels
+  // 4. Ingest 24/7 channels
   if (timstResults.status === 'fulfilled') {
     ingest(timstResults.value);
   }
