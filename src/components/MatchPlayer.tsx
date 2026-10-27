@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Match } from '../lib/sportivo';
+import type { PlayerState } from '../lib/providers/types';
 import {
   detectFootballLeague,
   formatCountdown,
@@ -14,37 +15,35 @@ import {
 } from '../lib/sportivo';
 import { loadUserPreferences, saveUserPreferences, type UserPreferences } from '../lib/preferences';
 
-type Stream = { embedUrl?: string; url?: string; language?: string; hd?: boolean } | string;
-type Props = { match: Match };
-
-function streamUrl(stream: Stream) {
-  return typeof stream === 'string' ? stream : stream.embedUrl || stream.url || '';
+interface StreamItem {
+  embedUrl: string;
+  hd?: boolean;
+  language?: string;
+  isNativeVideo?: boolean;
+  isSandboxedIframe?: boolean;
 }
+
+type Props = { match: Match };
 
 export default function MatchPlayer({ match }: Props) {
   const sources = match.sources || [];
   const [selectedSourceIndex, setSelectedSourceIndex] = useState(0);
   const currentSource = sources[selectedSourceIndex];
 
-  const [streams, setStreams] = useState<Stream[]>([]);
-  const [active, setActive] = useState<Stream | null>(null);
-  const [loading, setLoading] = useState(Boolean(currentSource?.source && currentSource.id));
-  const [error, setError] = useState(
-    currentSource?.source && currentSource.id ? '' : 'No stream sources available for this match.'
-  );
-
-  const [streamConnecting, setStreamConnecting] = useState(true);
-  const [connectionStep, setConnectionStep] = useState(0);
-  const [streamTimeoutHint, setStreamTimeoutHint] = useState(false);
+  // Explicit Player States: 'idle' | 'resolving' | 'ready' | 'playing' | 'failed' | 'unavailable' | 'unsupported'
+  const [playerState, setPlayerState] = useState<PlayerState>('idle');
+  const [streams, setStreams] = useState<StreamItem[]>([]);
+  const [activeStream, setActiveStream] = useState<StreamItem | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const [isFavorite, setIsFavorite] = useState(false);
   const [copiedToast, setCopiedToast] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [timeZone, setTimeZone] = useState<'Asia/Kathmandu' | string>('Asia/Kathmandu');
   const [localTz, setLocalTz] = useState<string>('Local Time');
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const isResolvingRef = useRef(false);
 
   const title = titleOf(match);
   const slug = slugify(title);
@@ -58,7 +57,6 @@ export default function MatchPlayer({ match }: Props) {
     const prefs = loadUserPreferences();
     setIsFavorite(prefs.starredMatches.includes(slug));
     if (prefs.timeZone) {
-      setTimeZone(prefs.timeZone);
       setLocalTz(prefs.timeZone);
     }
 
@@ -67,7 +65,6 @@ export default function MatchPlayer({ match }: Props) {
       const current = customEvent.detail || loadUserPreferences();
       setIsFavorite(current.starredMatches.includes(slug));
       if (current.timeZone) {
-        setTimeZone(current.timeZone);
         setLocalTz(current.timeZone);
       }
     };
@@ -89,95 +86,79 @@ export default function MatchPlayer({ match }: Props) {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  // Fetch streams from provider with multi-tier resilient fallback
-  useEffect(() => {
-    if (!currentSource?.source || !currentSource.id) return;
+  // Resolves playback signals on explicit user action
+  async function resolvePlayback() {
+    if (!currentSource?.source || !currentSource.id) {
+      setPlayerState('unsupported');
+      setErrorMessage('No valid stream source configured for this fixture.');
+      return;
+    }
 
-    let cancelled = false;
+    if (isResolvingRef.current) return;
+    isResolvingRef.current = true;
+    setPlayerState('resolving');
+    setErrorMessage('');
 
-    async function loadStreams() {
-      if (!currentSource?.source || !currentSource.id) return;
-      const src = encodeURIComponent(currentSource.source);
-      const sid = encodeURIComponent(currentSource.id);
+    const src = encodeURIComponent(currentSource.source);
+    const sid = encodeURIComponent(currentSource.id);
 
-      let payload: unknown = null;
+    try {
+      const res = await fetch(`/api/stream/${src}/${sid}/`);
+      const data = await res.json();
 
-      // Tier 1: Local API proxy with trailing slash
-      try {
-        const res = await fetch(`/api/stream/${src}/${sid}/`);
-        if (res.ok) payload = await res.json();
-      } catch {}
-
-      // Tier 2: Local API proxy without trailing slash
-      if (!payload) {
-        try {
-          const res = await fetch(`/api/stream/${src}/${sid}`);
-          if (res.ok) payload = await res.json();
-        } catch {}
-      }
-
-      // Tier 3: Direct upstream CORS fallback
-      if (!payload) {
-        try {
-          const res = await fetch(`https://strmfree.st/api/v1/sources/${sid}`);
-          if (res.ok) {
-            const data = await res.json();
-            if (Array.isArray(data?.sources) && data.sources.length > 0) {
-              payload = data.sources.map((url: string) => ({ embedUrl: url, hd: true, language: 'English' }));
-            }
-          }
-        } catch {}
-      }
-
-      if (cancelled) return;
-
-      if (!payload) {
-        setError(
-          'This stream feed is currently offline or waiting for pre-match broadcast signal. Live streams activate 15 minutes before kickoff.'
-        );
-        setLoading(false);
+      if (!res.ok) {
+        setPlayerState(res.status === 404 ? 'unavailable' : 'failed');
+        setErrorMessage(data?.error || 'Broadcast signal is currently offline or waiting for pre-match feed.');
         return;
       }
 
-      try {
-        const parsed = typeof (payload as { contents?: string })?.contents === 'string'
-          ? JSON.parse((payload as { contents: string }).contents)
-          : payload;
-        const available = (Array.isArray(parsed) ? parsed : [parsed]).filter((item): item is Stream =>
-          Boolean(publicUrl(streamUrl(item)))
-        );
+      const list: any[] = Array.isArray(data) ? data : data?.streams || [data];
+      const validated: StreamItem[] = list
+        .map((item) => {
+          const rawUrl = typeof item === 'string' ? item : item.embedUrl || item.url || '';
+          const safeUrl = publicUrl(rawUrl);
+          if (!safeUrl) return null;
+          const isNative = safeUrl.endsWith('.m3u8') || safeUrl.endsWith('.mp4');
+          return {
+            embedUrl: safeUrl,
+            hd: Boolean(item.hd),
+            language: item.language || 'English',
+            isNativeVideo: isNative,
+            isSandboxedIframe: !isNative,
+          };
+        })
+        .filter((item): item is StreamItem => Boolean(item));
 
-        if (available.length === 0) {
-          setError(
-            'Live broadcast feeds typically go online 15 minutes before official kickoff. Check back shortly or switch providers above.'
-          );
-        } else {
-          setStreams(available);
-          setActive(available[0] || null);
-          setError('');
-        }
-      } catch {
-        setError('Unable to parse broadcast stream signals.');
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+      if (validated.length === 0) {
+        setPlayerState('unavailable');
+        setErrorMessage('Stream sources could not be validated against approved security allowlists.');
+        return;
       }
+
+      setStreams(validated);
+      setActiveStream(validated[0]);
+      setPlayerState('ready');
+    } catch {
+      setPlayerState('failed');
+      setErrorMessage('Network connection to stream resolver failed. Please try again.');
+    } finally {
+      isResolvingRef.current = false;
     }
-
-    loadStreams();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [currentSource?.id, currentSource?.source]);
+  }
 
   const handleSourceChange = (idx: number) => {
     setSelectedSourceIndex(idx);
-    setLoading(true);
-    setError('');
+    setPlayerState('idle');
     setStreams([]);
-    setActive(null);
+    setActiveStream(null);
+    setErrorMessage('');
+  };
+
+  const handleServerSelect = (item: StreamItem) => {
+    setActiveStream(item);
+    if (item.isNativeVideo) {
+      setPlayerState('ready');
+    }
   };
 
   const toggleFavorite = () => {
@@ -210,7 +191,6 @@ export default function MatchPlayer({ match }: Props) {
         return;
       } catch {}
     }
-    // Fallback: clipboard copy
     try {
       await navigator.clipboard.writeText(url);
       setCopiedToast(true);
@@ -231,46 +211,11 @@ export default function MatchPlayer({ match }: Props) {
     URL.revokeObjectURL(link.href);
   };
 
-  const url = active ? publicUrl(streamUrl(active)) : null;
-
-  const activeServerIndex = streams.findIndex((s) => s === active);
+  const activeServerIndex = streams.findIndex((s) => s === activeStream);
   const activeServerLabel =
     activeServerIndex >= 0
-      ? typeof active === 'string'
-        ? `Server ${activeServerIndex + 1}`
-        : `${active?.language || `Server ${activeServerIndex + 1}`} ${active?.hd ? 'HD' : ''}`.trim()
+      ? `${activeStream?.language || `Server ${activeServerIndex + 1}`} ${activeStream?.hd ? 'HD' : ''}`.trim()
       : 'Primary Server';
-
-  // Monitor stream loading and connection progress
-  useEffect(() => {
-    if (!url) {
-      setStreamConnecting(false);
-      setStreamTimeoutHint(false);
-      return;
-    }
-    setStreamConnecting(true);
-    setConnectionStep(0);
-    setStreamTimeoutHint(false);
-
-    const stepInterval = setInterval(() => {
-      setConnectionStep((prev) => (prev < 3 ? prev + 1 : prev));
-    }, 1300);
-
-    const hintTimer = setTimeout(() => {
-      setStreamTimeoutHint(true);
-    }, 5500);
-
-    // Auto-dismiss after 9s to ensure user always has access to player controls
-    const maxTimer = setTimeout(() => {
-      setStreamConnecting(false);
-    }, 9000);
-
-    return () => {
-      clearInterval(stepInterval);
-      clearTimeout(hintTimer);
-      clearTimeout(maxTimer);
-    };
-  }, [url]);
 
   return (
     <div className="space-y-6">
@@ -304,11 +249,11 @@ export default function MatchPlayer({ match }: Props) {
                     onClick={() => handleSourceChange(idx)}
                     className={`rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition ${
                       selectedSourceIndex === idx
-                        ? 'bg-[#c9f36b] text-[#0a1110] shadow-sm'
+                        ? 'bg-[#c9f36b] text-[#0a1110] shadow-sm font-black'
                         : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
                     }`}
                   >
-                    {s.source || `Provider ${idx + 1}`}
+                    {s.label || s.source || `Provider ${idx + 1}`}
                   </button>
                 ))}
               </div>
@@ -342,20 +287,59 @@ export default function MatchPlayer({ match }: Props) {
           </div>
         </div>
 
-        {/* Video / Iframe Stream Area */}
+        {/* Video / Player Display Area */}
         <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-black">
-          {loading ? (
-            <div className="flex flex-col items-center gap-4 px-6 text-center">
+          {/* STATE 1: IDLE - Transparent & Honest Match Kickoff Poster with Accessible Play Action */}
+          {playerState === 'idle' && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-[#0e1716]/95 via-[#0a100f]/98 to-[#050807] px-6 text-center">
+              {/* Match Details */}
+              <div className="mb-6 max-w-lg">
+                <span className="text-[11px] font-bold uppercase tracking-widest text-[#e5b94f]">
+                  {league || match.category?.toUpperCase() || 'SPORTS'} · NEPAL STANDARD TIME
+                </span>
+                <h3 className="mt-1 text-xl sm:text-2xl font-black text-white">{title}</h3>
+                <p className="mt-2 text-xs font-semibold text-slate-400">
+                  {isLive ? 'Broadcasting live now' : `Kickoff: ${timeOf(match, 'Asia/Kathmandu')}`}
+                </p>
+              </div>
+
+              {/* Predictable, Accessible Play Button */}
+              <button
+                type="button"
+                onClick={resolvePlayback}
+                aria-label={`Start broadcast stream for ${title}`}
+                className="group relative inline-flex items-center gap-3 rounded-2xl bg-[#c9f36b] px-6 py-3.5 text-sm font-black text-[#0a1110] shadow-lg shadow-[#c9f36b]/20 hover:bg-[#b8e25d] focus:outline-none focus:ring-4 focus:ring-[#c9f36b]/40 transition-all hover:scale-105 active:scale-95"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0a1110] text-[#c9f36b] transition-transform group-hover:scale-110">
+                  <svg className="h-4 w-4 ml-0.5" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                </span>
+                <span>Play Broadcast Stream</span>
+              </button>
+
+              <p className="mt-4 text-[11px] text-slate-500">
+                Sandboxed embed · Top-level ad-redirects blocked
+              </p>
+            </div>
+          )}
+
+          {/* STATE 2: RESOLVING - Loading indicator while preparing verified playback */}
+          {playerState === 'resolving' && (
+            <div className="flex flex-col items-center gap-4 px-6 text-center" aria-live="polite">
               <div className="relative flex h-16 w-16 items-center justify-center">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#c9f36b]/30"></span>
                 <span className="h-10 w-10 animate-spin rounded-full border-2 border-[#c9f36b] border-t-transparent shadow-[0_0_15px_rgba(201,243,107,0.3)]"></span>
               </div>
               <div>
-                <p className="text-sm font-bold text-white">Connecting to Broadcast Signal</p>
-                <p className="mt-1 font-mono text-xs text-slate-400">Searching active stream sources for {title}...</p>
+                <p className="text-sm font-bold text-white">Resolving Verified Broadcast Signal</p>
+                <p className="mt-1 font-mono text-xs text-slate-400">Negotiating stream parameters for {title}...</p>
               </div>
             </div>
-          ) : error ? (
+          )}
+
+          {/* STATE 3: ERROR / UNAVAILABLE / UNSUPPORTED */}
+          {(playerState === 'failed' || playerState === 'unavailable' || playerState === 'unsupported') && (
             <div className="max-w-md px-6 text-center">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10 text-amber-400 shadow-lg">
                 <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -364,143 +348,86 @@ export default function MatchPlayer({ match }: Props) {
                   <line x1="12" y1="16" x2="12.01" y2="16"></line>
                 </svg>
               </div>
-              <p className="text-sm font-bold text-amber-300">{error}</p>
-              {sources.length > 1 && (
-                <p className="mt-2 text-xs text-slate-400">
-                  Multiple stream sources are available for this fixture. Try switching providers in the top bar.
-                </p>
-              )}
+              <p className="text-sm font-bold text-amber-300">{errorMessage}</p>
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={resolvePlayback}
+                  className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/20 transition"
+                >
+                  Retry Connection
+                </button>
+                {sources.length > 1 && (
+                  <span className="text-xs text-slate-400 flex items-center">
+                    or try another provider in the top bar.
+                  </span>
+                )}
+              </div>
             </div>
-          ) : !url ? (
-            <div className="flex flex-col items-center gap-2 text-center text-slate-400">
-              <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse"></span>
-              <p className="font-mono text-xs">Waiting for pre-match broadcast feed...</p>
-            </div>
-          ) : (
+          )}
+
+          {/* STATE 4: READY & PLAYING */}
+          {(playerState === 'ready' || playerState === 'playing') && activeStream && (
             <>
-              {/* Active Stream Renderer */}
-              {url.includes('.m3u8') ? (
+              {activeStream.isNativeVideo ? (
                 <video
                   ref={videoRef}
                   controls
                   autoPlay
                   className="h-full w-full"
-                  src={url}
+                  src={activeStream.embedUrl}
                   playsInline
-                  onLoadedData={() => setStreamConnecting(false)}
-                  onCanPlay={() => setStreamConnecting(false)}
-                  onPlaying={() => setStreamConnecting(false)}
-                  onWaiting={() => setStreamConnecting(true)}
-                  onError={() => setStreamConnecting(false)}
+                  onLoadedMetadata={() => setPlayerState('playing')}
+                  onPlaying={() => setPlayerState('playing')}
+                  onWaiting={() => {}}
+                  onError={() => {
+                    setPlayerState('failed');
+                    setErrorMessage('Video playback error on this server.');
+                  }}
                 ></video>
               ) : (
                 <iframe
-                  src={url}
+                  src={activeStream.embedUrl}
                   className="h-full w-full border-0"
                   allowFullScreen
                   allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
                   referrerPolicy="no-referrer"
                   title={`${title} live stream`}
-                  onLoad={() => setStreamConnecting(false)}
+                  onLoad={() => setPlayerState('playing')}
                 ></iframe>
-              )}
-
-              {/* High-Tech Animated Loading & Connection Overlay (Replaces Black Screen) */}
-              {streamConnecting && (
-                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-gradient-to-b from-[#0a110f]/95 via-[#080d0c]/95 to-[#050807]/98 px-6 text-center backdrop-blur-sm transition-all duration-300">
-                  {/* Glowing Radar Pulse & Rotating Ring */}
-                  <div className="relative mb-5 flex h-20 w-20 items-center justify-center">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#c9f36b]/20 opacity-75"></span>
-                    <div className="absolute h-16 w-16 animate-spin rounded-full border-2 border-dashed border-[#c9f36b]/40 [animation-duration:6s]"></div>
-                    <div className="absolute h-12 w-12 rounded-full border-2 border-[#c9f36b] shadow-[0_0_20px_rgba(201,243,107,0.4)]"></div>
-                    <div className="relative flex h-8 w-8 items-center justify-center rounded-full bg-[#c9f36b] text-[#080a0b] shadow-md">
-                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                      </svg>
-                    </div>
-                  </div>
-
-                  {/* Status Badge */}
-                  <div className="mb-2.5 inline-flex items-center gap-2 rounded-full border border-[#c9f36b]/30 bg-[#c9f36b]/10 px-3 py-1 text-[11px] font-bold text-[#c9f36b]">
-                    <span className="h-1.5 w-1.5 animate-ping rounded-full bg-[#c9f36b]"></span>
-                    <span>{isLive ? 'LIVE BROADCAST FEED' : 'CONNECTING STREAM'}</span>
-                    <span className="text-white/30">•</span>
-                    <span className="text-white/80">{activeServerLabel}</span>
-                  </div>
-
-                  {/* Match Title */}
-                  <h3 className="line-clamp-1 max-w-md text-sm sm:text-base font-black text-white">
-                    {title}
-                  </h3>
-
-                  {/* Dynamic Step Status */}
-                  <p className="mt-2 text-xs font-semibold text-slate-300 flex items-center justify-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#c9f36b] animate-pulse"></span>
-                    <span>
-                      {connectionStep === 0 && 'Connecting to high-speed stream server...'}
-                      {connectionStep === 1 && 'Negotiating secure broadcast handshake...'}
-                      {connectionStep === 2 && 'Buffering live audio & video packets...'}
-                      {connectionStep >= 3 && 'Finalizing playback stream renderer...'}
-                    </span>
-                  </p>
-
-                  {/* Shimmer Progress Bar */}
-                  <div className="mt-4 h-1 w-56 overflow-hidden rounded-full bg-white/10">
-                    <div className="h-full w-full animate-pulse bg-gradient-to-r from-transparent via-[#c9f36b] to-transparent"></div>
-                  </div>
-
-                  {/* Helpful Quick Switcher if connection takes >5.5s */}
-                  {streamTimeoutHint && streams.length > 1 && (
-                    <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3 max-w-sm transition-all">
-                      <p className="text-[11px] text-slate-300">
-                        Feed taking a moment? Switch to another server:
-                      </p>
-                      <div className="mt-2 flex flex-wrap justify-center gap-1.5">
-                        {streams.map((s, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => {
-                              setActive(s);
-                            }}
-                            className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${
-                              active === s
-                                ? 'bg-[#c9f36b] text-[#080a0b]'
-                                : 'bg-white/10 text-white hover:bg-white/20'
-                            }`}
-                          >
-                            {typeof s === 'string' ? `Server ${idx + 1}` : (s.language || `Server ${idx + 1}`)}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
               )}
             </>
           )}
         </div>
 
-        {/* Server Selector Bar */}
+        {/* Security & Server Selection Toolbar */}
         {streams.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 border-t border-white/5 bg-[#0b100f] p-3">
-            <span className="mr-2 text-xs font-bold text-slate-500">Servers:</span>
-            {streams.map((stream, index) => (
-              <button
-                key={index}
-                type="button"
-                onClick={() => setActive(stream)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                  active === stream
-                    ? 'bg-[#c9f36b] text-[#0a1110] font-black shadow-sm'
-                    : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
-                }`}
-              >
-                {typeof stream === 'string'
-                  ? `Server ${index + 1}`
-                  : `${stream.language || `Server ${index + 1}`} ${stream.hd ? 'HD' : ''}`}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/5 bg-[#0b100f] p-3 text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="mr-1 font-bold text-slate-500">Servers:</span>
+              {streams.map((stream, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => handleServerSelect(stream)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                    activeStream === stream
+                      ? 'bg-[#c9f36b] text-[#0a1110] font-black shadow-sm'
+                      : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  {stream.language || `Server ${index + 1}`} {stream.hd ? 'HD' : ''}
+                </button>
+              ))}
+            </div>
+
+            <div className="inline-flex items-center gap-2 text-[10px] text-slate-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#c9f36b]"></span>
+              <span>{activeServerLabel}</span>
+              <span className="text-white/20">•</span>
+              <span className="text-slate-400">Sandboxed (No Top-Level Ad-Redirects)</span>
+            </div>
           </div>
         )}
       </div>

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "node scripts/generate-sitemap.mjs && astro check && astro build",
+    "test": "npx tsx tests/providers.test.mjs",
     "lint": "oxlint",
     "monitor": "node scripts/monitor.mjs",
     "audit": "node scripts/audit.mjs",
