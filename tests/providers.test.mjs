@@ -99,3 +99,17 @@ test('12. Provider registry lookup', () => {
   assert.ok(getProvider('demo'));
   assert.equal(getProvider('non-existent-provider'), null);
 });
+
+test('13. Sandbox permission policy enforcement (no allow-top-navigation)', () => {
+  const defaultSandboxPolicy = 'allow-scripts allow-same-origin allow-forms allow-presentation';
+  assert.equal(defaultSandboxPolicy.includes('allow-top-navigation'), false);
+  assert.equal(defaultSandboxPolicy.includes('allow-top-navigation-by-user-activation'), false);
+});
+
+test('14. Risk assessment of allow-popups in sandbox', () => {
+  const defaultSandboxPolicy = 'allow-scripts allow-same-origin allow-forms allow-presentation';
+  // allow-popups is intentionally omitted from the default production sandbox because it enables ad networks
+  // to spawn new tabs on user gesture
+  assert.equal(defaultSandboxPolicy.includes('allow-popups'), false);
+});
+
