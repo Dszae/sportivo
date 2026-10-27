@@ -275,13 +275,18 @@ export default function PersonalDashboard({ allMatchesByCategory }: Props) {
 
             {/* Real Visible Match Thumbnail */}
             <img
-              src={getSafeThumbnailUrl(poster) || (category === 'cricket' ? 'https://static.ppvservices.st/assets/thumb/2e3cba2a94ae6af4b958675e73fe91e9-thumbnail.jpg' : 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=600&auto=format&fit=crop')}
+              src={getSafeThumbnailUrl(poster) || '/sportivo-video-thumbnail.png'}
               alt={title}
               width="288"
               height="144"
               loading="lazy"
               decoding="async"
-              referrerPolicy="no-referrer"
+              onError={(e) => {
+                const el = e.currentTarget as HTMLImageElement;
+                if (el.src !== '/sportivo-video-thumbnail.png') {
+                  el.src = '/sportivo-video-thumbnail.png';
+                }
+              }}
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
 
@@ -293,20 +298,29 @@ export default function PersonalDashboard({ allMatchesByCategory }: Props) {
               <div className="absolute inset-x-2 bottom-2 z-10 flex items-center justify-center gap-2 rounded-xl bg-black/60 px-2.5 py-1 backdrop-blur-md border border-white/10">
                 {/* Home Team */}
                 <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                  {match.teams.home?.badge ? (
-                    <img
-                      src={getSafeThumbnailUrl(match.teams.home.badge)}
-                      alt=""
-                      width="20"
-                      height="20"
-                      className="h-5 w-5 shrink-0 object-contain drop-shadow"
-                      onError={(e) => ((e.currentTarget as HTMLElement).style.display = 'none')}
-                    />
-                  ) : (
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-[9px] font-black text-[#c9f36b]">
+                  <div className="relative flex h-5 w-5 shrink-0 items-center justify-center">
+                    {match.teams.home?.badge && (
+                      <img
+                        src={getSafeThumbnailUrl(match.teams.home.badge)}
+                        alt=""
+                        width="20"
+                        height="20"
+                        className="h-5 w-5 shrink-0 object-contain drop-shadow"
+                        onError={(e) => {
+                          const el = e.currentTarget as HTMLElement;
+                          el.style.display = 'none';
+                          const fallback = el.parentElement?.querySelector('.team-badge-fallback') as HTMLElement;
+                          if (fallback) fallback.style.display = 'flex';
+                        }}
+                      />
+                    )}
+                    <span
+                      className="team-badge-fallback h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/15 text-[9px] font-black text-[#c9f36b]"
+                      style={{ display: match.teams.home?.badge ? 'none' : 'flex' }}
+                    >
                       {(match.teams.home?.name || first || 'H').slice(0, 2).toUpperCase()}
                     </span>
-                  )}
+                  </div>
                   <span className="line-clamp-1 text-[11px] font-bold text-white">
                     {match.teams.home?.name || first}
                   </span>
@@ -319,20 +333,29 @@ export default function PersonalDashboard({ allMatchesByCategory }: Props) {
                   <span className="line-clamp-1 text-[11px] font-bold text-white text-right">
                     {match.teams.away?.name || second}
                   </span>
-                  {match.teams.away?.badge ? (
-                    <img
-                      src={getSafeThumbnailUrl(match.teams.away.badge)}
-                      alt=""
-                      width="20"
-                      height="20"
-                      className="h-5 w-5 shrink-0 object-contain drop-shadow"
-                      onError={(e) => ((e.currentTarget as HTMLElement).style.display = 'none')}
-                    />
-                  ) : (
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-[9px] font-black text-[#c9f36b]">
+                  <div className="relative flex h-5 w-5 shrink-0 items-center justify-center">
+                    {match.teams.away?.badge && (
+                      <img
+                        src={getSafeThumbnailUrl(match.teams.away.badge)}
+                        alt=""
+                        width="20"
+                        height="20"
+                        className="h-5 w-5 shrink-0 object-contain drop-shadow"
+                        onError={(e) => {
+                          const el = e.currentTarget as HTMLElement;
+                          el.style.display = 'none';
+                          const fallback = el.parentElement?.querySelector('.team-badge-fallback') as HTMLElement;
+                          if (fallback) fallback.style.display = 'flex';
+                        }}
+                      />
+                    )}
+                    <span
+                      className="team-badge-fallback h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/15 text-[9px] font-black text-[#c9f36b]"
+                      style={{ display: match.teams.away?.badge ? 'none' : 'flex' }}
+                    >
                       {(match.teams.away?.name || second || 'A').slice(0, 2).toUpperCase()}
                     </span>
-                  )}
+                  </div>
                 </div>
               </div>
             )}

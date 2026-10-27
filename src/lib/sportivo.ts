@@ -357,7 +357,7 @@ export function getSafeThumbnailUrl(url: string | undefined): string | undefined
   if (!trimmed) return undefined;
   if (trimmed.startsWith('/')) return trimmed;
 
-  if (/^https:\/\//i.test(trimmed)) {
+  if (/^https?:\/\//i.test(trimmed)) {
     try {
       const parsed = new URL(trimmed);
       const host = parsed.hostname.toLowerCase();
@@ -375,14 +375,12 @@ export function getSafeThumbnailUrl(url: string | undefined): string | undefined
       ) {
         return undefined;
       }
-      return trimmed;
+      // Route all external images through the local /api/thumbnail proxy
+      // This prevents adblockers, Brave Shields, and ISP DNS filtering from blocking team logos and posters
+      return `/api/thumbnail?url=${encodeURIComponent(trimmed)}`;
     } catch {
       return undefined;
     }
-  }
-
-  if (/^http:\/\//i.test(trimmed)) {
-    return `/api/thumbnail?url=${encodeURIComponent(trimmed)}`;
   }
 
   return undefined;

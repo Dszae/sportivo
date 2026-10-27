@@ -1,22 +1,17 @@
 import React, { useState, useEffect } from 'react';
 
-// Sports backgrounds that cycle continuously 24/7
-const BG_IMAGES = [
-  // Football
-  'https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=1600&auto=format&fit=crop',
-  // Cricket
-  'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=1600&auto=format&fit=crop',
-  // Basketball
-  'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=1600&auto=format&fit=crop',
-  // Football stadium aerial
-  'https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=1600&auto=format&fit=crop',
-  // Cricket bowl
-  'https://images.unsplash.com/photo-1518091043644-c1d4457512c6?q=80&w=1600&auto=format&fit=crop',
-  // Tennis
-  'https://images.unsplash.com/photo-1611791484670-ce19b801d192?q=80&w=1600&auto=format&fit=crop',
-  // Stadium lights
-  'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1600&auto=format&fit=crop',
+// Sports backgrounds that cycle continuously 24/7 (routed via local first-party proxy)
+const RAW_BG_IMAGES = [
+  'https://images.unsplash.com/photo-1522778119026-d647f0596c20?q=80&w=1600&auto=format&fit=crop', // Football pitch
+  'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=1600&auto=format&fit=crop', // Cricket stadium
+  'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=1600&auto=format&fit=crop', // Basketball court
+  'https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=1600&auto=format&fit=crop', // Football stadium lights
+  'https://images.unsplash.com/photo-1518091043644-c1d4457512c6?q=80&w=1600&auto=format&fit=crop', // Cricket bowler
+  'https://images.unsplash.com/photo-1611791484670-ce19b801d192?q=80&w=1600&auto=format&fit=crop', // Tennis action
+  'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1600&auto=format&fit=crop', // Night arena
 ];
+
+const BG_IMAGES = RAW_BG_IMAGES.map((url) => `/api/thumbnail?url=${encodeURIComponent(url)}`);
 
 // Generic Sportivo slogans — sport-neutral, rotating
 const SLOGANS = [
@@ -68,20 +63,19 @@ export default function HeroShowcase() {
               loading={idx === 0 ? 'eager' : 'lazy'}
               decoding="async"
               className={`h-full w-full object-cover object-center ${idx === bgIndex ? 'img-zoom-in' : ''}`}
-              style={{ filter: 'brightness(0.35) contrast(1.1)', opacity: 0.4 }}
+              style={{ filter: 'brightness(0.7) contrast(1.1)', opacity: 0.65 }}
             />
           </div>
         ))}
 
         {/* Ambient Top Vignette */}
-        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#080a0b]/90 via-[#080a0b]/40 to-transparent"></div>
+        <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#080a0b]/80 via-[#080a0b]/30 to-transparent"></div>
 
-        {/* Horizontal Edge Vignettes for Text Contrast */}
-        <div className="absolute inset-y-0 left-0 w-3/5 bg-gradient-to-r from-[#080a0b]/95 via-[#080a0b]/60 to-transparent"></div>
-        <div className="absolute inset-y-0 right-0 w-1/4 bg-gradient-to-l from-[#080a0b]/60 to-transparent"></div>
+        {/* Horizontal Vignette for Left-side Headline Contrast */}
+        <div className="absolute inset-y-0 left-0 w-full sm:w-2/3 bg-gradient-to-r from-[#080a0b]/85 via-[#080a0b]/40 to-transparent"></div>
 
         {/* Seamless Bottom Gradient Blend into Pure Site Black */}
-        <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#080a0b] via-[#080a0b]/80 to-transparent"></div>
+        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#080a0b] via-[#080a0b]/75 to-transparent"></div>
       </div>
 
       {/* Content Container (Constrained & Aligned with Grid) */}
