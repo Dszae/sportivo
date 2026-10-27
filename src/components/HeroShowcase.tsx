@@ -93,18 +93,18 @@ export default function HeroShowcase() {
           );
         })}
 
-        {/* Ambient Top Vignette */}
-        <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#080a0b]/80 via-[#080a0b]/30 to-transparent"></div>
+        {/* Ambient Top Vignette — z-20 sits on top of images */}
+        <div className="absolute inset-x-0 top-0 h-32 z-20 pointer-events-none bg-gradient-to-b from-[#080a0b]/90 via-[#080a0b]/40 to-transparent" aria-hidden="true"></div>
 
-        {/* Horizontal Vignette for Left-side Headline Contrast */}
-        <div className="absolute inset-y-0 left-0 w-full sm:w-2/3 bg-gradient-to-r from-[#080a0b]/85 via-[#080a0b]/40 to-transparent"></div>
+        {/* Horizontal Vignette for Left-side Headline Contrast — z-20 */}
+        <div className="absolute inset-y-0 left-0 w-full sm:w-2/3 z-20 pointer-events-none bg-gradient-to-r from-[#080a0b]/90 via-[#080a0b]/50 to-transparent" aria-hidden="true"></div>
 
-        {/* Seamless Bottom Gradient Blend into Pure Site Black */}
-        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#080a0b] via-[#080a0b]/75 to-transparent"></div>
+        {/* Seamless Bottom Gradient Blend into Pure Site Black — z-20 */}
+        <div className="absolute inset-x-0 bottom-0 h-56 sm:h-64 lg:h-72 z-20 pointer-events-none bg-gradient-to-t from-[#080a0b] via-[#080a0b]/85 to-transparent" aria-hidden="true"></div>
       </div>
 
-      {/* Content Container (Constrained & Aligned with Grid) */}
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6 pb-14 sm:pt-8 sm:pb-16 lg:pt-10 lg:pb-20">
+      {/* Content Container (Constrained & Aligned with Grid — z-30 above all gradients) */}
+      <div className="relative z-30 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6 pb-14 sm:pt-8 sm:pb-16 lg:pt-10 lg:pb-20">
         {/* Top Meta Bar */}
         <div className="mb-6 sm:mb-8 flex flex-wrap items-center justify-between gap-3">
           <a
