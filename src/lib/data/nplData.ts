@@ -157,9 +157,9 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "awayScore": "94/7 (15.1 ov)",
     "summary": "Janakpur Bolts batting first",
     "broadcast": {
-      "provider": "Action Sports HD / NetTV (Official Stream)",
-      "authorizedEmbedUrl": "https://www.youtube-nocookie.com/embed/1MhWCENFmuI?rel=0&modestbranding=1&autoplay=0&mute=0",
-      "isHls": false,
+      "provider": "NetTV / Action Sports HD",
+      "authorizedEmbedUrl": "https://ott-nlive.nettvstreamz.com/ottnpweb/npl_live3/index.m3u8",
+      "isHls": true,
       "availabilityStatus": "live"
     },
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-03"

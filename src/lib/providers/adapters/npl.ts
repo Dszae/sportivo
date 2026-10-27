@@ -183,6 +183,45 @@ export const nplAdapter: ProviderAdapter = {
       }
     }
 
+    // 2. Direct upstream resolution (Cloud / Vercel fallback matching npl microservice)
+    for (const testId of candidateIds) {
+      try {
+        const directRes = await fetch(`https://yonotv.pages.dev/LINK?id=${encodeURIComponent(testId)}`, {
+          signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(4000)]) : AbortSignal.timeout(4000),
+        });
+        if (directRes.ok) {
+          const html = await directRes.text();
+          const pattern = new RegExp(`${testId}:\\s*["']([^"']+)["']`, 'i');
+          const match = html.match(pattern);
+          if (match && match[1]) {
+            let streamUrl = match[1];
+            const srcMatch = streamUrl.match(/src=([^&"']+)/i);
+            if (srcMatch && srcMatch[1]) {
+              streamUrl = decodeURIComponent(srcMatch[1]);
+            }
+            const safeUrl = sanitizePlaybackUrl(streamUrl);
+            if (safeUrl && (safeUrl.endsWith('.m3u8') || safeUrl.endsWith('.mp4'))) {
+              return {
+                status: 'ready',
+                provider: 'NPL Live Stream (NetTV)',
+                streams: [
+                  {
+                    embedUrl: safeUrl,
+                    hd: true,
+                    isNativeVideo: true,
+                    isSandboxedIframe: false,
+                    language: 'Nepali / English',
+                  },
+                ],
+              };
+            }
+          }
+        }
+      } catch (err: any) {
+        logDiagnostic('npl', 'debug', `Direct upstream resolution for ${testId}: ${err?.message}`);
+      }
+    }
+
     // 2. Check Supabase broadcasts if available
     try {
       const supabase = getSupabaseClient();
