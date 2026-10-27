@@ -78,7 +78,7 @@ function normalizeText(text: string): string {
 }
 
 export type Team = { logo?: string; name?: string };
-export type StreamSource = { source?: string; id?: string };
+export type StreamSource = { source?: string; id?: string; label?: string };
 export type Match = {
   id?: string;
   title?: string;

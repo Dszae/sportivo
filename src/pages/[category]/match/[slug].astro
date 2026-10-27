@@ -3,9 +3,10 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SiteHeader from '../../../components/SiteHeader.astro';
 import SiteFooter from '../../../components/SiteFooter.astro';
 import MatchPlayer from '../../../components/MatchPlayer';
+import { NPL_FIXTURES_2026 } from '../../../lib/data/nplData';
+import { fetchUnifiedMatches } from '../../../lib/providers';
 import {
   detectFootballLeague,
-  fetchMatches,
   getMatchTimestamp,
   isCategory,
   slugify,
@@ -30,9 +31,76 @@ let match: Match | undefined;
 let relatedMatches: Match[] = [];
 if (validCategory) {
   try {
-    const list = await fetchMatches(category);
-    match = list.find((item) => slugify(titleOf(item)) === slug);
-    relatedMatches = list.filter((item) => slugify(titleOf(item)) !== slug).slice(0, 4);
+    const list = await fetchUnifiedMatches(category);
+    match = list.find((item) => slugify(titleOf(item)) === slug || item.id === slug);
+
+    // If not found in real-time feeds, check verified tournament databases (e.g. NPL)
+    if (!match && category === 'cricket') {
+      const nplMatch = NPL_FIXTURES_2026.find((m) => {
+        const s1 = slugify(`${m.homeTeam} vs ${m.awayTeam}`);
+        const s2 = slugify(`${m.awayTeam} vs ${m.homeTeam}`);
+        return (
+          s1 === slug ||
+          s2 === slug ||
+          m.id.toLowerCase() === slug.toLowerCase() ||
+          slugify(m.id) === slug
+        );
+      });
+
+      if (nplMatch) {
+        match = {
+          id: nplMatch.id,
+          title: `${nplMatch.homeTeam} vs ${nplMatch.awayTeam}`,
+          category: 'cricket',
+          competition: nplMatch.competition || 'Nepal Premier League',
+          league: 'NPL',
+          status: nplMatch.status === 'LIVE' ? 'Live' : nplMatch.status === 'COMPLETED' ? 'Final' : 'Upcoming',
+          date: nplMatch.timestamp,
+          teams: {
+            home: { name: nplMatch.homeTeam, badge: nplMatch.homeTeamLogo },
+            away: { name: nplMatch.awayTeam, badge: nplMatch.awayTeamLogo },
+          },
+          poster: nplMatch.homeTeamLogo || 'https://nepalpremierleague.org/icon.svg',
+          sources: [
+            {
+              source: 'npl',
+              id: nplMatch.id,
+              label: nplMatch.broadcast?.provider || 'NPL Live Broadcast',
+            },
+          ],
+        };
+      }
+    }
+
+    if (match) {
+      relatedMatches = list.filter((item) => slugify(titleOf(item)) !== slug).slice(0, 4);
+      if (relatedMatches.length === 0 && category === 'cricket') {
+        relatedMatches = NPL_FIXTURES_2026
+          .filter((m) => m.id !== match?.id)
+          .slice(0, 4)
+          .map((m) => ({
+            id: m.id,
+            title: `${m.homeTeam} vs ${m.awayTeam}`,
+            category: 'cricket' as Category,
+            competition: 'Nepal Premier League',
+            league: 'NPL',
+            status: m.status === 'LIVE' ? 'Live' : m.status === 'COMPLETED' ? 'Final' : 'Upcoming',
+            date: m.timestamp,
+            teams: {
+              home: { name: m.homeTeam, badge: m.homeTeamLogo },
+              away: { name: m.awayTeam, badge: m.awayTeamLogo },
+            },
+            poster: m.homeTeamLogo,
+            sources: [
+              {
+                source: 'npl',
+                id: m.id,
+                label: m.broadcast?.provider || 'NPL Broadcast',
+              },
+            ],
+          }));
+      }
+    }
   } catch {
     match = undefined;
   }
