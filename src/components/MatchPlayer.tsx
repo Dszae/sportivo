@@ -580,6 +580,7 @@ export default function MatchPlayer({ match }: Props) {
                 <video
                   ref={videoRef}
                   controls
+                  autoPlay
                   playsInline
                   className="h-full w-full"
                   src={activeStream.embedUrl.includes('.m3u8') ? undefined : activeStream.embedUrl}

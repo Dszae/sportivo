@@ -200,12 +200,16 @@ export function statusOf(match: Match) {
       if (start - now > 10 * 60 * 1000) {
         return 'Upcoming';
       }
-      // Cricket matches last up to 4.5 hours; football up to 2.5 hours
-      const maxDuration = match.category === 'cricket' ? 4.5 * 60 * 60 * 1000 : 3.5 * 60 * 60 * 1000;
+      // Cricket matches can last up to 5.5 hours (including delays & presentations)
+      const maxDuration = match.category === 'cricket' ? 5.5 * 60 * 60 * 1000 : 3.5 * 60 * 60 * 1000;
       if (now >= start - 10 * 60 * 1000 && now <= start + maxDuration) {
         return 'Live';
       }
       if (now > start + maxDuration) {
+        // Verified active stream sources (e.g. NPL) should remain accessible rather than prematurely terminating
+        if (match.sources && match.sources.length > 0 && match.sources.some((s) => s.source === 'npl')) {
+          return 'Live';
+        }
         return 'Final';
       }
     }
