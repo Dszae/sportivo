@@ -150,10 +150,17 @@ export default function HeroShowcase() {
                       : 'opacity-0 translate-y-2 pointer-events-none'
                   }`}
                 >
-                  <h2 className="text-4xl font-black leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl">
-                    {item.headline}{' '}
-                    <span className="text-[#c9f36b]">{item.sub}</span>
-                  </h2>
+                  {idx === 0 ? (
+                    <h1 className="text-4xl font-black leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl">
+                      Sportivo — {item.headline}{' '}
+                      <span className="text-[#c9f36b]">{item.sub}</span>
+                    </h1>
+                  ) : (
+                    <div className="text-4xl font-black leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl font-bold">
+                      {item.headline}{' '}
+                      <span className="text-[#c9f36b]">{item.sub}</span>
+                    </div>
+                  )}
 
                   <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-300 sm:text-lg">
                     {item.description}
