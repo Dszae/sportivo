@@ -27,11 +27,8 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const [showWatchlistOnly, setShowWatchlistOnly] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
   const [timeZone, setTimeZone] = useState<'Asia/Kathmandu' | string>('Asia/Kathmandu');
   const [visibleCount, setVisibleCount] = useState(16);
-  const [mounted, setMounted] = useState(false);
 
   const categoryLabel = category[0].toUpperCase() + category.slice(1);
 
@@ -39,17 +36,11 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
     setVisibleCount(16);
   }, [selectedLeague, dateFilter, query, showWatchlistOnly]);
 
-  // Initialize client preferences from shared preferences and sync across tabs
+  // Sync client preferences (starred matches & timezone)
   useEffect(() => {
-    setMounted(true);
     const prefs = loadUserPreferences();
-    setFavorites(prefs.starredMatches);
+    setFavorites(prefs.starredMatches || []);
     if (prefs.timeZone) setTimeZone(prefs.timeZone);
-
-    try {
-      const savedSearches = localStorage.getItem('sportivo_searches');
-      if (savedSearches) setRecentSearches(JSON.parse(savedSearches));
-    } catch {}
 
     const handlePrefChange = (e: Event) => {
       const customEvent = e as CustomEvent<UserPreferences>;
@@ -73,27 +64,16 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
     const nextFavorites = currentPrefs.starredMatches.includes(slug)
       ? currentPrefs.starredMatches.filter((s) => s !== slug)
       : [...currentPrefs.starredMatches, slug];
-    
+
     saveUserPreferences({ ...currentPrefs, starredMatches: nextFavorites });
     setFavorites(nextFavorites);
   };
 
-  const handleSearchSubmit = (val: string) => {
-    const trimmed = val.trim();
-    if (!trimmed) return;
-    setRecentSearches((prev) => {
-      const updated = [trimmed, ...prev.filter((item) => item.toLowerCase() !== trimmed.toLowerCase())].slice(0, 5);
-      try {
-        localStorage.setItem('sportivo_searches', JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-  };
-
+  // Only count active fixtures (exclude finished/Final results per user instruction)
   const leagueCounts = useMemo(() => {
     if (category !== 'football') return {} as Record<FootballLeague, number>;
     const counts: Record<FootballLeague, number> = {
-      All: matches.length,
+      All: 0,
       'Premier League': 0,
       'La Liga': 0,
       'Champions League': 0,
@@ -103,16 +83,39 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
       MLS: 0,
       'Other Leagues': 0,
     };
-    matches.forEach((m) => {
+
+    // Filter active matches by date if dateFilter is active
+    const active = matches.filter((m) => {
+      if (statusOf(m) === 'Final') return false;
+      if (dateFilter !== 'all' && !isMatchOnDate(m, dateFilter, timeZone)) return false;
+      return true;
+    });
+
+    counts.All = active.length;
+    active.forEach((m) => {
       const l = detectFootballLeague(m);
       counts[l] = (counts[l] || 0) + 1;
     });
     return counts;
-  }, [category, matches]);
+  }, [category, matches, dateFilter, timeZone]);
+
+  // If currently selected league has 0 matches under the active filter, auto-reset to 'All'
+  useEffect(() => {
+    if (selectedLeague !== 'All' && (leagueCounts[selectedLeague] || 0) === 0) {
+      setSelectedLeague('All');
+    }
+  }, [leagueCounts, selectedLeague]);
+
+  // Only display leagues that actually have 1 or more fixtures
+  const availableLeagues = useMemo(() => {
+    if (category !== 'football') return [];
+    return FOOTBALL_LEAGUES.filter((l) => l === 'All' || (leagueCounts[l] || 0) > 0);
+  }, [category, leagueCounts]);
 
   const filtered = useMemo(() => {
     const value = query.trim().toLowerCase();
-    let list = matches;
+    // Exclude completed/final matches
+    let list = matches.filter((m) => statusOf(m) !== 'Final');
 
     // Filter by Watchlist
     if (showWatchlistOnly) {
@@ -146,36 +149,34 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
 
   const liveMatches = useMemo(() => filtered.filter((m) => statusOf(m) === 'Live'), [filtered]);
   const upcomingMatches = useMemo(() => filtered.filter((m) => statusOf(m) === 'Upcoming'), [filtered]);
-  const finalMatches = useMemo(() => filtered.filter((m) => statusOf(m) === 'Final'), [filtered]);
+
   const hasTomorrowMatches = useMemo(
-    () => matches.some((m) => isMatchOnDate(m, 'tomorrow', timeZone)),
+    () => matches.some((m) => statusOf(m) !== 'Final' && isMatchOnDate(m, 'tomorrow', timeZone)),
     [matches, timeZone]
   );
   const hasWeekMatches = useMemo(
-    () => matches.some((m) => isMatchOnDate(m, 'week', timeZone)),
+    () => matches.some((m) => statusOf(m) !== 'Final' && isMatchOnDate(m, 'week', timeZone)),
     [matches, timeZone]
   );
 
   const availableDateFilters = useMemo(() => {
-    const filters: Array<'all' | 'today' | 'tomorrow' | 'week'> = ['all', 'today'];
+    const filters: DateFilter[] = ['all'];
+    const hasToday = matches.some((m) => statusOf(m) !== 'Final' && isMatchOnDate(m, 'today', timeZone));
+    if (hasToday) filters.push('today');
     if (hasTomorrowMatches) filters.push('tomorrow');
     if (hasWeekMatches) filters.push('week');
     return filters;
-  }, [hasTomorrowMatches, hasWeekMatches]);
+  }, [hasTomorrowMatches, hasWeekMatches, matches, timeZone]);
 
   useEffect(() => {
-    if (dateFilter === 'tomorrow' && !hasTomorrowMatches) {
-      setDateFilter('all');
-    }
-    if (dateFilter === 'week' && !hasWeekMatches) {
-      setDateFilter('all');
-    }
+    if (dateFilter === 'tomorrow' && !hasTomorrowMatches) setDateFilter('all');
+    if (dateFilter === 'week' && !hasWeekMatches) setDateFilter('all');
   }, [dateFilter, hasTomorrowMatches, hasWeekMatches]);
 
   const displayedUpcoming = useMemo(() => upcomingMatches.slice(0, visibleCount), [upcomingMatches, visibleCount]);
   const remainingUpcoming = upcomingMatches.length - displayedUpcoming.length;
 
-  const activeLeagueLabel = selectedLeague === 'All' ? categoryLabel : selectedLeague;
+  const sportIcon = category === 'football' ? '⚽' : category === 'cricket' ? '🏏' : '🏀';
 
   const renderCard = (match: Match, index: number) => {
     const title = titleOf(match);
@@ -201,25 +202,24 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
       <a
         key={`${slug}-${index}`}
         href={`/${category}/match/${encodeURIComponent(slug)}/`}
-        className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border bg-[#0b100f] shadow-xl shadow-black/20 transition-all duration-300 hover:-translate-y-1 hover:border-[#c9f36b]/40 hover:shadow-2xl hover:shadow-[#c9f36b]/10 focus:outline-none focus:ring-2 focus:ring-[#c9f36b] ${
+        className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border bg-[#0b100f] shadow-lg shadow-black/30 transition-all duration-300 hover:-translate-y-1 hover:border-[#c9f36b]/40 hover:shadow-xl hover:shadow-[#c9f36b]/10 focus:outline-none focus:ring-2 focus:ring-[#c9f36b] ${
           isLive ? 'border-red-500/50 ring-1 ring-red-500/30' : 'border-white/10'
         }`}
       >
-        {/* Watchlist Favorite Toggle Button */}
+        {/* Watchlist Star Toggle */}
         <button
           type="button"
           onClick={(e) => toggleFavorite(slug, e)}
           aria-label={isFav ? `Remove ${title} from watchlist` : `Add ${title} to watchlist`}
-          className="absolute right-2.5 top-2.5 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-[#060a09]/80 border border-white/10 text-white backdrop-blur-sm transition-transform hover:scale-110 focus:outline-none"
+          className="absolute right-2.5 top-2.5 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/75 border border-white/10 text-white backdrop-blur-sm transition-transform hover:scale-110 focus:outline-none"
         >
-          <span aria-hidden="true" className={`text-xs ${isFav ? 'text-amber-400' : 'text-slate-400 hover:text-white'}`}>
+          <span aria-hidden="true" className={`text-xs ${isFav ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-white'}`}>
             {isFav ? '★' : '☆'}
           </span>
         </button>
 
-        {/* Top Split: Match Thumbnail Stage */}
+        {/* Thumbnail Stage */}
         <div className="relative flex h-36 w-full items-center justify-center overflow-hidden bg-[#070c0b]">
-          {/* Real Visible Match Thumbnail (Proxied for zero ISP/Adblock blocking) */}
           <img
             src={poster}
             alt={title}
@@ -238,24 +238,22 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
 
-          {/* Dark Bottom Vignette Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0b100f] via-black/20 to-black/30 pointer-events-none"></div>
+          {/* Vignette */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0b100f] via-black/20 to-black/30 pointer-events-none" />
 
           {/* Status Badge */}
           <span
-            suppressHydrationWarning
             className={`absolute left-2.5 top-2.5 z-20 flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-bold shadow-md ${
               isLive ? 'bg-red-600 font-black tracking-wider text-white' : 'bg-[#060a09]/90 border border-white/10 text-slate-200 backdrop-blur-sm'
             }`}
           >
-            {isLive && <span className="inline-block h-1.5 w-1.5 animate-ping rounded-full bg-white" aria-hidden="true"></span>}
-            {isLive ? 'LIVE' : status === 'Final' ? 'Final' : `${formattedTime} NST`}
+            {isLive && <span className="inline-block h-1.5 w-1.5 animate-ping rounded-full bg-white" aria-hidden="true" />}
+            {isLive ? 'LIVE' : `${formattedTime} NST`}
           </span>
 
-          {/* Team Crests Overlaid on Thumbnail if Home/Away Present */}
+          {/* Team Crests Overlay */}
           {match.teams && typeof match.teams === 'object' && (match.teams.home || match.teams.away) && (
-            <div className="absolute inset-x-2 bottom-2 z-10 flex items-center justify-center gap-2 rounded-xl bg-black/60 px-2.5 py-1 backdrop-blur-md border border-white/10">
-              {/* Home Team */}
+            <div className="absolute inset-x-2 bottom-2 z-10 flex items-center justify-between gap-2 rounded-xl bg-black/70 px-2.5 py-1 backdrop-blur-md border border-white/10">
               <div className="flex items-center gap-1.5 flex-1 min-w-0">
                 <div className="relative flex h-5 w-5 shrink-0 items-center justify-center">
                   {match.teams.home?.badge && (
@@ -280,16 +278,15 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
                     {(match.teams.home?.name || first || 'H').slice(0, 2).toUpperCase()}
                   </span>
                 </div>
-                <span className="line-clamp-1 text-[11px] font-bold text-white">
+                <span className="truncate text-[11px] font-bold text-white">
                   {match.teams.home?.name || first}
                 </span>
               </div>
 
-              <span className="text-[10px] font-black text-[#c9f36b] shrink-0">VS</span>
+              <span className="text-[10px] font-black text-[#c9f36b] shrink-0 px-1">VS</span>
 
-              {/* Away Team */}
               <div className="flex items-center justify-end gap-1.5 flex-1 min-w-0">
-                <span className="line-clamp-1 text-[11px] font-bold text-white text-right">
+                <span className="truncate text-[11px] font-bold text-white text-right">
                   {match.teams.away?.name || second}
                 </span>
                 <div className="relative flex h-5 w-5 shrink-0 items-center justify-center">
@@ -320,10 +317,12 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
           )}
         </div>
 
-        {/* Bottom Split: Match Metadata */}
+        {/* Metadata Footer */}
         <div className="p-3.5 bg-[#070b0a] border-t border-white/5">
-          <h3 className="line-clamp-1 text-sm font-black text-slate-100 group-hover:text-[#c9f36b] transition-colors">{title}</h3>
-          <p className="mt-1 line-clamp-1 text-xs text-slate-400 font-medium">
+          <h3 className="truncate text-sm font-black text-slate-100 group-hover:text-[#c9f36b] transition-colors">
+            {title}
+          </h3>
+          <p className="mt-0.5 truncate text-xs text-slate-400 font-medium">
             {match.competition || matchLeague || `${categoryLabel} Broadcast`}
           </p>
 
@@ -333,12 +332,12 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
             </span>
             {isLive ? (
               <span className="flex items-center gap-1 font-black text-red-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
                 <span>Broadcasting Live</span>
               </span>
             ) : (
               <span className="font-mono text-[11px] font-bold text-[#c9f36b]">
-                {formattedTime} (NST)
+                {formattedTime} NST
               </span>
             )}
           </div>
@@ -348,215 +347,147 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
   };
 
   return (
-    <section aria-labelledby={`schedule-title-${category}`}>
-      {/* Header & Controls Toolbar */}
-      <div className="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#e5b94f]">Schedule</span>
-            <span className="text-slate-600">•</span>
-            <span className="inline-flex items-center gap-1 text-xs text-slate-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-              Live Sync
-            </span>
+    <div aria-labelledby={`section-title-${category}`} className="w-full">
+      {/* Clean Minimal Broadcast Header */}
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/[0.08] pb-5">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl" aria-hidden="true">{sportIcon}</span>
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h2 id={`section-title-${category}`} className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                {showWatchlistOnly ? '★ Watchlist Fixtures' : selectedLeague === 'All' ? `${categoryLabel}` : selectedLeague}
+              </h2>
+              {liveMatches.length > 0 ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/15 border border-red-500/30 px-2.5 py-0.5 text-[11px] font-black text-red-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                  <span>{liveMatches.length} LIVE</span>
+                </span>
+              ) : (
+                <span className="rounded-full bg-white/5 border border-white/10 px-2.5 py-0.5 text-[11px] font-bold text-slate-400">
+                  {filtered.length} Scheduled
+                </span>
+              )}
+            </div>
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-3">
-            <h2 id={`schedule-title-${category}`} className="text-2xl font-black text-white">
-              {showWatchlistOnly ? '★ My Watchlist' : selectedLeague === 'All' ? `${categoryLabel}` : selectedLeague}
-            </h2>
-            {exploreUrl && (
-              <a
-                href={exploreUrl}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#c9f36b]/40 bg-[#c9f36b]/10 px-3.5 py-1 text-xs font-bold text-[#c9f36b] hover:bg-[#c9f36b] hover:text-[#080a0b] transition-all shadow-sm shadow-[#c9f36b]/10"
-              >
-                <span>Explore {categoryLabel}</span>
-                <span aria-hidden="true">&rarr;</span>
-              </a>
-            )}
-          </div>
-          <p className="mt-1 text-xs text-slate-400">
-            {filtered.length} matches scheduled.
-          </p>
         </div>
 
-        <div className="w-full sm:w-72">
-          {/* Search Box */}
-          <div className="relative w-full">
-            <label htmlFor={`search-${category}`} className="sr-only">Search matches or teams</label>
+        {/* Clean Controls (Search + Explore Link) */}
+        <div className="flex items-center gap-3">
+          <div className="relative w-full sm:w-56">
+            <span className="absolute left-3 top-2 text-slate-500 text-xs" aria-hidden="true">🔍</span>
             <input
               id={`search-${category}`}
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleSearchSubmit(query);
-              }}
-              placeholder="Search matches or teams..."
-              className="w-full rounded-xl border border-white/10 bg-[#111a19] px-4 py-2 text-sm text-white placeholder-slate-500 focus:border-[#c9f36b] focus:outline-none"
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={`Search ${category}...`}
+              className="w-full rounded-full border border-white/10 bg-[#101716] pl-8 pr-7 py-1.5 text-xs text-white placeholder-slate-500 focus:border-[#c9f36b] focus:outline-none transition"
             />
             {query && (
               <button
                 type="button"
                 onClick={() => setQuery('')}
-                className="absolute right-2.5 top-2.5 text-xs text-slate-400 hover:text-white"
+                className="absolute right-2.5 top-1.5 text-xs text-slate-400 hover:text-white"
                 aria-label="Clear search"
               >
                 ✕
               </button>
             )}
           </div>
+
+          {exploreUrl && (
+            <a
+              href={exploreUrl}
+              className="hidden sm:inline-flex items-center gap-1 text-xs font-bold text-[#c9f36b] hover:underline shrink-0"
+            >
+              <span>Explore</span>
+              <span aria-hidden="true">&rarr;</span>
+            </a>
+          )}
         </div>
       </div>
 
-      {/* Date Navigation & Watchlist Pill Tabs */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label={`Date filter for ${categoryLabel}`}>
-            {availableDateFilters.map((filter) => {
-              const isSelected = dateFilter === filter && !showWatchlistOnly;
-              return (
-                <button
-                  key={filter}
-                  type="button"
-                  role="tab"
-                  aria-selected={isSelected}
-                  onClick={() => {
-                    setDateFilter(filter);
-                    setShowWatchlistOnly(false);
-                  }}
-                  className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all duration-200 ${
-                    isSelected
-                      ? 'site-button-active'
-                      : 'border border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white'
-                  }`}
-                >
-                  {filter === 'all' ? 'All Dates' : filter === 'today' ? 'Today' : filter === 'tomorrow' ? 'Tomorrow' : 'Next 7 Days'}
-                </button>
-              );
-            })}
+      {/* Streamlined Filter Pills (Only shown when meaningful choices exist) */}
+      {(availableLeagues.length > 2 || availableDateFilters.length > 2 || favorites.length > 0) && (
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          {/* Active League Pills (Only leagues that actually have active matches) */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {category === 'football' && availableLeagues.length > 2 && !showWatchlistOnly && (
+              availableLeagues.map((league) => {
+                const count = leagueCounts[league] || 0;
+                const isSelected = selectedLeague === league;
+                return (
+                  <button
+                    key={league}
+                    type="button"
+                    onClick={() => setSelectedLeague(league)}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all ${
+                      isSelected
+                        ? 'bg-[#c9f36b] text-[#080c0b] shadow-sm'
+                        : 'border border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white'
+                    }`}
+                  >
+                    <span>{league === 'All' ? 'All Leagues' : league}</span>
+                    <span className={`text-[10px] ${isSelected ? 'opacity-80' : 'text-slate-400'}`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })
+            )}
+
+            {/* Date Filters: Only shown if fixtures span across multiple dates */}
+            {availableDateFilters.length > 2 && (
+              <div className="flex items-center gap-1 bg-white/5 p-0.5 rounded-full border border-white/10">
+                {availableDateFilters.map((filter) => {
+                  const isSelected = dateFilter === filter && !showWatchlistOnly;
+                  return (
+                    <button
+                      key={filter}
+                      type="button"
+                      onClick={() => {
+                        setDateFilter(filter);
+                        setShowWatchlistOnly(false);
+                      }}
+                      className={`rounded-full px-3 py-0.5 text-xs font-bold transition-all ${
+                        isSelected ? 'bg-white/20 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {filter === 'all' ? 'All' : filter === 'today' ? 'Today' : filter === 'tomorrow' ? 'Tomorrow' : '7 Days'}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* Watchlist Filter Pill (Separate toggle button outside tablist) */}
-          <button
-            type="button"
-            onClick={() => setShowWatchlistOnly(!showWatchlistOnly)}
-            aria-pressed={showWatchlistOnly}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all duration-200 ${
-              showWatchlistOnly
-                ? 'border border-amber-400/50 bg-amber-400/20 text-amber-300 shadow-sm shadow-amber-400/20'
-                : 'border border-white/10 bg-white/5 text-slate-300 hover:border-amber-400/40 hover:text-amber-300'
-            }`}
-          >
-            <span aria-hidden="true">★</span>
-            <span>Watchlist</span>
-            {favorites.length > 0 && (
-              <span className="rounded-full bg-amber-400/20 px-1.5 py-0.2 text-[10px] text-amber-300" aria-label={`${favorites.length} saved matches`}>
-                {favorites.length}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* Manual Refresh & Status */}
-        <div className="flex items-center gap-3 text-xs text-slate-400">
-          <span suppressHydrationWarning>
-            {mounted ? `Refreshed: ${lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Refreshed: Live Sync'}
-          </span>
-          <button
-            type="button"
-            onClick={() => setLastRefreshed(new Date())}
-            className="rounded-full border border-white/10 bg-white/5 p-1.5 text-slate-400 hover:border-white/20 hover:text-white transition"
-            title="Refresh schedule"
-            aria-label="Refresh schedule"
-          >
-            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {/* League Filter Pills for Football */}
-      {category === 'football' && !showWatchlistOnly && (
-        <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none" role="tablist" aria-label="Football league filters">
-          {FOOTBALL_LEAGUES.map((league) => {
-            const count = leagueCounts[league] || 0;
-            const isPrimary = [
-              'All',
-              'Premier League',
-              'La Liga',
-              'Champions League',
-              'Bundesliga',
-              'Ligue 1',
-            ].includes(league);
-            if (!isPrimary && count === 0) return null;
-            const isSelected = selectedLeague === league;
-            return (
-              <button
-                key={league}
-                type="button"
-                role="tab"
-                aria-selected={isSelected}
-                onClick={() => setSelectedLeague(league)}
-                className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#c9f36b] ${
-                  isSelected
-                    ? 'site-button-active ring-2 ring-[#c9f36b]'
-                    : 'border border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white'
-                }`}
-              >
-                <span>{league === 'All' ? 'All Leagues' : league}</span>
-                <span
-                  className={`rounded-full px-1.5 py-0.2 text-[10px] font-black ${
-                    isSelected ? 'bg-black/20 text-[#0a1110]' : 'bg-white/10 text-slate-400'
-                  }`}
-                >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Recent Searches Pills */}
-      {recentSearches.length > 0 && !query && (
-        <div className="mb-6 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Recent:</span>
-          {recentSearches.map((term, i) => (
+          {/* Watchlist Filter Pill */}
+          {favorites.length > 0 && (
             <button
-              key={i}
               type="button"
-              onClick={() => setQuery(term)}
-              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300 hover:border-[#c9f36b]/40 hover:text-[#c9f36b] transition"
+              onClick={() => setShowWatchlistOnly(!showWatchlistOnly)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all ${
+                showWatchlistOnly
+                  ? 'border border-amber-400/50 bg-amber-400/20 text-amber-300 shadow-sm'
+                  : 'border border-white/10 bg-white/5 text-slate-400 hover:text-amber-300'
+              }`}
             >
-              {term}
+              <span>★ Watchlist</span>
+              <span className="rounded-full bg-amber-400/20 px-1 text-[10px] text-amber-300">{favorites.length}</span>
             </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => {
-              setRecentSearches([]);
-              try {
-                localStorage.removeItem('sportivo_searches');
-              } catch {}
-            }}
-            className="text-xs text-slate-400 hover:text-slate-200 underline transition ml-1"
-          >
-            Clear
-          </button>
+          )}
         </div>
       )}
 
+      {/* Main Grid Content */}
       {filtered.length === 0 ? (
-        <div className="rounded-xl border border-slate-800 bg-[#12161f] py-16 text-center">
-          <p className="font-medium text-slate-300">No fixtures found for this sport.</p>
-          <p className="mt-2 text-sm text-slate-500">
+        <div className="rounded-2xl border border-white/5 bg-[#090d0c] py-12 px-6 text-center">
+          <p className="font-bold text-slate-300">No active fixtures found for this selection.</p>
+          <p className="mt-1.5 text-xs text-slate-500">
             {showWatchlistOnly
-              ? 'You have not added any matches to your watchlist yet. Tap the ☆ star on any fixture card to track it.'
-              : selectedLeague !== 'All'
-              ? `No fixtures match your search in ${selectedLeague}. Try selecting "All Leagues" or searching another term.`
-              : 'Try another search or check back when the schedule updates.'}
+              ? 'Tap the ☆ star on any fixture card to add it to your personal watchlist.'
+              : 'Try selecting "All Leagues" or resetting the date filter.'}
           </p>
-          {(selectedLeague !== 'All' || showWatchlistOnly || dateFilter !== 'all') && (
+          {(selectedLeague !== 'All' || showWatchlistOnly || dateFilter !== 'all' || query) && (
             <button
               type="button"
               onClick={() => {
@@ -565,102 +496,69 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
                 setDateFilter('all');
                 setQuery('');
               }}
-              className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-bold text-[#c9f36b] hover:bg-white/10 transition"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-bold text-[#c9f36b] hover:bg-white/10 transition"
             >
-              <span>Reset all filters</span>
+              <span>Reset filters</span>
             </button>
           )}
         </div>
       ) : (
-        <div className="space-y-10">
-          {/* Section 1: Live Matches */}
-          <div>
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <span className="h-5 w-1.5 rounded-full bg-red-500 shadow-sm shadow-red-500/50" aria-hidden="true"></span>
-                <h3 className="text-base font-black uppercase tracking-wider text-white sm:text-lg">
-                  {selectedLeague !== 'All'
-                    ? `LIVE · ${selectedLeague}`
-                    : 'LIVE MATCHES'}
-                </h3>
+        <div className="space-y-8">
+          {/* Live Matches Section (Only rendered when there are active live streams) */}
+          {liveMatches.length > 0 && (
+            <div>
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="h-4 w-1.5 rounded-full bg-red-500 shadow-sm shadow-red-500/50" aria-hidden="true" />
+                  <h3 className="text-xs font-black uppercase tracking-wider text-red-400">
+                    Live Broadcasts Now
+                  </h3>
+                </div>
+                <span className="text-[11px] font-bold text-slate-400">{liveMatches.length} Active</span>
               </div>
-              {liveMatches.length > 0 && (
-                <span className="rounded-full border border-red-500/40 bg-red-500/10 px-2.5 py-0.5 text-[11px] font-black text-red-400">
-                  {liveMatches.length} LIVE
-                </span>
-              )}
-            </div>
-
-            {liveMatches.length > 0 ? (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {liveMatches.map((match, index) => renderCard(match, index))}
               </div>
-            ) : (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/5 bg-[#101716]/60 px-4 py-2.5 text-xs text-slate-300">
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-slate-500" aria-hidden="true"></span>
-                  <span className="font-medium text-slate-300">
-                    {selectedLeague !== 'All'
-                      ? `No live matches right now in ${selectedLeague}.`
-                      : 'No matches broadcasting live right now.'}
-                  </span>
-                </div>
-                <span className="text-slate-300 text-xs flex items-center gap-1">
-                  <span>Upcoming kickoff fixtures listed below</span>
-                  <span aria-hidden="true">&darr;</span>
-                </span>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Section 2: Upcoming Matches */}
+          {/* Upcoming Fixtures Section */}
           {upcomingMatches.length > 0 && (
             <div>
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <span className="h-5 w-1.5 rounded-full bg-[#c9f36b] shadow-sm shadow-[#c9f36b]/50" aria-hidden="true"></span>
-                  <h3 className="text-base font-black uppercase tracking-wider text-white sm:text-lg">
-                    {selectedLeague !== 'All'
-                      ? `SCHEDULED · ${selectedLeague}`
-                      : 'UPCOMING FIXTURES'}
-                  </h3>
+              {liveMatches.length > 0 && (
+                <div className="mb-3 flex items-center justify-between pt-2">
+                  <div className="flex items-center gap-2">
+                    <span className="h-4 w-1.5 rounded-full bg-[#c9f36b] shadow-sm shadow-[#c9f36b]/50" aria-hidden="true" />
+                    <h3 className="text-xs font-black uppercase tracking-wider text-[#c9f36b]">
+                      Scheduled Kickoffs (NST)
+                    </h3>
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-400">{upcomingMatches.length} Fixtures</span>
                 </div>
-                <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-xs font-semibold text-slate-400">
-                  {upcomingMatches.length} Scheduled
-                </span>
-              </div>
-
+              )}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {displayedUpcoming.map((match, index) => renderCard(match, index))}
               </div>
 
+              {/* Single Minimal Pagination Control */}
               {remainingUpcoming > 0 && (
-                <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <div className="mt-6 flex justify-center">
                   <button
                     type="button"
                     onClick={() => setVisibleCount((prev) => prev + 16)}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-2 text-xs font-bold text-white hover:border-[#c9f36b]/40 hover:bg-[#c9f36b]/10 hover:text-[#c9f36b] transition-all"
+                    className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-6 py-2 text-xs font-bold text-slate-300 hover:border-[#c9f36b]/40 hover:bg-[#c9f36b]/10 hover:text-[#c9f36b] transition-all"
                   >
-                    <span>Show more upcoming matches</span>
-                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-[#c9f36b]">+{Math.min(remainingUpcoming, 16)}</span>
+                    <span>Show more fixtures</span>
+                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-[#c9f36b]">
+                      +{Math.min(remainingUpcoming, 16)}
+                    </span>
                   </button>
-                  {remainingUpcoming > 16 && (
-                    <button
-                      type="button"
-                      onClick={() => setVisibleCount(upcomingMatches.length)}
-                      className="rounded-full border border-white/5 px-4 py-2 text-xs font-medium text-slate-400 hover:text-white transition"
-                    >
-                      View all ({upcomingMatches.length})
-                    </button>
-                  )}
                 </div>
               )}
             </div>
           )}
-
-          {/* Section 3: Completed / Final Matches — hidden per user request */}
         </div>
       )}
-    </section>
+    </div>
   );
 }

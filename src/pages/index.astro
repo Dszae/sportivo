@@ -336,17 +336,38 @@ const homepageJsonLd = {
     <!-- Full-Width Immersive Hero Showcase -->
     <HeroShowcase client:load />
 
-    <!-- Fixture Explorers -->
-    <section class="mx-auto max-w-7xl space-y-16 px-6 pb-20" aria-label="Sports fixtures categories">
-      {categories.map((category) => (
+    <!-- Fixture Explorers: Distinct Sport Arenas with Generous Clear Gaps -->
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8 pb-24 space-y-16 sm:space-y-24" aria-label="Sports fixtures categories">
+      {/* Football Arena */}
+      <section id="football" class="scroll-mt-24 rounded-3xl border border-white/[0.08] bg-[#0a0f0e]/60 p-6 sm:p-8 lg:p-10 backdrop-blur-sm shadow-2xl shadow-black/40">
         <MatchExplorer
           client:load
-          category={category}
-          matches={byCategory[category] || []}
-          exploreUrl={`/${category}/`}
+          category="football"
+          matches={byCategory['football'] || []}
+          exploreUrl="/football/"
         />
-      ))}
-    </section>
+      </section>
+
+      {/* Cricket Arena */}
+      <section id="cricket" class="scroll-mt-24 rounded-3xl border border-white/[0.08] bg-[#0a0f0e]/60 p-6 sm:p-8 lg:p-10 backdrop-blur-sm shadow-2xl shadow-black/40">
+        <MatchExplorer
+          client:load
+          category="cricket"
+          matches={byCategory['cricket'] || []}
+          exploreUrl="/cricket/"
+        />
+      </section>
+
+      {/* Basketball Arena */}
+      <section id="basketball" class="scroll-mt-24 rounded-3xl border border-white/[0.08] bg-[#0a0f0e]/60 p-6 sm:p-8 lg:p-10 backdrop-blur-sm shadow-2xl shadow-black/40">
+        <MatchExplorer
+          client:load
+          category="basketball"
+          matches={byCategory['basketball'] || []}
+          exploreUrl="/basketball/"
+        />
+      </section>
+    </div>
 
     <!-- Why Sportivo: SEO Authority & Feature Highlights -->
     <section class="border-t border-white/5 bg-[#0a0f0e]/60 py-20">

@@ -250,7 +250,11 @@ export function isMatchOnDate(
 ): boolean {
   if (filter === 'all') return true;
   const ts = getMatchTimestamp(match);
-  if (!ts) return false;
+  if (!ts) {
+    // 24/7 continuous or live ongoing feeds are active today
+    if (filter === 'today' && statusOf(match) === 'Live') return true;
+    return false;
+  }
 
   const tz = timeZone || 'Asia/Kathmandu';
   const now = new Date();

@@ -89,9 +89,16 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
   }
 
   function ingest(items: NormalizedMatch[]) {
+    const now = Date.now();
     for (const item of items) {
       // Strictly only ingest head-to-head matches ("this vs this team")
       if (!isMatchWise(item)) continue;
+
+      // Drop completed/past results per user requirement
+      if (item.status === 'Final') continue;
+      if (typeof item.date === 'number' && item.date > 0 && now - item.date > 3.5 * 60 * 60 * 1000) {
+        continue;
+      }
 
       const slug = slugify(item.title);
       if (!slug) continue;
@@ -137,13 +144,58 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
     ingest(strmfreeResults.value);
   }
 
-  // 3. Ingest ESPN (adds crests and scoreboards)
+  // 3. Ingest ESPN (strictly enriches existing streamable fixtures with verified crests & metadata)
   if (espnResults.status === 'fulfilled') {
-    ingest(espnResults.value);
+    for (const espnMatch of espnResults.value) {
+      if (espnMatch.status === 'Final') continue;
+      const slug = slugify(espnMatch.title);
+      const existing = matches.find((m) => {
+        const mSlug = slugify(m.title);
+        if (mSlug === slug) return true;
+        if (espnMatch.teams?.home?.name && espnMatch.teams?.away?.name && m.teams?.home?.name && m.teams?.away?.name) {
+          const h1 = espnMatch.teams.home.name.toLowerCase();
+          const a1 = espnMatch.teams.away.name.toLowerCase();
+          const h2 = m.teams.home.name.toLowerCase();
+          const a2 = m.teams.away.name.toLowerCase();
+          if ((h1.includes(h2) || h2.includes(h1)) && (a1.includes(a2) || a2.includes(a1))) {
+            return true;
+          }
+        }
+        return false;
+      });
+
+      if (existing) {
+        if (!existing.poster && espnMatch.poster) existing.poster = espnMatch.poster;
+        if (espnMatch.teams) {
+          if (!existing.teams) {
+            existing.teams = espnMatch.teams;
+          } else {
+            if (!existing.teams.home?.badge && espnMatch.teams.home?.badge) {
+              existing.teams.home = { ...existing.teams.home, badge: espnMatch.teams.home.badge };
+            }
+            if (!existing.teams.away?.badge && espnMatch.teams.away?.badge) {
+              existing.teams.away = { ...existing.teams.away, badge: espnMatch.teams.away.badge };
+            }
+          }
+        }
+        if (espnMatch.competition && (!existing.competition || existing.competition === existing.category)) {
+          existing.competition = espnMatch.competition;
+        }
+      }
+    }
   }
 
+  // Filter out any past/completed fixtures
+  const activeMatches = matches.filter((m) => {
+    if (m.status === 'Final') return false;
+    if (typeof m.date === 'number' && m.date > 0 && Date.now() - m.date > 3.5 * 60 * 60 * 1000) {
+      return false;
+    }
+    return true;
+  });
+
   // Sort: Live matches first, then upcoming by start time
-  return matches.sort((a, b) => {
+  return activeMatches.sort((a, b) => {
     const aLive = a.status === 'Live' ? 1 : 0;
     const bLive = b.status === 'Live' ? 1 : 0;
     if (aLive !== bLive) return bLive - aLive;

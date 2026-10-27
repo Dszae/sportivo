@@ -39,7 +39,9 @@ export class EspnAdapter implements ProviderAdapter {
 
             const isLive = comp?.status?.type?.state === 'in';
             const isCompleted = comp?.status?.type?.state === 'post';
-            const status = isLive ? 'Live' : isCompleted ? 'Final' : 'Upcoming';
+            // User requirement: Never ingest completed past matches ("remove those recent results")
+            if (isCompleted) continue;
+            const status = isLive ? 'Live' : 'Upcoming';
 
             matches.push({
               id: ev.id ? `espn-nba-${ev.id}` : slug,
@@ -87,7 +89,9 @@ export class EspnAdapter implements ProviderAdapter {
 
                 const isLive = comp?.status?.type?.state === 'in';
                 const isCompleted = comp?.status?.type?.state === 'post';
-                const status = isLive ? 'Live' : isCompleted ? 'Final' : 'Upcoming';
+                // User requirement: Never ingest completed past matches ("remove those recent results")
+                if (isCompleted) continue;
+                const status = isLive ? 'Live' : 'Upcoming';
 
                 matches.push({
                   id: ev.id ? `espn-soc-${ev.id}` : slug,
