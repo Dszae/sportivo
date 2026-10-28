@@ -29,27 +29,19 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Accept Android SDK Licenses
-        run: yes | sdkmanager --licenses || true
-
       - name: Install Mobile Dependencies
         run: |
           cd mobile
-          npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+          npm ci --legacy-peer-deps
 
-      - name: Expo Prebuild (Generate Native Android Project)
-        run: |
-          cd mobile
-          CI=1 npx expo prebuild --platform android --clean --no-install
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
       - name: Compile Native Android APK with Gradle
         run: |
           cd mobile/android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleRelease --no-daemon || ./gradlew assembleDebug --no-daemon
 
       - name: Upload Native Sportivo APK
         uses: actions/upload-artifact@v4
@@ -57,5 +49,6 @@ jobs:
           name: Sportivo-Native-Android-APK
           path: mobile/android/app/build/outputs/apk/**/*.apk
           retention-days: 30
+
 
 
