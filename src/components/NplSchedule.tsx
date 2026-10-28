@@ -238,14 +238,14 @@ export default function NplSchedule() {
                 e.stopPropagation();
                 toggleFollowNplMatch(m);
               }}
-              title={isFollowed ? 'Alert active for this match — click to disable' : 'Remind me 5m before kickoff & on wickets'}
+              title={isFollowed ? 'In Watchlist (5m alerts active)' : 'Add to Watchlist for 5m alerts'}
               className={`ml-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold transition-all border ${
                 isFollowed
-                  ? 'border-[#c9f36b] bg-[#c9f36b]/20 text-[#c9f36b]'
-                  : 'border-white/10 bg-white/5 text-slate-400 hover:border-[#c9f36b]/40 hover:text-white'
+                  ? 'border-[#e5b94f] bg-[#e5b94f]/15 text-[#e5b94f]'
+                  : 'border-white/10 bg-white/5 text-slate-400 hover:border-[#e5b94f]/40 hover:text-white'
               }`}
             >
-              <span>{isFollowed ? '🔔 Alerting' : '🔔 Remind me'}</span>
+              <span>{isFollowed ? '★ Watchlist' : '☆ Watchlist'}</span>
             </button>
           </div>
 
