@@ -69,26 +69,6 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
 
     saveUserPreferences({ ...currentPrefs, starredMatches: nextFavorites });
     setFavorites(nextFavorites);
-
-    if (isAdding) {
-      if (currentPrefs.notifications?.soundEnabled) playNotificationChime();
-      window.dispatchEvent(
-        new CustomEvent('sportivo:live-toast', {
-          detail: {
-            id: `toast-${Date.now()}`,
-            type: '5min_warning',
-            title: '⭐ Match Added to Watchlist!',
-            message: "You'll be alerted 5 minutes before kickoff and during live moments.",
-            matchTitle: slug,
-            matchUrl: `/${category}/match/${encodeURIComponent(slug)}/`,
-            category,
-            badgeText: 'ALERT SET',
-            timestamp: Date.now(),
-            read: true,
-          },
-        })
-      );
-    }
   };
 
   // Only count active fixtures (exclude finished/Final results per user instruction)

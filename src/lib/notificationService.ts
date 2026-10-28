@@ -142,28 +142,36 @@ export function dispatchNotification(params: {
 
   recordAlertDispatched(key);
 
-  const prefs = loadUserPreferences();
-  if (prefs.notifications.soundEnabled) {
-    playNotificationChime();
+  const isBackgrounded =
+    typeof document !== 'undefined'
+      ? document.visibilityState === 'hidden' || !document.hasFocus()
+      : true;
+
+  // Background Alerting Only: If the user is actively viewing the website, they are already watching
+  if (isBackgrounded) {
+    const prefs = loadUserPreferences();
+    if (prefs.notifications.soundEnabled) {
+      playNotificationChime();
+    }
+
+    // Browser Native Push / System Notification
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        const n = new Notification(title, {
+          body: message,
+          icon: '/icon-192x192.png',
+          badge: '/favicon-48x48.png',
+          tag: key,
+        });
+        n.onclick = () => {
+          window.focus();
+          window.location.href = matchUrl;
+        };
+      } catch {}
+    }
   }
 
-  // 1. Browser Native Push Notification (if allowed)
-  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-    try {
-      const n = new Notification(title, {
-        body: message,
-        icon: '/icon-192x192.png',
-        badge: '/favicon-48x48.png',
-        tag: key,
-      });
-      n.onclick = () => {
-        window.focus();
-        window.location.href = matchUrl;
-      };
-    } catch {}
-  }
-
-  // 2. Add to in-app history
+  // Record to quiet history log (so user can check past updates in bell dropdown if they choose)
   const alertItem: NotificationAlert = {
     id: `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
     type,
@@ -179,11 +187,6 @@ export function dispatchNotification(params: {
 
   const currentHistory = getNotificationHistory();
   saveNotificationHistory([alertItem, ...currentHistory]);
-
-  // 3. Dispatch in-app live toast event
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('sportivo:live-toast', { detail: alertItem }));
-  }
 }
 
 /**

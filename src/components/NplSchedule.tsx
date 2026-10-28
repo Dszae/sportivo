@@ -133,26 +133,6 @@ export default function NplSchedule() {
     };
     saveUserPreferences(updated);
     setPrefs(updated);
-
-    if (!isStarred) {
-      if (prefs.notifications?.soundEnabled) playNotificationChime();
-      window.dispatchEvent(
-        new CustomEvent('sportivo:live-toast', {
-          detail: {
-            id: `toast-${Date.now()}`,
-            type: '5min_warning',
-            title: `🔔 Match Alert Set!`,
-            message: `You'll get notified 5 mins before ${match.homeTeam} vs ${match.awayTeam} starts and on key score moments!`,
-            matchTitle: `${match.homeTeam} vs ${match.awayTeam}`,
-            matchUrl: '/npl/',
-            category: 'cricket',
-            badgeText: 'ALERT ACTIVE',
-            timestamp: Date.now(),
-            read: true,
-          },
-        })
-      );
-    }
   };
 
   const todayYmd = useMemo(() => getKathmanduYmd(), []);

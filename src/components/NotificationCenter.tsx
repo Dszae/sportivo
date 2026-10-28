@@ -12,8 +12,6 @@ import type { NplMatch } from '../lib/data/nplData';
 export default function NotificationCenter() {
   const [isOpen, setIsOpen] = useState(false);
   const [history, setHistory] = useState<NotificationAlert[]>([]);
-  const [activeToast, setActiveToast] = useState<NotificationAlert | null>(null);
-  const [toastTimer, setToastTimer] = useState<NodeJS.Timeout | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Initialize and listen to storage & events
@@ -34,15 +32,7 @@ export default function NotificationCenter() {
       if (ce.detail) setHistory(ce.detail);
     };
 
-    const handleLiveToast = (e: Event) => {
-      const ce = e as CustomEvent<NotificationAlert>;
-      if (ce.detail) {
-        showToast(ce.detail);
-      }
-    };
-
     window.addEventListener('sportivo:notifications-updated', handleHistoryUpdate);
-    window.addEventListener('sportivo:live-toast', handleLiveToast);
 
     // Close on outside click
     const handleOutsideClick = (e: MouseEvent) => {
@@ -55,7 +45,6 @@ export default function NotificationCenter() {
     return () => {
       window.removeEventListener('click', handleFirstUserInteraction);
       window.removeEventListener('sportivo:notifications-updated', handleHistoryUpdate);
-      window.removeEventListener('sportivo:live-toast', handleLiveToast);
       document.removeEventListener('mousedown', handleOutsideClick);
     };
   }, []);
@@ -90,15 +79,6 @@ export default function NotificationCenter() {
       clearInterval(interval);
     };
   }, []);
-
-  const showToast = (alert: NotificationAlert) => {
-    if (toastTimer) clearTimeout(toastTimer);
-    setActiveToast(alert);
-    const timer = setTimeout(() => {
-      setActiveToast(null);
-    }, 6000);
-    setToastTimer(timer);
-  };
 
   const unreadCount = history.filter((h) => !h.read).length;
 
@@ -214,52 +194,6 @@ export default function NotificationCenter() {
                 </a>
               ))
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Floating In-App Live Toast Banner */}
-      {activeToast && (
-        <div className="fixed bottom-6 right-6 z-50 max-w-sm sm:max-w-md animate-in fade-in slide-in-from-bottom-5 duration-300">
-          <div className="rounded-2xl border border-[#c9f36b]/50 bg-[#101716]/95 p-4 shadow-2xl backdrop-blur-xl ring-1 ring-[#c9f36b]/30">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500"></span>
-                </span>
-                <span className="text-[11px] font-black uppercase tracking-wider text-[#c9f36b]">
-                  {activeToast.badgeText || 'LIVE MATCH ALERT'}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveToast(null)}
-                className="text-slate-400 hover:text-white text-xs p-1"
-                aria-label="Close alert"
-              >
-                &times;
-              </button>
-            </div>
-
-            <h4 className="mt-1.5 text-sm font-bold text-white">
-              {activeToast.title}
-            </h4>
-            <p className="mt-1 text-xs leading-relaxed text-slate-300">
-              {activeToast.message}
-            </p>
-
-            <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-2.5">
-              <span className="text-[10px] text-slate-400">Nepal Standard Time (NST)</span>
-              <a
-                href={activeToast.matchUrl}
-                onClick={() => setActiveToast(null)}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#c9f36b] px-3 py-1 text-xs font-bold text-[#080a0b] hover:bg-[#b0d859] transition shadow-md"
-              >
-                <span>Watch Stream</span>
-                <span aria-hidden="true">&rarr;</span>
-              </a>
-            </div>
           </div>
         </div>
       )}
