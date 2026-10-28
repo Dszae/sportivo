@@ -106,3 +106,4 @@ export const DELETE: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: 'Failed to delete' }), { status: 500 });
   }
 };
+

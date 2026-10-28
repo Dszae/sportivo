@@ -435,11 +435,11 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
         </div>
       </div>
 
-      {/* Streamlined Filter Pills (Only shown when meaningful choices exist) */}
+      {/* Streamlined Filter Pills (Smooth thumb-scrollable on mobile) */}
       {(availableLeagues.length > 2 || availableDateFilters.length > 2 || watchlistCount > 0 || showWatchlistOnly) && (
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-6 flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-between">
           {/* Active League Pills (Only leagues that actually have active matches) */}
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0 sm:flex-wrap">
             {category === 'football' && availableLeagues.length > 2 && !showWatchlistOnly && (
               availableLeagues.map((league) => {
                 const count = leagueCounts[league] || 0;
@@ -449,9 +449,9 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
                     key={league}
                     type="button"
                     onClick={() => setSelectedLeague(league)}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all ${
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all shrink-0 ${
                       isSelected
-                        ? 'bg-[#c9f36b] text-[#080c0b] shadow-sm'
+                        ? 'bg-[#c9f36b] text-[#080c0b] shadow-sm font-black'
                         : 'border border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white'
                     }`}
                   >
@@ -466,7 +466,7 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
 
             {/* Date Filters: Only shown if fixtures span across multiple dates */}
             {availableDateFilters.length > 2 && (
-              <div className="flex items-center gap-1 bg-white/5 p-0.5 rounded-full border border-white/10">
+              <div className="flex items-center gap-1 bg-white/5 p-0.5 rounded-full border border-white/10 shrink-0">
                 {availableDateFilters.map((filter) => {
                   const isSelected = dateFilter === filter && !showWatchlistOnly;
                   return (
@@ -477,7 +477,7 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
                         setDateFilter(filter);
                         setShowWatchlistOnly(false);
                       }}
-                      className={`rounded-full px-3 py-0.5 text-xs font-bold transition-all ${
+                      className={`rounded-full px-3 py-1 text-xs font-bold transition-all shrink-0 ${
                         isSelected ? 'bg-white/20 text-white shadow-sm' : 'text-slate-400 hover:text-white'
                       }`}
                     >
@@ -503,9 +503,9 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
                   setShowWatchlistOnly(false);
                 }
               }}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all ${
+              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all shrink-0 ${
                 showWatchlistOnly
-                  ? 'border border-amber-400/50 bg-amber-400/20 text-amber-300 shadow-sm'
+                  ? 'border border-amber-400/50 bg-amber-400/20 text-amber-300 shadow-sm font-black'
                   : 'border border-white/10 bg-white/5 text-slate-400 hover:text-amber-300'
               }`}
             >

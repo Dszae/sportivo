@@ -106,16 +106,16 @@ export default function HeroShowcase() {
       {/* Content Container (Constrained & Aligned with Grid — z-30 above all gradients) */}
       <div className="relative z-30 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6 pb-14 sm:pt-8 sm:pb-16 lg:pt-10 lg:pb-20">
         {/* Top Meta Bar */}
-        <div className="mb-6 sm:mb-8 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-4 sm:mb-8 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
           <a
             href="/about-dipesh-sapkota/"
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3.5 py-1.5 text-xs font-semibold text-slate-300 backdrop-blur-md hover:border-[#c9f36b]/40 hover:text-[#c9f36b] transition-all shadow-sm"
+            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3 py-1 sm:px-3.5 sm:py-1.5 text-[11px] sm:text-xs font-semibold text-slate-300 backdrop-blur-md hover:border-[#c9f36b]/40 hover:text-[#c9f36b] transition-all shadow-sm"
             title="Learn more about the creator of Sportivo"
           >
             <img
               src="/dipesh-sapkota-profile.webp"
               alt=""
-              className="h-4 w-4 rounded-full object-cover border border-[#c9f36b]"
+              className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-full object-cover border border-[#c9f36b]"
               width="16"
               height="16"
               loading="eager"
@@ -123,21 +123,21 @@ export default function HeroShowcase() {
             <span>Sportivo by Dipesh Sapkota</span>
           </a>
 
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3.5 py-1.5 text-xs font-bold text-[#e5b94f] backdrop-blur-md">
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3 py-1 sm:px-3.5 sm:py-1.5 text-[11px] sm:text-xs font-bold text-[#e5b94f] backdrop-blur-md">
             <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true"></span>
-            <span>Live Fixture Desk · Nepal Standard Time (UTC+5:45)</span>
+            <span>Live Desk · Nepal Time (NST)</span>
           </div>
         </div>
 
         {/* Center Headline & Rotating Slogan Stage — CSS Grid Stacking (Zero Layout Shift) */}
-        <div className="max-w-3xl py-2 sm:py-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#c9f36b]/30 bg-[#c9f36b]/10 px-3.5 py-1 text-[11px] font-black uppercase tracking-widest text-[#c9f36b] mb-4">
+        <div className="max-w-3xl py-1 sm:py-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#c9f36b]/30 bg-[#c9f36b]/10 px-3 py-0.5 sm:px-3.5 sm:py-1 text-[10px] sm:text-[11px] font-black uppercase tracking-widest text-[#c9f36b] mb-3 sm:mb-4">
             <span className="h-1.5 w-1.5 animate-ping rounded-full bg-[#c9f36b]" aria-hidden="true" />
             Live Sports Hub · Nepal
           </div>
 
           {/* Fixed-stage CSS Grid: All slogans occupy the exact same cell so the page below never shifts */}
-          <div className="grid grid-cols-1 grid-rows-1 min-h-[160px] sm:min-h-[180px] lg:min-h-[210px]">
+          <div className="grid grid-cols-1 grid-rows-1 min-h-[140px] sm:min-h-[180px] lg:min-h-[210px]">
             {SLOGANS.map((item, idx) => {
               const isCurrent = idx === sloganIndex;
               return (
@@ -151,18 +151,18 @@ export default function HeroShowcase() {
                   }`}
                 >
                   {idx === 0 ? (
-                    <h1 className="text-4xl font-black leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl">
+                    <h1 className="text-3xl sm:text-6xl lg:text-7xl font-black leading-tight tracking-tight text-white">
                       Sportivo — {item.headline}{' '}
                       <span className="text-[#c9f36b]">{item.sub}</span>
                     </h1>
                   ) : (
-                    <div className="text-4xl font-black leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl font-bold">
+                    <div className="text-3xl sm:text-6xl lg:text-7xl font-black leading-tight tracking-tight text-white">
                       {item.headline}{' '}
                       <span className="text-[#c9f36b]">{item.sub}</span>
                     </div>
                   )}
 
-                  <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-300 sm:text-lg">
+                  <p className="mt-2.5 sm:mt-4 max-w-2xl text-sm sm:text-lg leading-relaxed text-slate-300">
                     {item.description}
                   </p>
                 </div>
@@ -170,35 +170,35 @@ export default function HeroShowcase() {
             })}
           </div>
 
-          {/* Quick Action Navigation */}
-          <div className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3">
+          {/* Quick Action Navigation (Touch-Friendly Responsive Buttons) */}
+          <div className="mt-5 sm:mt-8 flex flex-wrap items-center gap-2 sm:gap-3">
             <a
               href="/football/"
-              className="inline-flex items-center gap-2 rounded-full bg-[#c9f36b] px-6 py-2.5 text-xs font-black uppercase tracking-wider text-[#080c0b] shadow-lg shadow-[#c9f36b]/20 transition-all hover:bg-[#b5e056] hover:scale-105 active:scale-95"
+              className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full bg-[#c9f36b] px-4 sm:px-6 py-2 sm:py-2.5 text-xs font-black uppercase tracking-wider text-[#080c0b] shadow-lg shadow-[#c9f36b]/20 transition-all hover:bg-[#b5e056] active:scale-95"
             >
               <span>⚽</span>
               <span>Football Live</span>
             </a>
             <a
-              href="/cricket/"
-              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-2.5 text-xs font-bold text-white backdrop-blur-md transition-all hover:border-[#c9f36b]/40 hover:bg-white/15 hover:text-[#c9f36b]"
+              href="/npl/"
+              className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-red-500/40 bg-red-600/20 px-4 sm:px-5 py-2 sm:py-2.5 text-xs font-black uppercase tracking-wider text-red-300 shadow-md backdrop-blur-md transition-all hover:bg-red-600/30 active:scale-95"
             >
-              <span>🏏</span>
-              <span>Cricket Live</span>
+              <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+              <span>NPL 2026</span>
             </a>
             <a
-              href="/basketball/"
-              className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-2.5 text-xs font-bold text-white backdrop-blur-md transition-all hover:border-[#c9f36b]/40 hover:bg-white/15 hover:text-[#c9f36b]"
+              href="/cricket/"
+              className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/10 bg-white/5 px-4 sm:px-5 py-2 sm:py-2.5 text-xs font-bold text-slate-200 backdrop-blur-md transition-all hover:border-[#c9f36b]/40 hover:text-white active:scale-95"
             >
-              <span>🏀</span>
-              <span>Basketball</span>
+              <span>🏏</span>
+              <span>Cricket Desk</span>
             </a>
             <a
               href="/dashboard/"
-              className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2.5 text-xs font-bold text-amber-300 backdrop-blur-md transition-all hover:bg-amber-400/20"
+              className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-4 sm:px-4 py-2 sm:py-2.5 text-xs font-bold text-amber-300 backdrop-blur-md transition-all hover:bg-amber-400/20 active:scale-95"
             >
               <span>★</span>
-              <span>My Watchlist</span>
+              <span>Watchlist</span>
             </a>
           </div>
         </div>

@@ -204,7 +204,7 @@ export default function NotificationCenter() {
 
       {/* Dropdown Modal: Notification Center */}
       {isOpen && (
-        <div className="absolute right-0 sm:right-0 mt-2.5 w-[92vw] max-w-[420px] sm:w-[420px] rounded-2xl border-2 border-white/20 bg-[#0b1110] shadow-[0_20px_60px_rgba(0,0,0,0.95)] z-50 overflow-hidden text-slate-100 ring-1 ring-[#c9f36b]/20">
+        <div className="fixed inset-x-3 top-14 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full mt-2 sm:mt-2.5 max-h-[85vh] sm:max-h-none sm:w-[420px] max-w-[420px] mx-auto sm:mx-0 rounded-2xl border-2 border-white/20 bg-[#0b1110] shadow-[0_20px_60px_rgba(0,0,0,0.95)] z-50 overflow-hidden text-slate-100 ring-1 ring-[#c9f36b]/20">
           {/* Header (100% Solid) */}
           <div className="flex items-center justify-between border-b border-white/15 px-4 py-3 bg-[#131d1b]">
             <div className="flex items-center gap-2.5">

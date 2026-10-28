@@ -537,15 +537,15 @@ export default function PersonalDashboard({ allMatchesByCategory }: Props) {
 
       {/* Tabs Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 pb-4">
-        <div className="flex items-center gap-2" role="tablist">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1 -mx-4 px-4 sm:mx-0 sm:px-0" role="tablist">
           <button
             type="button"
             role="tab"
             aria-selected={activeTab === 'feed'}
             onClick={() => setActiveTab('feed')}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition shrink-0 ${
               activeTab === 'feed'
-                ? 'bg-[#c9f36b] text-[#0a1110] shadow-md shadow-[#c9f36b]/20'
+                ? 'bg-[#c9f36b] text-[#0a1110] shadow-md shadow-[#c9f36b]/20 font-black'
                 : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
             }`}
           >
@@ -564,9 +564,9 @@ export default function PersonalDashboard({ allMatchesByCategory }: Props) {
             role="tab"
             aria-selected={activeTab === 'starred'}
             onClick={() => setActiveTab('starred')}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition shrink-0 ${
               activeTab === 'starred'
-                ? 'bg-amber-400 text-black shadow-md shadow-amber-400/20'
+                ? 'bg-amber-400 text-black shadow-md shadow-amber-400/20 font-black'
                 : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-amber-300'
             }`}
           >
@@ -585,9 +585,9 @@ export default function PersonalDashboard({ allMatchesByCategory }: Props) {
             role="tab"
             aria-selected={activeTab === 'customize'}
             onClick={() => setActiveTab('customize')}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition shrink-0 ${
               activeTab === 'customize'
-                ? 'bg-white/20 text-white'
+                ? 'bg-white/20 text-white font-bold'
                 : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
             }`}
           >

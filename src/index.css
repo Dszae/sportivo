@@ -80,6 +80,15 @@
 		animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 	}
 
+	/* Hide scrollbar for clean touch-swiping on mobile */
+	.no-scrollbar::-webkit-scrollbar {
+		display: none;
+	}
+	.no-scrollbar {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		*, *::before, *::after {
 			animation-duration: 0.01ms !important;

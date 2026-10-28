@@ -136,7 +136,7 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     
     <slot name="head" />
   </head>
-  <body>
+  <body class="pb-20 sm:pb-0 min-h-screen flex flex-col bg-[#080a0b] text-slate-100 antialiased selection:bg-[#c9f36b] selection:text-[#080a0b]">
     <slot />
 
     <!-- Floating Back to Top Button -->
@@ -145,7 +145,7 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
       type="button"
       aria-label="Back to top"
       title="Back to top"
-      class="fixed bottom-6 right-6 z-40 hidden h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-[#101716]/95 text-slate-300 shadow-2xl backdrop-blur transition-all duration-200 hover:border-[#c9f36b]/60 hover:bg-[#c9f36b] hover:text-[#080a0b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c9f36b]"
+      class="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-40 hidden h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-[#101716]/95 text-slate-300 shadow-2xl backdrop-blur transition-all duration-200 hover:border-[#c9f36b]/60 hover:bg-[#c9f36b] hover:text-[#080a0b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c9f36b]"
     >
       <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M18 15l-6-6-6 6"/>

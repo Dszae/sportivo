@@ -191,3 +191,4 @@ export async function broadcastMatchPush(alert: {
   await Promise.allSettled(promises);
   return sentCount;
 }
+
