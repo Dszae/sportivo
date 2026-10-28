@@ -1,6 +1,9 @@
 import * as Notifications from 'expo-notifications';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const DISPATCHED_IMMEDIATE_KEY = 'sportivo_dispatched_immediate_keys';
 
 // Configure foreground notification behavior
 Notifications.setNotificationHandler({
@@ -121,6 +124,48 @@ export async function scheduleMatchKickoffNotification(
 }
 
 /**
+ * Trigger immediate native notification for a live match event (wickets, 4s, 6s, milestones)
+ */
+export async function notifyLiveMoment(options: {
+  key: string;
+  title: string;
+  body: string;
+  type: 'wicket' | 'boundary' | 'kickoff' | 'milestone';
+}): Promise<void> {
+  try {
+    const hasPermission = await requestNativeNotificationPermission();
+    if (!hasPermission) return;
+
+    // Check if this moment was already notified
+    const raw = await AsyncStorage.getItem(DISPATCHED_IMMEDIATE_KEY);
+    const sentKeys = new Set(raw ? JSON.parse(raw) : []);
+    if (sentKeys.has(options.key)) return;
+
+    sentKeys.add(options.key);
+    await AsyncStorage.setItem(DISPATCHED_IMMEDIATE_KEY, JSON.stringify(Array.from(sentKeys)));
+
+    if (options.type === 'wicket') {
+      await triggerWicketHaptic();
+    } else {
+      await triggerGoalHaptic();
+    }
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: options.title,
+        body: options.body,
+        data: { alertKey: options.key, type: options.type },
+        channelId: 'match-moments',
+        sound: 'default',
+      },
+      trigger: null, // immediate alert
+    });
+  } catch (e) {
+    console.warn('[Notifications] notifyLiveMoment error:', e);
+  }
+}
+
+/**
  * Automatically schedule reminders for all upcoming NPL matches and user's bookmarked matches
  */
 export async function autoScheduleAllMatchAlerts(
@@ -135,6 +180,9 @@ export async function autoScheduleAllMatchAlerts(
       scheduled.map((s) => s.content.data?.alertKey).filter(Boolean)
     );
 
+    const rawDispatched = await AsyncStorage.getItem(DISPATCHED_IMMEDIATE_KEY);
+    const dispatchedKeys = new Set(rawDispatched ? JSON.parse(rawDispatched) : []);
+
     for (const match of matches) {
       if (!match.timestamp || !match.title) continue;
 
@@ -144,14 +192,17 @@ export async function autoScheduleAllMatchAlerts(
       // Skip completed / expired matches (older than 4 hours)
       if (diffMs < -4 * 60 * 60 * 1000) continue;
 
-      // 1. If match is within the next 25 minutes (e.g. today at 4:45 PM for 5:00 PM match):
-      // Fire an immediate heads-up alert so the user doesn't miss it!
+      // 1. If match is within the next 25 minutes AND has not yet started:
+      // Fire an immediate heads-up alert ONLY ONCE (persisted in AsyncStorage)
       const immediateKey = `${match.title}-immediate`;
-      if (diffMs > 0 && diffMs <= 25 * 60 * 1000 && !scheduledKeys.has(immediateKey)) {
+      if (diffMs > 0 && diffMs <= 25 * 60 * 1000 && !dispatchedKeys.has(immediateKey)) {
+        dispatchedKeys.add(immediateKey);
+        await AsyncStorage.setItem(DISPATCHED_IMMEDIATE_KEY, JSON.stringify(Array.from(dispatchedKeys)));
+
         await Notifications.scheduleNotificationAsync({
           content: {
             title: `🏏 Match Starting Soon! (${Math.round(diffMs / 60000)}m)`,
-            body: `${match.title} begins at 5:00 PM NST! Tap to open live stream desk.`,
+            body: `${match.title} begins soon! Tap to open live stream desk.`,
             data: { alertKey: immediateKey, matchTitle: match.title },
             channelId: 'match-alerts',
             sound: 'default',

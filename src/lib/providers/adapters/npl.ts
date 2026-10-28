@@ -147,8 +147,15 @@ export const nplAdapter: ProviderAdapter = {
     if (id.toLowerCase().includes('npl26-04') || id.toLowerCase().includes('npl4') || id.toLowerCase().includes('pokhara') || id.toLowerCase().includes('sudurpaschim') || knownFixture?.status === 'LIVE') {
       return {
         status: 'ready',
-        provider: 'NetTV Action Sports HD',
+        provider: 'NPL Official Broadcast',
         streams: [
+          {
+            embedUrl: 'https://www.youtube-nocookie.com/embed/Z_yjma948Ug?autoplay=1&modestbranding=1&rel=0',
+            hd: true,
+            isNativeVideo: false,
+            isSandboxedIframe: false,
+            language: 'Official Stadium Direct (0 Delay HD)',
+          },
           {
             embedUrl: 'https://yonotv-now.pages.dev/plyrr?src=https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
             hd: true,

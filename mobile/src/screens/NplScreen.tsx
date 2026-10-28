@@ -39,11 +39,14 @@ export default function NplScreen() {
       ]);
       setFixtures(data);
       setStarredSlugs(prefs.starredMatches);
+      // Only schedule alerts for genuinely upcoming future matches
       autoScheduleAllMatchAlerts(
-        data.map((f) => ({
-          title: `${f.homeTeam} vs ${f.awayTeam}`,
-          timestamp: f.timestamp,
-        }))
+        data
+          .filter((f) => f.status === 'UPCOMING' && f.timestamp > Date.now())
+          .map((f) => ({
+            title: `${f.homeTeam} vs ${f.awayTeam}`,
+            timestamp: f.timestamp,
+          }))
       );
     } finally {
       setLoading(false);

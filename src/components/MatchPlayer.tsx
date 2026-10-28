@@ -204,7 +204,15 @@ export default function MatchPlayer({ match }: Props) {
           const rawUrl = typeof item === 'string' ? item : item.embedUrl || item.url || '';
           const safeUrl = publicUrl(rawUrl);
           if (!safeUrl) return null;
-          const isNative = safeUrl.endsWith('.m3u8') || safeUrl.endsWith('.mp4');
+          
+          let isNative = false;
+          if (typeof item.isNativeVideo === 'boolean') {
+            isNative = item.isNativeVideo;
+          } else {
+            const cleanPath = safeUrl.split('?')[0].toLowerCase();
+            isNative = cleanPath.endsWith('.m3u8') || cleanPath.endsWith('.mp4');
+          }
+
           return {
             embedUrl: safeUrl,
             hd: Boolean(item.hd),

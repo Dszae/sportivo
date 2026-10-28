@@ -1,7 +1,7 @@
 {
-  "version": "1.0.5",
-  "versionCode": 6,
+  "version": "1.0.6",
+  "versionCode": 7,
   "downloadUrl": "https://sportivo.dipeshsapkota7.com.np/download/sportivo.apk",
-  "releaseNotes": "Auto-scheduled NPL kickoff notifications (30m reminder, 5m reminder, and starting-soon alerts).",
+  "releaseNotes": "Added live ball-by-ball wicket, boundary, and milestone notifications; resolved pull-to-refresh notification duplicates; added direct official stadium low-latency broadcast.",
   "publishedAt": "2026-10-28"
 }

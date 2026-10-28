@@ -9,6 +9,7 @@ import {
   autoScheduleAllMatchAlerts,
 } from './src/services/notifications';
 import { fetchNplFixtures } from './src/services/api';
+import { startLiveMomentPoller } from './src/services/matchMomentService';
 
 const SportivoDarkTheme = {
   ...DarkTheme,
@@ -41,6 +42,12 @@ export default function App() {
         console.warn('Auto schedule NPL alerts failed', e);
       }
     })();
+
+    // Start background live moment poller (wickets, 4s, 6s, milestones)
+    const stopPoller = startLiveMomentPoller(12000);
+    return () => {
+      stopPoller();
+    };
   }, []);
 
   return (
