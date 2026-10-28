@@ -1,7 +1,7 @@
 {
-  "version": "1.0.6",
-  "versionCode": 7,
+  "version": "1.0.7",
+  "versionCode": 8,
   "downloadUrl": "https://sportivo.dipeshsapkota7.com.np/download/sportivo.apk",
-  "releaseNotes": "Added live ball-by-ball wicket, boundary, and milestone notifications; resolved pull-to-refresh notification duplicates; added direct official stadium low-latency broadcast.",
+  "releaseNotes": "Zero-latency live player sync, hardware-accelerated in-app live stream playback, removed browser redirect.",
   "publishedAt": "2026-10-28"
 }

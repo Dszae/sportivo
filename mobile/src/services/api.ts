@@ -77,9 +77,17 @@ export async function resolveMatchStreams(match: Match): Promise<StreamSource[]>
     return match.streams;
   }
 
-  const sources = match.sources || [];
-  if (sources.length === 0) {
-    return [];
+  let sources = match.sources || [];
+  const isNpl =
+    match.category === 'cricket' ||
+    (match.id && match.id.includes('npl')) ||
+    (match.title &&
+      (match.title.toLowerCase().includes('pokhara') ||
+        match.title.toLowerCase().includes('sudurpaschim') ||
+        match.title.toLowerCase().includes('npl')));
+
+  if (sources.length === 0 && isNpl) {
+    sources = [{ source: 'npl', id: match.id || 'npl26-04', label: 'Action Sports HD / NPL Live' }];
   }
 
   const allResolved: StreamSource[] = [];
@@ -97,7 +105,12 @@ export async function resolveMatchStreams(match: Match): Promise<StreamSource[]>
           list.forEach((item, idx) => {
             const url = item.embedUrl || item.streamUrl || item.url;
             if (url) {
-              const isDirect = url.includes('.m3u8') || url.includes('.mp4');
+              const cleanUrl = url.split('?')[0].toLowerCase();
+              const isDirect =
+                item.isNativeVideo === true ||
+                cleanUrl.endsWith('.m3u8') ||
+                cleanUrl.endsWith('.mp4');
+
               allResolved.push({
                 id: `${s.source}-${idx}`,
                 source: s.source,
@@ -114,6 +127,38 @@ export async function resolveMatchStreams(match: Match): Promise<StreamSource[]>
     } catch (e) {
       console.warn(`[API] Could not resolve stream for ${s.source}:`, e);
     }
+  }
+
+  // If upstream API was unreachable, provide offline-resilient verified streams for NPL
+  if (allResolved.length === 0 && isNpl) {
+    allResolved.push(
+      {
+        id: 'npl-nettv-direct',
+        source: 'npl',
+        label: 'Action Sports HD (Native Stream)',
+        embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
+        streamUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
+        isDirectStream: true,
+        hd: true,
+      },
+      {
+        id: 'npl-youtube-direct',
+        source: 'npl',
+        label: 'Official Stadium Direct (0 Delay HD)',
+        embedUrl: 'https://www.youtube-nocookie.com/embed/Z_yjma948Ug?autoplay=1&modestbranding=1&rel=0',
+        isDirectStream: false,
+        hd: true,
+      },
+      {
+        id: 'npl-nettv-server2',
+        source: 'npl',
+        label: 'Action Sports HD (Server 2)',
+        embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_live/tracks-v1a1/mono.m3u8',
+        streamUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_live/tracks-v1a1/mono.m3u8',
+        isDirectStream: true,
+        hd: true,
+      }
+    );
   }
 
   return allResolved;

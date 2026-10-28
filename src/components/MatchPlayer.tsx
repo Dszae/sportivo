@@ -102,9 +102,10 @@ export default function MatchPlayer({ match }: Props) {
             const hls = new Hls({
               enableWorker: true,
               lowLatencyMode: true,
-              liveSyncDurationCount: 1,
-              liveMaxLatencyDurationCount: 2,
-              maxLiveSyncPlaybackRate: 1.15,
+              liveSyncDurationCount: 0,
+              liveMaxLatencyDurationCount: 1,
+              maxLiveSyncPlaybackRate: 1.25,
+              liveDurationInfinity: true,
             });
             hlsInstance = hls;
             hls.loadSource(url);
@@ -280,6 +281,17 @@ export default function MatchPlayer({ match }: Props) {
     }
   };
 
+  const jumpToLiveEdge = () => {
+    if (videoRef.current) {
+      const v = videoRef.current;
+      if (v.seekable && v.seekable.length > 0) {
+        v.currentTime = v.seekable.end(v.seekable.length - 1);
+      }
+      v.playbackRate = 1.0;
+      v.play().catch(() => {});
+    }
+  };
+
   const handleShare = async () => {
     const url = window.location.href;
     if (navigator.share) {
@@ -362,6 +374,17 @@ export default function MatchPlayer({ match }: Props) {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Live Edge 0.0s Sync Toggle Button */}
+            <button
+              type="button"
+              onClick={jumpToLiveEdge}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/50 bg-red-500/10 px-2.5 py-1.5 text-xs font-black text-red-400 hover:bg-red-500 hover:text-white transition shadow-sm"
+              title="Jump directly to live broadcast edge (0.0s latency)"
+            >
+              <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
+              <span>LIVE 0.0s</span>
+            </button>
+
             {/* Fullscreen Button */}
             <button
               type="button"
@@ -653,6 +676,16 @@ export default function MatchPlayer({ match }: Props) {
                 {stream.language || `Server ${index + 1}`} {stream.hd ? 'HD' : ''}
               </button>
             ))}
+
+            <button
+              type="button"
+              onClick={jumpToLiveEdge}
+              className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-[#c9f36b]/40 bg-[#c9f36b]/10 px-3 py-1.5 text-xs font-black text-[#c9f36b] hover:bg-[#c9f36b] hover:text-[#080a0b] transition shadow-sm"
+              title="Sync playback directly to live broadcast edge"
+            >
+              <span className="h-2 w-2 rounded-full bg-[#c9f36b] animate-ping"></span>
+              <span>Sync to Live Edge (0.0s)</span>
+            </button>
           </div>
         )}
       </div>

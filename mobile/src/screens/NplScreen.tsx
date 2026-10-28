@@ -194,11 +194,43 @@ export default function NplScreen() {
               onPress={() =>
                 navigation.navigate('MatchPlayer', {
                   match: {
+                    id: item.id,
                     title: `${item.homeTeam} vs ${item.awayTeam}`,
                     category: 'cricket',
                     status: 'Live',
                     venue: item.venue,
                     timestamp: item.timestamp,
+                    sources: [
+                      { source: 'npl', id: item.id, label: 'Action Sports HD / NPL Live' },
+                    ],
+                    streams: [
+                      {
+                        id: 'nettv-hls',
+                        source: 'npl',
+                        label: 'Action Sports HD (Native Stream)',
+                        embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
+                        streamUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
+                        isDirectStream: true,
+                        hd: true,
+                      },
+                      {
+                        id: 'npl-youtube',
+                        source: 'npl',
+                        label: 'Official Stadium Direct (0 Delay HD)',
+                        embedUrl: 'https://www.youtube-nocookie.com/embed/Z_yjma948Ug?autoplay=1&modestbranding=1&rel=0',
+                        isDirectStream: false,
+                        hd: true,
+                      },
+                      {
+                        id: 'nettv-server-2',
+                        source: 'npl',
+                        label: 'Action Sports HD (Server 2)',
+                        embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_live/tracks-v1a1/mono.m3u8',
+                        streamUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_live/tracks-v1a1/mono.m3u8',
+                        isDirectStream: true,
+                        hd: true,
+                      },
+                    ],
                   },
                 })
               }

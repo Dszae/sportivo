@@ -93,11 +93,11 @@ export default function MatchPlayerScreen() {
   // Current active stream source
   const fallbackStream: StreamSource = {
     id: 'server-1',
-    source: 'sportivo',
-    label: 'Server 1 · Ultra HD',
-    embedUrl: `https://strmfree.st/embed/soccer/${match.slug || 'live-match'}`,
-    streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    isDirectStream: false,
+    source: 'npl',
+    label: 'Action Sports HD (Native Stream)',
+    embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
+    streamUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
+    isDirectStream: true,
     hd: true,
   };
 
@@ -117,13 +117,6 @@ export default function MatchPlayerScreen() {
     const slug = match.slug || match.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     await toggleStarredMatch(slug);
     setIsStarred(!isStarred);
-  };
-
-  const openInBrowser = async () => {
-    const url = activeStream.embedUrl || activeStream.streamUrl || 'https://sportivo.dipeshsapkota7.com.np/';
-    try {
-      await Linking.openURL(url);
-    } catch {}
   };
 
   return (
@@ -189,6 +182,20 @@ export default function MatchPlayerScreen() {
             onLoadProgress={({ nativeEvent }) => {
               if (nativeEvent.progress > 0.35) setIsBuffering(false);
             }}
+            onError={(_syntheticEvent) => {
+              setIsBuffering(false);
+              if (streams.length > 1) {
+                setSelectedServer((selectedServer + 1) % streams.length);
+              }
+            }}
+            renderError={() => (
+              <View style={[styles.video, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }]}>
+                <ActivityIndicator size="large" color="#c9f36b" />
+                <Text style={{ color: '#c9f36b', marginTop: 12, fontSize: 12, fontWeight: 'bold' }}>
+                  Connecting to High-Speed Stream...
+                </Text>
+              </View>
+            )}
           />
         )}
 
@@ -200,15 +207,14 @@ export default function MatchPlayerScreen() {
         )}
       </View>
 
-      {/* Non-blocking Stream Helper Bar (appears if user needs alternative) */}
-      {hasTimedOut && (
-        <View style={styles.streamHelperBanner}>
-          <View style={styles.streamHelperTextRow}>
-            <AlertCircleIcon size={16} color="#fbbf24" />
-            <Text style={styles.streamHelperTitle}>Tap play on video if paused</Text>
-          </View>
-          <View style={styles.streamHelperActions}>
-            {streams.length > 1 && (
+        {/* Switch Server Helper if user wants to change stream */}
+        {hasTimedOut && streams.length > 1 && (
+          <View style={styles.streamHelperBanner}>
+            <View style={styles.streamHelperTextRow}>
+              <AlertCircleIcon size={16} color="#fbbf24" />
+              <Text style={styles.streamHelperTitle}>Switch to backup stream if buffering</Text>
+            </View>
+            <View style={styles.streamHelperActions}>
               <TouchableOpacity
                 style={styles.retryBtn}
                 onPress={() => {
@@ -220,14 +226,9 @@ export default function MatchPlayerScreen() {
                 <RefreshIcon size={12} color="#080a0b" />
                 <Text style={styles.retryBtnText}>Next Server</Text>
               </TouchableOpacity>
-            )}
-            <TouchableOpacity style={styles.browserBtn} onPress={openInBrowser}>
-              <ExternalLinkIcon size={12} color="#c9f36b" />
-              <Text style={styles.browserBtnText}>Open HD Browser</Text>
-            </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      )}
+        )}
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Match Header Information */}
