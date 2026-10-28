@@ -11,7 +11,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { BookmarkIcon, ClockIcon } from '../components/Icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Match, RootStackParamList } from '../types';
@@ -104,7 +104,7 @@ export default function WatchlistScreen() {
     >
       {/* Top Banner */}
       <View style={styles.banner}>
-        <Ionicons name="bookmark" size={32} color="#fbbf24" style={{ marginBottom: 8 }} />
+        <BookmarkIcon size={32} color="#fbbf24" fill="#fbbf24" style={{ marginBottom: 8 }} />
         <Text style={styles.bannerTitle}>My Personal Watchlist</Text>
         <Text style={styles.bannerSubtitle}>
           Follow your favorite clubs and NPL franchises. Match alerts will automatically fire 5 minutes before kickoff!
@@ -149,7 +149,7 @@ export default function WatchlistScreen() {
                       </View>
                     ) : (
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                        <Ionicons name="time-outline" size={11} color="#94a3b8" />
+                        <ClockIcon size={11} color="#94a3b8" />
                         <Text style={styles.statusText}>{kickoff} NST</Text>
                       </View>
                     )}

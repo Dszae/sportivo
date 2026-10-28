@@ -11,7 +11,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { BookmarkIcon, CalendarIcon, FlameIcon, CricketIcon } from '../components/Icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NplMatch, RootStackParamList } from '../types';
@@ -103,10 +103,10 @@ export default function NplScreen() {
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               style={styles.starBtn}
             >
-              <Ionicons
-                name={isStarred ? 'bookmark' : 'bookmark-outline'}
+              <BookmarkIcon
                 size={18}
                 color={isStarred ? '#fbbf24' : '#64748b'}
+                fill={isStarred ? '#fbbf24' : undefined}
               />
             </TouchableOpacity>
           </View>
@@ -164,7 +164,7 @@ export default function NplScreen() {
         {/* Card Footer */}
         <View style={styles.cardFooter}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Ionicons name="calendar-outline" size={13} color="#94a3b8" />
+            <CalendarIcon size={13} color="#94a3b8" />
             <Text style={styles.scheduleText}>
               {formatKathmanduDate(item.timestamp)} · {formatKathmanduTime(item.timestamp)} NST
             </Text>
@@ -200,7 +200,7 @@ export default function NplScreen() {
       {/* Top Banner */}
       <View style={styles.topBanner}>
         <View style={styles.nplTitleRow}>
-          <Ionicons name="flame" size={24} color="#ef4444" style={{ marginRight: 8 }} />
+          <FlameIcon size={24} color="#ef4444" style={{ marginRight: 8 }} />
           <View>
             <Text style={styles.nplTitle}>Nepal Premier League 2026</Text>
             <Text style={styles.nplSubtitle}>Official 32-Match Schedule · TU Cricket Ground</Text>
@@ -259,7 +259,7 @@ export default function NplScreen() {
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <MaterialCommunityIcons name="cricket" size={40} color="#64748b" style={{ marginBottom: 12 }} />
+              <CricketIcon size={40} color="#64748b" style={{ marginBottom: 12 }} />
               <Text style={styles.emptyTitle}>No NPL Fixtures In This Tab</Text>
               <Text style={styles.emptySubtitle}>Switch to "All Matches" to see the full tournament schedule.</Text>
             </View>

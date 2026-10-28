@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { FootballIcon, TrophyIcon, CricketIcon, BookmarkIcon, BellIcon, ArrowForwardIcon, InfoIcon } from '../components/Icons';
 import { RootStackParamList } from '../types';
 import { loadPreferences } from '../services/storage';
 import { triggerButtonHaptic } from '../services/notifications';
@@ -54,9 +54,7 @@ export default function HomeScreen() {
     {
       title: 'Football Desk',
       category: 'FootballTab',
-      iconType: 'ionicons' as const,
-      iconName: 'football-outline',
-      iconColor: '#c9f36b',
+      renderIcon: () => <FootballIcon size={24} color="#c9f36b" />,
       subtitle: 'Premier League, UCL, La Liga, Serie A',
       badge: 'Live Feeds',
       badgeColor: '#c9f36b',
@@ -66,9 +64,7 @@ export default function HomeScreen() {
     {
       title: 'Nepal Premier League',
       category: 'NplTab',
-      iconType: 'ionicons' as const,
-      iconName: 'trophy-outline',
-      iconColor: '#ef4444',
+      renderIcon: () => <TrophyIcon size={24} color="#ef4444" />,
       subtitle: 'Official Season 2026 Schedule',
       badge: '32 Matches',
       badgeColor: '#ef4444',
@@ -78,9 +74,7 @@ export default function HomeScreen() {
     {
       title: 'Cricket Desk',
       category: 'CricketTab',
-      iconType: 'material' as const,
-      iconName: 'cricket',
-      iconColor: '#c9f36b',
+      renderIcon: () => <CricketIcon size={24} color="#c9f36b" />,
       subtitle: 'ICC World Cups, IPL, Bilateral Series',
       badge: 'NST Scores',
       badgeColor: '#c9f36b',
@@ -90,9 +84,7 @@ export default function HomeScreen() {
     {
       title: 'My Watchlist',
       category: 'WatchlistTab',
-      iconType: 'ionicons' as const,
-      iconName: 'bookmark-outline',
-      iconColor: '#fbbf24',
+      renderIcon: () => <BookmarkIcon size={24} color="#fbbf24" fill="#fbbf24" />,
       subtitle: 'Followed Teams & Kickoff Alerts',
       badge: `${watchlistCount} Saved`,
       badgeColor: '#fbbf24',
@@ -126,7 +118,7 @@ export default function HomeScreen() {
             onPress={() => navigation.navigate('NotificationSettings')}
             accessibilityLabel="Notification Settings"
           >
-            <Ionicons name="notifications-outline" size={20} color="#cbd5e1" />
+            <BellIcon size={20} color="#cbd5e1" />
           </TouchableOpacity>
         </View>
       </View>
@@ -176,11 +168,7 @@ export default function HomeScreen() {
           >
             <View style={styles.arenaTopRow}>
               <View style={styles.iconCircle}>
-                {item.iconType === 'ionicons' ? (
-                  <Ionicons name={item.iconName as any} size={22} color={item.iconColor} />
-                ) : (
-                  <MaterialCommunityIcons name={item.iconName as any} size={22} color={item.iconColor} />
-                )}
+                {item.renderIcon()}
               </View>
               <View style={[styles.arenaBadge, { backgroundColor: item.badgeBg }]}>
                 <Text style={[styles.arenaBadgeText, { color: item.badgeColor }]}>
@@ -195,7 +183,7 @@ export default function HomeScreen() {
 
             <View style={styles.arenaFooter}>
               <Text style={styles.arenaActionText}>Enter Desk</Text>
-              <Ionicons name="arrow-forward" size={14} color="#c9f36b" />
+              <ArrowForwardIcon size={14} color="#c9f36b" />
             </View>
           </TouchableOpacity>
         ))}
@@ -207,7 +195,7 @@ export default function HomeScreen() {
           activeOpacity={0.8}
         >
           <View style={styles.creatorHeaderRow}>
-            <Ionicons name="information-circle-outline" size={20} color="#c9f36b" />
+            <InfoIcon size={20} color="#c9f36b" />
             <Text style={styles.creatorHeading}>About the Creator</Text>
           </View>
           <Text style={styles.creatorDescription}>
@@ -215,7 +203,7 @@ export default function HomeScreen() {
           </Text>
           <View style={styles.creatorLinkRow}>
             <Text style={styles.creatorLinkText}>View Creator Profile &amp; Projects</Text>
-            <Ionicons name="arrow-forward" size={14} color="#c9f36b" />
+            <ArrowForwardIcon size={14} color="#c9f36b" />
           </View>
         </TouchableOpacity>
       </ScrollView>

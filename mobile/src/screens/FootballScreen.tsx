@@ -12,7 +12,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { BookmarkIcon, ChevronForwardIcon, FootballIcon } from '../components/Icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Match, RootStackParamList } from '../types';
@@ -142,13 +142,13 @@ export default function FootballScreen() {
             onPress={() => handleToggleStar(slug)}
             style={styles.starTouch}
           >
-            <Ionicons
-              name={isStarred ? 'bookmark' : 'bookmark-outline'}
+            <BookmarkIcon
               size={18}
               color={isStarred ? '#fbbf24' : '#64748b'}
+              fill={isStarred ? '#fbbf24' : undefined}
             />
           </TouchableOpacity>
-          <Ionicons name="chevron-forward" size={16} color="#64748b" />
+          <ChevronForwardIcon size={16} color="#64748b" />
         </View>
       </TouchableOpacity>
     );
@@ -206,7 +206,7 @@ export default function FootballScreen() {
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Ionicons name="football-outline" size={40} color="#64748b" style={{ marginBottom: 12 }} />
+              <FootballIcon size={40} color="#64748b" style={{ marginBottom: 12 }} />
               <Text style={styles.emptyTitle}>No Fixtures In This League</Text>
               <Text style={styles.emptySubtitle}>Select "All" to view all worldwide fixtures.</Text>
             </View>

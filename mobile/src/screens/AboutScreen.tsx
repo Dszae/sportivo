@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowBackIcon, LocationIcon, ClockIcon, GlobeIcon, ChevronForwardIcon, GithubIcon, LinkedinIcon, MailIcon } from '../components/Icons';
 
 export default function AboutScreen() {
   const navigation = useNavigation();
@@ -38,7 +38,7 @@ export default function AboutScreen() {
           style={styles.backBtn}
           accessibilityLabel="Back"
         >
-          <Ionicons name="arrow-back" size={20} color="#c9f36b" />
+          <ArrowBackIcon size={20} color="#c9f36b" />
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>About the Creator</Text>
@@ -57,11 +57,11 @@ export default function AboutScreen() {
 
           <View style={styles.badgeRow}>
             <View style={styles.badge}>
-              <Ionicons name="location-outline" size={13} color="#c9f36b" />
+              <LocationIcon size={13} color="#c9f36b" />
               <Text style={styles.badgeText}>Kathmandu, Nepal</Text>
             </View>
             <View style={styles.badge}>
-              <Ionicons name="time-outline" size={13} color="#fbbf24" />
+              <ClockIcon size={13} color="#fbbf24" />
               <Text style={styles.badgeText}>NST · UTC+5:45</Text>
             </View>
           </View>
@@ -87,13 +87,13 @@ export default function AboutScreen() {
             onPress={() => openLink('https://www.dipeshsapkota7.com.np/')}
           >
             <View style={styles.linkIconBox}>
-              <Ionicons name="globe-outline" size={18} color="#c9f36b" />
+              <GlobeIcon size={18} color="#c9f36b" />
             </View>
             <View style={styles.linkTextBox}>
               <Text style={styles.linkLabel}>Personal Website &amp; Portfolio</Text>
               <Text style={styles.linkValue}>www.dipeshsapkota7.com.np</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#64748b" />
+            <ChevronForwardIcon size={16} color="#64748b" />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -101,13 +101,13 @@ export default function AboutScreen() {
             onPress={() => openLink('https://github.com/Dszae')}
           >
             <View style={styles.linkIconBox}>
-              <Ionicons name="logo-github" size={18} color="#c9f36b" />
+              <GithubIcon size={18} color="#c9f36b" />
             </View>
             <View style={styles.linkTextBox}>
               <Text style={styles.linkLabel}>GitHub</Text>
               <Text style={styles.linkValue}>github.com/Dszae</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#64748b" />
+            <ChevronForwardIcon size={16} color="#64748b" />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -115,13 +115,13 @@ export default function AboutScreen() {
             onPress={() => openLink('https://linkedin.com/in/dszae')}
           >
             <View style={styles.linkIconBox}>
-              <Ionicons name="logo-linkedin" size={18} color="#c9f36b" />
+              <LinkedinIcon size={18} color="#c9f36b" />
             </View>
             <View style={styles.linkTextBox}>
               <Text style={styles.linkLabel}>LinkedIn</Text>
               <Text style={styles.linkValue}>linkedin.com/in/dszae</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#64748b" />
+            <ChevronForwardIcon size={16} color="#64748b" />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -129,13 +129,13 @@ export default function AboutScreen() {
             onPress={() => openLink('mailto:dsz.ae18@gmail.com')}
           >
             <View style={styles.linkIconBox}>
-              <Ionicons name="mail-outline" size={18} color="#c9f36b" />
+              <MailIcon size={18} color="#c9f36b" />
             </View>
             <View style={styles.linkTextBox}>
               <Text style={styles.linkLabel}>Direct Email</Text>
               <Text style={styles.linkValue}>dsz.ae18@gmail.com</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#64748b" />
+            <ChevronForwardIcon size={16} color="#64748b" />
           </TouchableOpacity>
         </View>
 

@@ -16,7 +16,16 @@ import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { WebView } from 'react-native-webview';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  ArrowBackIcon,
+  ShareIcon,
+  AlertCircleIcon,
+  RefreshIcon,
+  ExternalLinkIcon,
+  LocationIcon,
+  BookmarkIcon,
+  RadioIcon,
+} from '../components/Icons';
 import { Match, RootStackParamList, StreamSource } from '../types';
 import { toggleStarredMatch } from '../services/storage';
 import { triggerButtonHaptic } from '../services/notifications';
@@ -123,14 +132,14 @@ export default function MatchPlayerScreen() {
           style={styles.backButton}
           accessibilityLabel="Back"
         >
-          <Ionicons name="arrow-back" size={20} color="#c9f36b" />
+          <ArrowBackIcon size={20} color="#c9f36b" />
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.topBarTitle} numberOfLines={1}>
           {match.title}
         </Text>
         <TouchableOpacity onPress={handleShare} style={styles.shareButton} accessibilityLabel="Share">
-          <Ionicons name="share-social-outline" size={18} color="#cbd5e1" />
+          <ShareIcon size={18} color="#cbd5e1" />
         </TouchableOpacity>
       </View>
 
@@ -173,7 +182,7 @@ export default function MatchPlayerScreen() {
 
         {hasTimedOut && (
           <View style={styles.timeoutOverlay}>
-            <Ionicons name="alert-circle-outline" size={32} color="#fbbf24" />
+            <AlertCircleIcon size={32} color="#fbbf24" />
             <Text style={styles.timeoutTitle}>Broadcast Feed Connecting</Text>
             <Text style={styles.timeoutSub}>
               If the stream does not start automatically, switch servers or launch directly in HD browser view.
@@ -189,11 +198,11 @@ export default function MatchPlayerScreen() {
                   }
                 }}
               >
-                <Ionicons name="refresh" size={14} color="#080a0b" />
+                <RefreshIcon size={14} color="#080a0b" />
                 <Text style={styles.retryBtnText}>Next Server</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.browserBtn} onPress={openInBrowser}>
-                <Ionicons name="open-outline" size={14} color="#c9f36b" />
+                <ExternalLinkIcon size={14} color="#c9f36b" />
                 <Text style={styles.browserBtnText}>Open in Browser</Text>
               </TouchableOpacity>
             </View>
@@ -219,7 +228,7 @@ export default function MatchPlayerScreen() {
           <Text style={styles.matchTitle}>{match.title}</Text>
           {match.venue && (
             <View style={styles.venueRow}>
-              <Ionicons name="location-outline" size={13} color="#94a3b8" />
+              <LocationIcon size={13} color="#94a3b8" />
               <Text style={styles.venueText}>{match.venue}</Text>
             </View>
           )}
@@ -230,10 +239,10 @@ export default function MatchPlayerScreen() {
               style={[styles.actionButton, isStarred && styles.actionButtonActive]}
               onPress={handleToggleStar}
             >
-              <Ionicons
-                name={isStarred ? 'bookmark' : 'bookmark-outline'}
+              <BookmarkIcon
                 size={16}
                 color={isStarred ? '#fbbf24' : '#cbd5e1'}
+                fill={isStarred ? '#fbbf24' : undefined}
               />
               <Text style={[styles.actionButtonText, isStarred && styles.actionButtonTextActive]}>
                 {isStarred ? 'Saved to Watchlist' : 'Add to Watchlist'}
@@ -241,7 +250,7 @@ export default function MatchPlayerScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-              <Ionicons name="share-social-outline" size={16} color="#cbd5e1" />
+              <ShareIcon size={16} color="#cbd5e1" />
               <Text style={styles.actionButtonText}>Share</Text>
             </TouchableOpacity>
           </View>
@@ -268,8 +277,7 @@ export default function MatchPlayerScreen() {
                 >
                   <View style={styles.serverInfo}>
                     <View style={styles.serverTitleRow}>
-                      <Ionicons
-                        name="radio-outline"
+                      <RadioIcon
                         size={15}
                         color={isCurrent ? '#c9f36b' : '#94a3b8'}
                       />

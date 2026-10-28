@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { GridIcon, FootballIcon, FlameIcon, CricketIcon, BookmarkIcon } from '../components/Icons';
 import { RootStackParamList } from '../types';
 
 import HomeScreen from '../screens/HomeScreen';
@@ -43,8 +43,8 @@ function BottomTabs() {
         component={HomeScreen}
         options={{
           tabBarLabel: 'Desk',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'grid' : 'grid-outline'} size={20} color={color} />
+          tabBarIcon: ({ color }) => (
+            <GridIcon size={20} color={color} />
           ),
         }}
       />
@@ -54,8 +54,8 @@ function BottomTabs() {
         component={FootballScreen}
         options={{
           tabBarLabel: 'Football',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'football' : 'football-outline'} size={20} color={color} />
+          tabBarIcon: ({ color }) => (
+            <FootballIcon size={20} color={color} />
           ),
         }}
       />
@@ -66,9 +66,9 @@ function BottomTabs() {
         options={{
           tabBarLabel: 'NPL 2026',
           tabBarActiveTintColor: '#ef4444',
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ color }) => (
             <View style={{ position: 'relative' }}>
-              <Ionicons name={focused ? 'flame' : 'flame-outline'} size={20} color={color} />
+              <FlameIcon size={20} color={color} />
               <View style={styles.pulseDot} />
             </View>
           ),
@@ -81,7 +81,7 @@ function BottomTabs() {
         options={{
           tabBarLabel: 'Cricket',
           tabBarIcon: ({ color }) => (
-            <MaterialCommunityIcons name="cricket" size={21} color={color} />
+            <CricketIcon size={20} color={color} />
           ),
         }}
       />
@@ -93,7 +93,7 @@ function BottomTabs() {
           tabBarLabel: 'Watchlist',
           tabBarActiveTintColor: '#fbbf24',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'bookmark' : 'bookmark-outline'} size={20} color={color} />
+            <BookmarkIcon size={20} color={color} fill={focused ? color : undefined} />
           ),
         }}
       />

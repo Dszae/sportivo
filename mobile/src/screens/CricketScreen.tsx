@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { ClockIcon, BookmarkIcon, LocationIcon, CricketIcon, ChevronForwardIcon } from '../components/Icons';
 import { Match, RootStackParamList } from '../types';
 import { fetchMatches, formatKathmanduTime } from '../services/api';
 import { loadPreferences, toggleStarredMatch } from '../services/storage';
@@ -81,7 +81,7 @@ export default function CricketScreen() {
               </View>
             ) : (
               <View style={styles.scheduledBadge}>
-                <Ionicons name="time-outline" size={11} color="#94a3b8" />
+                <ClockIcon size={11} color="#94a3b8" />
                 <Text style={styles.scheduledText}>{kickoff} NST</Text>
               </View>
             )}
@@ -93,10 +93,10 @@ export default function CricketScreen() {
             onPress={() => handleToggleStar(slug)}
             style={styles.starBtn}
           >
-            <Ionicons
-              name={isStarred ? 'bookmark' : 'bookmark-outline'}
+            <BookmarkIcon
               size={18}
               color={isStarred ? '#fbbf24' : '#64748b'}
+              fill={isStarred ? '#fbbf24' : undefined}
             />
           </TouchableOpacity>
         </View>
@@ -107,7 +107,7 @@ export default function CricketScreen() {
           </Text>
           {item.venue && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
-              <Ionicons name="location-outline" size={12} color="#94a3b8" />
+              <LocationIcon size={12} color="#94a3b8" />
               <Text style={styles.venueText} numberOfLines={1}>
                 {item.venue}
               </Text>
@@ -117,8 +117,7 @@ export default function CricketScreen() {
 
         <View style={styles.cardFooter}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <MaterialCommunityIcons
-              name="cricket"
+            <CricketIcon
               size={14}
               color={isLive ? '#ef4444' : '#c9f36b'}
             />
@@ -126,7 +125,7 @@ export default function CricketScreen() {
               {isLive ? 'Watch Live Feed' : 'View Fixture Details'}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={14} color="#64748b" />
+          <ChevronForwardIcon size={14} color="#64748b" />
         </View>
       </TouchableOpacity>
     );
@@ -155,7 +154,7 @@ export default function CricketScreen() {
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <MaterialCommunityIcons name="cricket" size={40} color="#64748b" style={{ marginBottom: 12 }} />
+              <CricketIcon size={40} color="#64748b" style={{ marginBottom: 12 }} />
               <Text style={styles.emptyTitle}>No Cricket Matches Active</Text>
               <Text style={styles.emptySubtitle}>Check the NPL tab for Nepal Premier League fixtures!</Text>
             </View>
