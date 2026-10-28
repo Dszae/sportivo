@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   Dimensions,
   ActivityIndicator,
   Share,
-  Linking,
   Platform,
   StatusBar,
 } from 'react-native';
@@ -21,19 +20,35 @@ import {
   ShareIcon,
   AlertCircleIcon,
   RefreshIcon,
-  ExternalLinkIcon,
   LocationIcon,
   BookmarkIcon,
   RadioIcon,
 } from '../components/Icons';
-import { Match, RootStackParamList, StreamSource } from '../types';
+import { Match, RootStackParamList, StreamSource, NplMatch } from '../types';
 import { toggleStarredMatch } from '../services/storage';
 import { triggerButtonHaptic } from '../services/notifications';
-import { resolveMatchStreams } from '../services/api';
+import {
+  resolveMatchStreams,
+  fetchLiveDeskMoments,
+  LiveScorerMobile,
+  fetchNplFixtures,
+  formatKathmanduTime,
+} from '../services/api';
 
 type RouteProps = RouteProp<RootStackParamList, 'MatchPlayer'>;
 
 const { width } = Dimensions.get('window');
+
+const NPL_TEAMS_DATA = [
+  { name: 'Sudurpaschim Royals', p: 1, w: 1, l: 0, pts: 2, nrr: '+1.450' },
+  { name: 'Janakpur Bolts', p: 1, w: 1, l: 0, pts: 2, nrr: '+1.120' },
+  { name: 'Biratnagar Kings', p: 1, w: 1, l: 0, pts: 2, nrr: '+0.850' },
+  { name: 'Chitwan Rhinos', p: 1, w: 1, l: 0, pts: 2, nrr: '+0.420' },
+  { name: 'Kathmandu Gurkhas', p: 1, w: 0, l: 1, pts: 0, nrr: '-0.420' },
+  { name: 'Pokhara Avengers', p: 1, w: 0, l: 1, pts: 0, nrr: '-0.850' },
+  { name: 'Lumbini Lions', p: 1, w: 0, l: 1, pts: 0, nrr: '-1.120' },
+  { name: 'Karnali Yaks', p: 1, w: 0, l: 1, pts: 0, nrr: '-1.450' },
+];
 
 export default function MatchPlayerScreen() {
   const route = useRoute<RouteProps>();
@@ -50,6 +65,14 @@ export default function MatchPlayerScreen() {
   const [isStarred, setIsStarred] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [hasTimedOut, setHasTimedOut] = useState(false);
+
+  // Hub tabs: 'commentary' | 'upcoming' | 'standings'
+  const [activeHubTab, setActiveHubTab] = useState<'commentary' | 'upcoming' | 'standings'>('commentary');
+
+  // Live Ground Scorer State
+  const [liveDesk, setLiveDesk] = useState<LiveScorerMobile | null>(null);
+  const [upcomingMatches, setUpcomingMatches] = useState<NplMatch[]>([]);
+
   const videoRef = useRef<Video>(null);
 
   // Auto-resolve live streaming sources on screen open
@@ -74,7 +97,41 @@ export default function MatchPlayerScreen() {
     };
   }, [match]);
 
-  // Buffering timeout safeguard: never leave user stuck indefinitely
+  // Poll Ground Scorer Ball Commentary & Live Moments (every 4s)
+  useEffect(() => {
+    let isMounted = true;
+    let timer: any = null;
+
+    const poll = async () => {
+      try {
+        const data = await fetchLiveDeskMoments();
+        if (data && isMounted) {
+          setLiveDesk(data);
+        }
+      } catch {}
+
+      if (isMounted) {
+        timer = setTimeout(poll, 4000);
+      }
+    };
+
+    poll();
+
+    // Fetch upcoming fixtures
+    fetchNplFixtures().then((list) => {
+      if (isMounted) {
+        const now = Date.now();
+        setUpcomingMatches(list.filter((m) => m.timestamp > now).slice(0, 5));
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
+
+  // Buffering timeout safeguard
   useEffect(() => {
     setHasTimedOut(false);
     setIsBuffering(true);
@@ -141,12 +198,12 @@ export default function MatchPlayerScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Video Player Stage */}
+      {/* Video Player Stage (ExoPlayer Native Streaming) */}
       <View style={styles.playerStage}>
-        {activeStream.isDirectStream && activeStream.streamUrl ? (
+        {activeStream.streamUrl || activeStream.embedUrl?.includes('.m3u8') ? (
           <Video
             ref={videoRef}
-            source={{ uri: activeStream.streamUrl }}
+            source={{ uri: activeStream.streamUrl || activeStream.embedUrl || '' }}
             style={styles.video}
             useNativeControls
             resizeMode={ResizeMode.CONTAIN}
@@ -161,38 +218,18 @@ export default function MatchPlayerScreen() {
           />
         ) : (
           <WebView
-            source={{
-              uri: activeStream.embedUrl || 'https://sportivo.dipeshsapkota7.com.np/',
-              headers: { Referer: 'https://sportivo.dipeshsapkota7.com.np/' },
-            }}
+            source={{ uri: activeStream.embedUrl || activeStream.streamUrl || '' }}
             style={styles.video}
-            allowsFullscreenVideo={true}
+            allowsFullscreenVideo
+            allowsInlineMediaPlayback
             mediaPlaybackRequiresUserAction={false}
-            allowsInlineMediaPlayback={true}
-            javaScriptEnabled={true}
-            domStorageEnabled={true}
-            mixedContentMode="always"
-            originWhitelist={['*']}
-            androidLayerType="hardware"
-            userAgent="Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
-            onLoadStart={() => {
-              setTimeout(() => setIsBuffering(false), 2000);
-            }}
-            onLoadEnd={() => setIsBuffering(false)}
-            onLoadProgress={({ nativeEvent }) => {
-              if (nativeEvent.progress > 0.35) setIsBuffering(false);
-            }}
-            onError={(_syntheticEvent) => {
-              setIsBuffering(false);
-              if (streams.length > 1) {
-                setSelectedServer((selectedServer + 1) % streams.length);
-              }
-            }}
+            javaScriptEnabled
+            domStorageEnabled
             renderError={() => (
               <View style={[styles.video, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }]}>
                 <ActivityIndicator size="large" color="#c9f36b" />
                 <Text style={{ color: '#c9f36b', marginTop: 12, fontSize: 12, fontWeight: 'bold' }}>
-                  Connecting to High-Speed Stream...
+                  Connecting to Live Broadcast...
                 </Text>
               </View>
             )}
@@ -207,30 +244,192 @@ export default function MatchPlayerScreen() {
         )}
       </View>
 
-        {/* Switch Server Helper if user wants to change stream */}
-        {hasTimedOut && streams.length > 1 && (
-          <View style={styles.streamHelperBanner}>
-            <View style={styles.streamHelperTextRow}>
-              <AlertCircleIcon size={16} color="#fbbf24" />
-              <Text style={styles.streamHelperTitle}>Switch to backup stream if buffering</Text>
-            </View>
-            <View style={styles.streamHelperActions}>
-              <TouchableOpacity
-                style={styles.retryBtn}
-                onPress={() => {
-                  setHasTimedOut(false);
-                  setIsBuffering(true);
-                  setSelectedServer((selectedServer + 1) % streams.length);
-                }}
-              >
-                <RefreshIcon size={12} color="#080a0b" />
-                <Text style={styles.retryBtnText}>Next Server</Text>
-              </TouchableOpacity>
-            </View>
+      {/* Switch Server Helper if user wants to change stream */}
+      {hasTimedOut && streams.length > 1 && (
+        <View style={styles.streamHelperBanner}>
+          <View style={styles.streamHelperTextRow}>
+            <AlertCircleIcon size={16} color="#fbbf24" />
+            <Text style={styles.streamHelperTitle}>Switch to backup stream if buffering</Text>
           </View>
-        )}
+          <View style={styles.streamHelperActions}>
+            <TouchableOpacity
+              style={styles.retryBtn}
+              onPress={() => {
+                setHasTimedOut(false);
+                setIsBuffering(true);
+                setSelectedServer((selectedServer + 1) % streams.length);
+              }}
+            >
+              <RefreshIcon size={12} color="#080a0b" />
+              <Text style={styles.retryBtnText}>Next Server</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* Real-time Match Telemetry Bar (Live Score & Recent Balls) */}
+      {liveDesk && (
+        <View style={styles.telemetryBar}>
+          <View style={styles.telemetryScoreRow}>
+            <View style={styles.telemetryBadge}>
+              <View style={styles.liveDot} />
+              <Text style={styles.telemetryBadgeText}>GROUND</Text>
+            </View>
+            {liveDesk.score ? (
+              <View style={styles.scoreTextRow}>
+                <Text style={styles.scoreNumber}>{liveDesk.score}</Text>
+                {liveDesk.overs && <Text style={styles.oversNumber}>({liveDesk.overs} ov)</Text>}
+                {liveDesk.crr && <Text style={styles.crrNumber}>CRR: {liveDesk.crr}</Text>}
+              </View>
+            ) : null}
+          </View>
+
+          {/* Recent Balls Strip */}
+          {liveDesk.recentBalls && liveDesk.recentBalls.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.ballsStrip}>
+              {liveDesk.recentBalls.slice(-10).map((b, idx) => {
+                const code = (b.code || '').toLowerCase();
+                const isFour = code === '4';
+                const isSix = code === '6';
+                const isWkt = code.includes('w') && !code.includes('wd');
+                const isDot = code === '0';
+
+                return (
+                  <View
+                    key={idx}
+                    style={[
+                      styles.ballCircle,
+                      isSix && styles.ballSix,
+                      isFour && styles.ballFour,
+                      isWkt && styles.ballWicket,
+                      isDot && styles.ballDot,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.ballText,
+                        isFour && styles.ballFourText,
+                        (isSix || isWkt) && styles.ballWhiteText,
+                      ]}
+                    >
+                      {isWkt ? 'W' : isDot ? '•' : b.code}
+                    </Text>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          )}
+        </View>
+      )}
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Interactive Match Hub Tabs */}
+        <View style={styles.hubContainer}>
+          <View style={styles.hubHeader}>
+            <TouchableOpacity
+              style={[styles.hubTab, activeHubTab === 'commentary' && styles.hubTabActive]}
+              onPress={() => setActiveHubTab('commentary')}
+            >
+              <Text style={[styles.hubTabText, activeHubTab === 'commentary' && styles.hubTabTextActive]}>
+                Commentary
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.hubTab, activeHubTab === 'upcoming' && styles.hubTabActive]}
+              onPress={() => setActiveHubTab('upcoming')}
+            >
+              <Text style={[styles.hubTabText, activeHubTab === 'upcoming' && styles.hubTabTextActive]}>
+                Fixtures
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.hubTab, activeHubTab === 'standings' && styles.hubTabActive]}
+              onPress={() => setActiveHubTab('standings')}
+            >
+              <Text style={[styles.hubTabText, activeHubTab === 'standings' && styles.hubTabTextActive]}>
+                Points Table
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Hub Tab Content */}
+          {activeHubTab === 'commentary' && (
+            <View style={styles.hubBody}>
+              {liveDesk && liveDesk.commentary && liveDesk.commentary.length > 0 ? (
+                liveDesk.commentary.map((comm, idx) => (
+                  <View key={idx} style={styles.commItem}>
+                    <View style={styles.commBallCol}>
+                      <Text style={styles.commBallText}>{comm.ball}</Text>
+                      {comm.outcome && (
+                        <View
+                          style={[
+                            styles.commBadge,
+                            comm.outcome === '6' && styles.ballSix,
+                            comm.outcome === '4' && styles.ballFour,
+                            comm.outcome === 'W' && styles.ballWicket,
+                          ]}
+                        >
+                          <Text style={styles.commBadgeText}>{comm.outcome}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <View style={styles.commTextCol}>
+                      <Text style={styles.commBowlerText}>{comm.bowlerToBatsman}</Text>
+                      <Text style={styles.commDescText}>{comm.text}</Text>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.emptyText}>Waiting for live ground scorer commentary feeds...</Text>
+              )}
+            </View>
+          )}
+
+          {activeHubTab === 'upcoming' && (
+            <View style={styles.hubBody}>
+              {upcomingMatches.map((m) => (
+                <View key={m.id} style={styles.upcomingCard}>
+                  <View style={styles.upcomingTop}>
+                    <Text style={styles.upcomingMatchNum}>Match {m.matchNumber}</Text>
+                    <Text style={styles.upcomingTime}>{formatKathmanduTime(m.timestamp)}</Text>
+                  </View>
+                  <Text style={styles.upcomingTitle}>
+                    {m.homeTeam} vs {m.awayTeam}
+                  </Text>
+                  <Text style={styles.upcomingVenue}>{m.venue}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {activeHubTab === 'standings' && (
+            <View style={styles.hubBody}>
+              <View style={styles.tableHeader}>
+                <Text style={[styles.tableCol, { flex: 3 }]}>Team</Text>
+                <Text style={[styles.tableCol, { flex: 1, textAlign: 'center' }]}>P</Text>
+                <Text style={[styles.tableCol, { flex: 1, textAlign: 'center' }]}>W</Text>
+                <Text style={[styles.tableCol, { flex: 1, textAlign: 'center' }]}>PTS</Text>
+                <Text style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}>NRR</Text>
+              </View>
+              {NPL_TEAMS_DATA.map((t, idx) => (
+                <View key={idx} style={styles.tableRow}>
+                  <Text style={[styles.teamName, { flex: 3 }]} numberOfLines={1}>
+                    {idx + 1}. {t.name}
+                  </Text>
+                  <Text style={[styles.tableVal, { flex: 1, textAlign: 'center' }]}>{t.p}</Text>
+                  <Text style={[styles.tableVal, { flex: 1, textAlign: 'center', color: '#10b981' }]}>{t.w}</Text>
+                  <Text style={[styles.tableVal, { flex: 1, textAlign: 'center', fontWeight: '900', color: '#c9f36b' }]}>
+                    {t.pts}
+                  </Text>
+                  <Text style={[styles.tableVal, { flex: 1.5, textAlign: 'right' }]}>{t.nrr}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
         {/* Match Header Information */}
         <View style={styles.metaCard}>
           <View style={styles.metaTopRow}>
@@ -297,10 +496,7 @@ export default function MatchPlayerScreen() {
                 >
                   <View style={styles.serverInfo}>
                     <View style={styles.serverTitleRow}>
-                      <RadioIcon
-                        size={15}
-                        color={isCurrent ? '#c9f36b' : '#94a3b8'}
-                      />
+                      <RadioIcon size={15} color={isCurrent ? '#c9f36b' : '#94a3b8'} />
                       <Text style={[styles.serverTitle, isCurrent && styles.serverTitleActive]}>
                         {stream.label || `Server ${idx + 1}`}
                       </Text>
@@ -432,21 +628,238 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '900',
   },
-  browserBtn: {
+  telemetryBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#0c1211',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+  },
+  telemetryScoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  telemetryBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(201, 243, 107, 0.15)',
-    borderWidth: 1,
-    borderColor: '#c9f36b',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 6,
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
-  browserBtnText: {
+  telemetryBadgeText: {
+    color: '#ef4444',
+    fontSize: 8,
+    fontWeight: '900',
+  },
+  scoreTextRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+  },
+  scoreNumber: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  oversNumber: {
+    color: '#94a3b8',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  crrNumber: {
+    color: '#e5b94f',
+    fontSize: 10,
+    fontWeight: '700',
+    marginLeft: 4,
+  },
+  ballsStrip: {
+    flexDirection: 'row',
+    gap: 5,
+    paddingLeft: 8,
+  },
+  ballCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ballSix: {
+    backgroundColor: '#9333ea',
+  },
+  ballFour: {
+    backgroundColor: '#10b981',
+  },
+  ballWicket: {
+    backgroundColor: '#ef4444',
+  },
+  ballDot: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  ballText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  ballFourText: {
+    color: '#080a0b',
+  },
+  ballWhiteText: {
+    color: '#ffffff',
+  },
+  hubContainer: {
+    backgroundColor: '#0e1716',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  hubHeader: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#0a100f',
+  },
+  hubTab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  hubTabActive: {
+    borderBottomColor: '#c9f36b',
+  },
+  hubTabText: {
+    color: '#94a3b8',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  hubTabTextActive: {
+    color: '#c9f36b',
+    fontWeight: '900',
+  },
+  hubBody: {
+    padding: 12,
+  },
+  commItem: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.04)',
+  },
+  commBallCol: {
+    alignItems: 'center',
+    width: 32,
+  },
+  commBallText: {
     color: '#c9f36b',
     fontSize: 10,
+    fontWeight: '900',
+  },
+  commBadge: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  commBadgeText: {
+    color: '#ffffff',
+    fontSize: 9,
+    fontWeight: '900',
+  },
+  commTextCol: {
+    flex: 1,
+  },
+  commBowlerText: {
+    color: '#e5b94f',
+    fontSize: 11,
     fontWeight: '800',
+  },
+  commDescText: {
+    color: '#cbd5e1',
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 2,
+  },
+  upcomingCard: {
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.04)',
+  },
+  upcomingTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  upcomingMatchNum: {
+    color: '#e5b94f',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  upcomingTime: {
+    color: '#c9f36b',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  upcomingTitle: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  upcomingVenue: {
+    color: '#94a3b8',
+    fontSize: 9,
+    marginTop: 2,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+    paddingBottom: 6,
+    marginBottom: 6,
+  },
+  tableCol: {
+    color: '#94a3b8',
+    fontSize: 9,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    paddingVertical: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.02)',
+  },
+  teamName: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  tableVal: {
+    color: '#cbd5e1',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  emptyText: {
+    color: '#94a3b8',
+    fontSize: 11,
+    textAlign: 'center',
+    paddingVertical: 16,
   },
   scrollContent: {
     padding: 16,

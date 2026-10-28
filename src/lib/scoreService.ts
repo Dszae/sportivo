@@ -80,7 +80,7 @@ export async function discoverActiveMatchUrl(): Promise<string | null> {
 }
 
 /**
- * 2. Fetch and decode live scoring state from app-root-state
+ * 2. Fetch and decode live scoring state from app-root-state JSON
  */
 export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> {
   const matchUrl = await discoverActiveMatchUrl();
@@ -94,108 +94,87 @@ export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> 
     if (!res.ok) return null;
     const html = await res.text();
 
-    const match = html.match(/<script id="app-root-state"[^>]*>([\s\S]*?)<\/script>/);
-    if (!match) return null;
+    const scriptMatch = html.match(/<script id="app-root-state"[^>]*>([\s\S]*?)<\/script>/);
+    if (!scriptMatch) return null;
 
-    const raw = match[1];
-    const scoreMatch = raw.match(/&q;score1&q;:&q;([^&]+)&q;/);
-    const overMatch = raw.match(/&q;over1&q;:&q;([^&]+)&q;/);
-    const crrMatch = raw.match(/&q;crr&q;:&q;([^&]+)&q;/);
-    const score = scoreMatch ? scoreMatch[1].replace('-', '/') : '';
-    const overs = overMatch ? overMatch[1] : '';
-    const crr = crrMatch ? crrMatch[1] : '';
+    const jsonStr = scriptMatch[1].replace(/&q;/g, '"');
+    const state = JSON.parse(jsonStr);
 
-    // Extract commentary lines (c1 = bowler to batsman, c2 = description, delivery = ball number)
+    const sv3 = state['https://api.goscorer.com/api/v3/getSV3'] || {};
+    const feeds = state['https://content.crickapi.com/commentary/v2/getBallFeeds'] || [];
+
+    const score = (sv3.score1 || '').replace('-', '/');
+    const overs = sv3.over1 || '';
+    const crr = sv3.crr || '';
+
+    // Extract structured commentary from getBallFeeds
     const commentary: CommentaryLine[] = [];
-    const commRegex = /&q;c1&q;:&q;([^&]+)&q;,&q;c2&q;:&q;([^&]+)&q;.*?&q;delivery&q;:(\d+)/g;
-    let cm: RegExpExecArray | null;
-    while ((cm = commRegex.exec(raw)) !== null) {
-      const c1 = cm[1];
-      const c2 = cm[2];
-      const delivery = parseInt(cm[3], 10);
-      const overNum = Math.floor((delivery - 1) / 6);
-      const ballInOver = ((delivery - 1) % 6) + 1;
-      const ballLabel = `${overNum}.${ballInOver}`;
-      const isFour = c2.toLowerCase().includes('four') || c2.startsWith('FOUR');
-      const isSix = c2.toLowerCase().includes('six') || c2.startsWith('SIX');
-      const isWicket = c2.toLowerCase().includes('wicket') || c2.toLowerCase().includes('out') || c2.startsWith('WICKET');
+    if (Array.isArray(feeds)) {
+      for (const item of feeds) {
+        if (!item) continue;
+        if (item.type === 'b' && item.o) {
+          const resCode = item.b || '';
+          const isFour = resCode === '4' || (item.c2 || '').toLowerCase().includes('four');
+          const isSix = resCode === '6' || (item.c2 || '').toLowerCase().includes('six');
+          const isWkt = resCode.toLowerCase().includes('w') || (item.c2 || '').toLowerCase().includes('wicket');
+          const cleanText = (item.c2 || '')
+            .replace(/&[lg]t;/g, '')
+            .replace(/<\/?b>/g, '')
+            .trim();
 
-      commentary.push({
-        ball: ballLabel,
-        bowlerToBatsman: c1,
-        text: c2,
-        outcome: isSix ? '6' : isFour ? '4' : isWicket ? 'W' : undefined,
-        isBoundary: isFour || isSix,
-        isWicket,
-      });
-    }
-
-    // Extract Recent Balls matrix (rb array)
-    const rbIdx = raw.indexOf('&q;rb&q;:');
-    if (rbIdx === -1) {
-      return { score, overs, crr, moments: [], recentBalls: [], commentary };
-    }
-
-    const rbStart = raw.indexOf('[', rbIdx);
-    let depth = 0;
-    let rbEnd = rbStart;
-    for (let i = rbStart; i < raw.length; i++) {
-      if (raw[i] === '[') depth++;
-      else if (raw[i] === ']') {
-        depth--;
-        if (depth === 0) {
-          rbEnd = i + 1;
-          break;
+          commentary.push({
+            ball: String(item.o),
+            bowlerToBatsman: item.c1 || '',
+            text: cleanText,
+            outcome: isSix ? '6' : isFour ? '4' : isWkt ? 'W' : resCode,
+            isBoundary: isFour || isSix,
+            isWicket: isWkt,
+          });
+        } else if (item.type === 't' && item.c) {
+          commentary.push({
+            ball: 'Info',
+            bowlerToBatsman: 'Match Update',
+            text: item.c,
+          });
         }
       }
     }
 
-    const rbJson = raw.substring(rbStart, rbEnd).replace(/&q;/g, '"');
+    // Extract recent balls from getSV3.rb
+    const recentBalls: RecentBall[] = [];
+    const newMoments: BallMoment[] = [];
     const rbList: Array<{
       o: number;
       ts?: string;
       b?: Array<{ d: number; u: string }>;
-    }> = JSON.parse(rbJson);
+    }> = Array.isArray(sv3.rb) ? sv3.rb : [];
 
-    const recentBalls: RecentBall[] = [];
-    const newMoments: BallMoment[] = [];
-
-    // Collect recent balls for live ribbon display
     for (const overObj of rbList) {
       if (!overObj.b) continue;
       for (const b of overObj.b) {
-        const resCode = (b.u || '').toLowerCase().trim();
-        const isBoundary = resCode === '4' || resCode === '6';
-        const isWkt = resCode.includes('w') && !resCode.includes('wd');
-        const isExt = resCode.includes('wd') || resCode.includes('nb') || resCode.includes('by') || resCode.includes('lb');
+        const resCode = (b.u || '').trim();
+        const lowerCode = resCode.toLowerCase();
+        const isBoundary = lowerCode === '4' || lowerCode === '6';
+        const isWkt = lowerCode.includes('w') && !lowerCode.includes('wd');
+        const isExt = lowerCode.includes('wd') || lowerCode.includes('nb') || lowerCode.includes('by') || lowerCode.includes('lb');
 
         recentBalls.push({
           over: overObj.o,
           delivery: b.d,
-          code: b.u,
+          code: resCode,
           teamScore: overObj.ts,
           isBoundary,
           isWicket: isWkt,
           isExtra: isExt,
         });
-      }
-    }
 
-    // Process new deliveries for live push dispatch
-    for (const overObj of rbList) {
-      if (!overObj.b) continue;
-      for (const b of overObj.b) {
-        const resCode = (b.u || '').toLowerCase().trim();
         const ballId = `${overObj.o}.${b.d}:${resCode}`;
-
-        if (isInitialized && seenBalls.has(ballId)) continue;
-        seenBalls.add(ballId);
-
         const currentScore = overObj.ts || score;
 
-        // Map Ball Code to Match Moment
-        if (resCode === '4') {
-          newMoments.push({
+        // Build moment item
+        let momentItem: BallMoment | null = null;
+        if (lowerCode === '4') {
+          momentItem = {
             over: overObj.o,
             delivery: b.d,
             code: b.u,
@@ -204,9 +183,9 @@ export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> 
             type: 'FOUR',
             title: '🏏 FOUR BOUNDARY! (4 Runs)',
             message: `Cracking boundary four! Score: ${currentScore} (${overObj.o}.${b.d} ov)`,
-          });
-        } else if (resCode === '6') {
-          newMoments.push({
+          };
+        } else if (lowerCode === '6') {
+          momentItem = {
             over: overObj.o,
             delivery: b.d,
             code: b.u,
@@ -215,9 +194,9 @@ export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> 
             type: 'SIX',
             title: '🚀 MAXIMUM SIX! (6 Runs)',
             message: `Smashed out of the park for SIX! Score: ${currentScore} (${overObj.o}.${b.d} ov)`,
-          });
-        } else if (resCode.includes('w') && !resCode.includes('wd')) {
-          newMoments.push({
+          };
+        } else if (isWkt) {
+          momentItem = {
             over: overObj.o,
             delivery: b.d,
             code: b.u,
@@ -226,9 +205,9 @@ export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> 
             type: 'WICKET',
             title: '💥 WICKET FALLEN!',
             message: `Wicket is down! Now ${currentScore} (${overObj.o}.${b.d} ov)`,
-          });
-        } else if (resCode.includes('wd')) {
-          newMoments.push({
+          };
+        } else if (lowerCode.includes('wd')) {
+          momentItem = {
             over: overObj.o,
             delivery: b.d,
             code: b.u,
@@ -237,9 +216,9 @@ export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> 
             type: 'WIDE',
             title: '⚠️ WIDE BALL (+1 Extra)',
             message: `Bowled wide down the leg side! Score: ${currentScore}`,
-          });
-        } else if (resCode.includes('nb')) {
-          newMoments.push({
+          };
+        } else if (lowerCode.includes('nb')) {
+          momentItem = {
             over: overObj.o,
             delivery: b.d,
             code: b.u,
@@ -248,13 +227,26 @@ export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> 
             type: 'NO_BALL',
             title: '🚨 NO BALL / FREE HIT!',
             message: `Overstepped! Next delivery is a FREE HIT! Score: ${currentScore}`,
-          });
+          };
+        }
+
+        if (momentItem) {
+          if (!seenBalls.has(ballId)) {
+            newMoments.push(momentItem);
+            seenBalls.add(ballId);
+          }
         }
       }
     }
 
-    // Set initialized after first run
-    isInitialized = true;
+    // On cold boot: if newMoments contains all history, keep the latest 5 key moments so clients
+    // immediately have populated data in Notification Center without flooding
+    if (!isInitialized) {
+      isInitialized = true;
+      if (newMoments.length > 5) {
+        newMoments.splice(0, newMoments.length - 5);
+      }
+    }
 
     return {
       score,

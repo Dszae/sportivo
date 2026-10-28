@@ -48,7 +48,7 @@ export async function discoverActiveMatchUrl(): Promise<string | null> {
 }
 
 /**
- * 2. Scrapes and decodes the live scoring state from app-root-state
+ * 2. Scrapes and decodes the live scoring state from app-root-state JSON
  */
 export async function pollCrexGroundScores(): Promise<void> {
   try {
@@ -66,46 +66,27 @@ export async function pollCrexGroundScores(): Promise<void> {
     if (!res.ok) return;
 
     const html = await res.text();
-    const match = html.match(/<script id="app-root-state"[^>]*>([\s\S]*?)<\/script>/);
-    if (!match) return;
+    const scriptMatch = html.match(/<script id="app-root-state"[^>]*>([\s\S]*?)<\/script>/);
+    if (!scriptMatch) return;
 
-    const raw = match[1];
-    const scoreMatch = raw.match(/&q;score1&q;:&q;([^&]+)&q;/);
-    const overMatch = raw.match(/&q;over1&q;:&q;([^&]+)&q;/);
-    const score = scoreMatch ? scoreMatch[1].replace('-', '/') : '';
-    const overs = overMatch ? overMatch[1] : '';
+    const jsonStr = scriptMatch[1].replace(/&q;/g, '"');
+    const state = JSON.parse(jsonStr);
+    const sv3 = state['https://api.goscorer.com/api/v3/getSV3'] || {};
 
-    // Extract Recent Balls array (rb)
-    const rbIdx = raw.indexOf('&q;rb&q;:');
-    if (rbIdx === -1) return;
-
-    const rbStart = raw.indexOf('[', rbIdx);
-    let depth = 0;
-    let rbEnd = rbStart;
-    for (let i = rbStart; i < raw.length; i++) {
-      if (raw[i] === '[') depth++;
-      else if (raw[i] === ']') {
-        depth--;
-        if (depth === 0) {
-          rbEnd = i + 1;
-          break;
-        }
-      }
-    }
-
-    const rbJson = raw.substring(rbStart, rbEnd).replace(/&q;/g, '"');
+    const score = (sv3.score1 || '').replace('-', '/');
+    const overs = sv3.over1 || '';
     const rbList: Array<{
       o: number;
       ts?: string;
       b?: Array<{ d: number; u: string }>;
-    }> = JSON.parse(rbJson);
+    }> = Array.isArray(sv3.rb) ? sv3.rb : [];
 
     // Initial boot: mark all historical balls as already seen
     if (!isInitialized) {
       for (const overObj of rbList) {
         if (!overObj.b) continue;
         for (const b of overObj.b) {
-          const ballId = `${overObj.o}.${b.d}:${b.u}`;
+          const ballId = `${overObj.o}.${b.d}:${(b.u || '').toLowerCase().trim()}`;
           seenBalls.add(ballId);
         }
       }
@@ -163,8 +144,8 @@ export async function pollCrexGroundScores(): Promise<void> {
         }
       }
     }
-  } catch (e) {
-    console.warn('[ScoreService] Error polling CREX ground score:', e);
+  } catch (err) {
+    console.warn('[ScoreService] Poller error:', err);
   }
 }
 
@@ -191,4 +172,3 @@ export function startGroundScorePoller(): () => void {
     }
   };
 }
-

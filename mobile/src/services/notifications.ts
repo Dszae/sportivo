@@ -43,6 +43,34 @@ export async function setupNotificationChannels(): Promise<void> {
 }
 
 /**
+ * Clean up legacy or invalid scheduled notifications
+ */
+export async function purgeInvalidScheduledNotifications(): Promise<void> {
+  try {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    const now = Date.now();
+    for (const item of scheduled) {
+      const title = (item.content.title || '').toLowerCase();
+      const body = (item.content.body || '').toLowerCase();
+      const isPlaceholder =
+        title.includes('determined') ||
+        title.includes('qualifier') ||
+        title.includes('eliminator') ||
+        title.includes('place vs') ||
+        title.includes('finalist') ||
+        body.includes('place vs') ||
+        body.includes('determined');
+
+      if (isPlaceholder) {
+        await Notifications.cancelScheduledNotificationAsync(item.identifier);
+      }
+    }
+  } catch (e) {
+    console.warn('[Notifications] Failed to purge invalid notifications:', e);
+  }
+}
+
+/**
  * Request native notification permissions
  */
 export async function requestNativeNotificationPermission(): Promise<boolean> {
@@ -57,6 +85,7 @@ export async function requestNativeNotificationPermission(): Promise<boolean> {
 
     if (finalStatus === 'granted') {
       await setupNotificationChannels();
+      await purgeInvalidScheduledNotifications();
       return true;
     }
     return false;
@@ -175,6 +204,8 @@ export async function autoScheduleAllMatchAlerts(
     const hasPermission = await requestNativeNotificationPermission();
     if (!hasPermission) return;
 
+    await purgeInvalidScheduledNotifications();
+
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     const scheduledKeys = new Set(
       scheduled.map((s) => s.content.data?.alertKey).filter(Boolean)
@@ -182,25 +213,32 @@ export async function autoScheduleAllMatchAlerts(
 
     const rawDispatched = await AsyncStorage.getItem(DISPATCHED_IMMEDIATE_KEY);
     const dispatchedKeys = new Set(rawDispatched ? JSON.parse(rawDispatched) : []);
+    const now = Date.now();
 
     for (const match of matches) {
       if (!match.timestamp || !match.title) continue;
+
+      // STRICT FILTER: Skip placeholders, non-team playoff descriptors
       const lower = match.title.toLowerCase();
       if (
         lower.includes('determined') ||
         lower.includes('qualifier') ||
         lower.includes('eliminator') ||
         lower.includes('place vs') ||
+        lower.includes('finalist') ||
+        lower.includes('winner') ||
+        lower.includes('loser') ||
         lower.includes('tbd')
       ) {
         continue;
       }
 
-      const now = Date.now();
-      const diffMs = match.timestamp - now;
+      // STRICT TIME CHECK: Never schedule alerts for matches that already kicked off or in past
+      if (match.timestamp <= now + 60 * 1000) {
+        continue;
+      }
 
-      // Skip completed / expired matches (older than 4 hours)
-      if (diffMs < -4 * 60 * 60 * 1000) continue;
+      const diffMs = match.timestamp - now;
 
       // 1. If match is within the next 25 minutes AND has not yet started:
       // Fire an immediate heads-up alert ONLY ONCE (persisted in AsyncStorage)
@@ -221,10 +259,10 @@ export async function autoScheduleAllMatchAlerts(
         });
       }
 
-      // 2. Schedule 30-minute reminder
+      // 2. Schedule 30-minute reminder (strictly for matches at least 30m in future)
       const key30 = `${match.title}-30m`;
       const diffSec30 = Math.floor((match.timestamp - 30 * 60 * 1000 - now) / 1000);
-      if (diffSec30 > 5 && !scheduledKeys.has(key30)) {
+      if (diffSec30 > 60 && !scheduledKeys.has(key30)) {
         await Notifications.scheduleNotificationAsync({
           content: {
             title: `🏏 30m Reminder: ${match.title}`,
@@ -240,10 +278,10 @@ export async function autoScheduleAllMatchAlerts(
         });
       }
 
-      // 3. Schedule 5-minute reminder
+      // 3. Schedule 5-minute reminder (strictly for matches at least 5m in future)
       const key5 = `${match.title}-5m`;
       const diffSec5 = Math.floor((match.timestamp - 5 * 60 * 1000 - now) / 1000);
-      if (diffSec5 > 5 && !scheduledKeys.has(key5)) {
+      if (diffSec5 > 60 && !scheduledKeys.has(key5)) {
         await Notifications.scheduleNotificationAsync({
           content: {
             title: `🔔 Kickoff in 5 Minutes!`,

@@ -186,3 +186,38 @@ export function formatKathmanduDate(timestamp: number | string): string {
   }
 }
 
+export interface LiveScorerMobile {
+  score: string;
+  overs: string;
+  crr?: string;
+  recentBalls: Array<{
+    over: number;
+    delivery: number;
+    code: string;
+    teamScore?: string;
+    isBoundary: boolean;
+    isWicket: boolean;
+  }>;
+  commentary: Array<{
+    ball: string;
+    bowlerToBatsman: string;
+    text: string;
+    outcome?: string;
+    isBoundary?: boolean;
+    isWicket?: boolean;
+  }>;
+}
+
+export async function fetchLiveDeskMoments(): Promise<LiveScorerMobile | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/npl/live-moments/?_t=${Date.now()}`, {
+      headers: { Accept: 'application/json' },
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {}
+  return null;
+}
+
+

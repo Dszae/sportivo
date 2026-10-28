@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { fetchMatches, type Match, titleOf, slugify, statusOf, getMatchTimestamp } from '../../../lib/sportivo';
 import { NPL_FIXTURES_2026 } from '../../../lib/data/nplData';
 import { broadcastMatchPush, getAllSubscriptions } from '../../../lib/pushServer';
+import { fetchLiveBallMoments } from '../../../lib/scoreService';
 
 export const prerender = false;
 
@@ -179,6 +180,30 @@ export const GET: APIRoute = async () => {
       }
     }
 
+    // 3. Evaluate Ground Scorer Live Ball Moments (Wickets, 4s, 6s)
+    try {
+      const momentsData = await fetchLiveBallMoments();
+      if (momentsData && Array.isArray(momentsData.moments) && momentsData.moments.length > 0) {
+        for (const moment of momentsData.moments) {
+          const key = `push:moment:${moment.ballId}`;
+          if (!isAlreadyDispatched(key)) {
+            markDispatched(key);
+            const sent = await broadcastMatchPush({
+              key,
+              type: moment.type === 'WICKET' ? 'wicket' : 'goal',
+              title: moment.title,
+              message: `${moment.message} · Score: ${moment.teamScore || momentsData.score}`,
+              matchTitle: 'Pokhara Avengers vs Sudurpaschim Royals',
+              matchUrl: '/npl/',
+              category: 'cricket',
+              slug: 'pokhara-avengers-vs-sudurpaschim-royals',
+            });
+            totalDispatched += sent;
+          }
+        }
+      }
+    } catch {}
+
     return new Response(
       JSON.stringify({
         status: 'ok',
@@ -195,4 +220,3 @@ export const GET: APIRoute = async () => {
     );
   }
 };
-
