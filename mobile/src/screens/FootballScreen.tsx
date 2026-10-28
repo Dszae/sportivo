@@ -28,6 +28,11 @@ const LEAGUES = [
   'MLS',
 ];
 
+function teamParts(title: string) {
+  const parts = title.split(/\s+vs\.?\s+|\s+-\s+/i);
+  return { first: parts[0]?.trim() || title, second: parts[1]?.trim() || '' };
+}
+
 export default function FootballScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [matches, setMatches] = useState<Match[]>([]);
@@ -78,54 +83,64 @@ export default function FootballScreen() {
     const isStarred = starredSlugs.includes(slug);
     const isLive = item.status === 'Live';
     const kickoff = formatKathmanduTime(item.timestamp || item.startTime || Date.now());
+    const { first, second } = teamParts(item.title);
+    const homeTeam = item.teams?.home?.name || first || 'Home';
+    const awayTeam = item.teams?.away?.name || second || 'Away';
+    const homeScore = item.teams?.home?.score ?? '-';
+    const awayScore = item.teams?.away?.score ?? '-';
 
     return (
       <TouchableOpacity
         activeOpacity={0.88}
         onPress={() => navigation.navigate('MatchPlayer', { match: item })}
-        style={[styles.card, isLive && styles.liveCard]}
+        style={[styles.fotmobCard, isLive && styles.liveCard]}
       >
-        <View style={styles.cardHeader}>
-          <View style={styles.headerLeft}>
-            {isLive ? (
-              <View style={styles.liveBadge}>
-                <View style={styles.liveDot} />
-                <Text style={styles.liveText}>LIVE</Text>
-              </View>
-            ) : (
-              <View style={styles.scheduledBadge}>
-                <Text style={styles.scheduledText}>⏰ {kickoff} NST</Text>
-              </View>
-            )}
-            <Text style={styles.leagueText}>{item.league || 'Football'}</Text>
+        {/* Status / Kickoff Column */}
+        <View style={styles.timeColumn}>
+          {isLive ? (
+            <View style={styles.liveBadge}>
+              <View style={styles.liveDot} />
+              <Text style={styles.liveText}>LIVE</Text>
+            </View>
+          ) : (
+            <Text style={styles.kickoffText}>{kickoff}</Text>
+          )}
+          <Text style={styles.timeLabel}>{isLive ? 'Playing' : 'NST'}</Text>
+        </View>
+
+        {/* Center: Two Team Rows (FotMob Layout) */}
+        <View style={styles.teamsColumn}>
+          {/* Home Team */}
+          <View style={styles.teamRow}>
+            <View style={styles.teamBadge}>
+              <Text style={styles.teamBadgeText}>{homeTeam.slice(0, 2).toUpperCase()}</Text>
+            </View>
+            <Text style={styles.teamName} numberOfLines={1}>{homeTeam}</Text>
+            <Text style={styles.scoreText}>{homeScore}</Text>
           </View>
 
+          {/* Away Team */}
+          <View style={styles.teamRow}>
+            <View style={styles.teamBadge}>
+              <Text style={styles.teamBadgeText}>{awayTeam.slice(0, 2).toUpperCase()}</Text>
+            </View>
+            <Text style={styles.teamName} numberOfLines={1}>{awayTeam}</Text>
+            <Text style={styles.scoreText}>{awayScore}</Text>
+          </View>
+        </View>
+
+        {/* Right Action Column */}
+        <View style={styles.actionColumn}>
           <TouchableOpacity
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             onPress={() => handleToggleStar(slug)}
-            style={styles.starBtn}
+            style={styles.starTouch}
           >
-            <Text style={[styles.starIcon, isStarred && styles.starActive]}>
+            <Text style={[styles.starSymbol, isStarred && styles.starActive]}>
               {isStarred ? '★' : '☆'}
             </Text>
           </TouchableOpacity>
-        </View>
-
-        <View style={styles.cardBody}>
-          <Text style={styles.matchTitle} numberOfLines={2}>
-            {item.title}
-          </Text>
-          {item.venue && (
-            <Text style={styles.venueText} numberOfLines={1}>
-              📍 {item.venue}
-            </Text>
-          )}
-        </View>
-
-        <View style={styles.cardFooter}>
-          <Text style={styles.footerAction}>
-            {isLive ? '📺 Watch Live Broadcast' : '⚡ View Match Center'} &rarr;
-          </Text>
+          <Text style={styles.chevron}>›</Text>
         </View>
       </TouchableOpacity>
     );
@@ -231,105 +246,118 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   listContent: {
-    padding: 16,
+    padding: 14,
     paddingBottom: 32,
   },
-  card: {
-    backgroundColor: '#121c1a',
+  fotmobCard: {
+    backgroundColor: '#0e1615',
     borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
-    marginBottom: 14,
-    overflow: 'hidden',
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
   },
   liveCard: {
     borderColor: 'rgba(239,68,68,0.5)',
-    backgroundColor: '#162220',
+    backgroundColor: '#161e1c',
   },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingTop: 12,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  timeColumn: {
+    width: 62,
+    borderRightWidth: 1,
+    borderRightColor: 'rgba(255,255,255,0.08)',
+    paddingRight: 8,
+    alignItems: 'flex-start',
   },
   liveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#dc2626',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
     gap: 4,
   },
   liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
     backgroundColor: '#ffffff',
   },
   liveText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '900',
     color: '#ffffff',
   },
-  scheduledBadge: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+  kickoffText: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#c9f36b',
   },
-  scheduledText: {
-    fontSize: 10,
+  timeLabel: {
+    fontSize: 8,
     fontWeight: '700',
-    color: '#cbd5e1',
-  },
-  leagueText: {
-    fontSize: 11,
     color: '#94a3b8',
-    fontWeight: '600',
+    marginTop: 2,
   },
-  starBtn: {
+  teamsColumn: {
+    flex: 1,
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  teamRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  teamBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  teamBadgeText: {
+    fontSize: 8,
+    fontWeight: '900',
+    color: '#c9f36b',
+  },
+  teamName: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  scoreText: {
+    fontSize: 13,
+    fontWeight: '900',
+    color: '#ffffff',
+  },
+  actionColumn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingLeft: 8,
+    borderLeftWidth: 1,
+    borderLeftColor: 'rgba(255,255,255,0.05)',
+  },
+  starTouch: {
     padding: 4,
   },
-  starIcon: {
-    fontSize: 18,
-    color: '#64748b',
+  starSymbol: {
+    fontSize: 16,
+    color: '#475569',
   },
   starActive: {
     color: '#fbbf24',
   },
-  cardBody: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  matchTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#ffffff',
-    lineHeight: 20,
-  },
-  venueText: {
-    fontSize: 11,
-    color: '#94a3b8',
-    marginTop: 6,
-  },
-  cardFooter: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-  },
-  footerAction: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#c9f36b',
+  chevron: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#475569',
   },
   centerLoading: {
     flex: 1,

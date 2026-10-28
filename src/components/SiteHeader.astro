@@ -3,7 +3,7 @@ import type { Category } from '../lib/sportivo';
 import NotificationCenter from './NotificationCenter';
 import HamburgerMenu from './HamburgerMenu';
 import MobileNav from './MobileNav.astro';
-import InstallPrompt from './InstallPrompt';
+import DownloadApkButton from './InstallPrompt';
 
 interface Props {
   activeCategory?: Category | 'creator' | 'api-docs' | 'dashboard' | 'npl';
@@ -111,8 +111,8 @@ const { activeCategory } = Astro.props;
       <!-- Notification Center Bell -->
       <NotificationCenter client:load />
 
-      <!-- PWA Install Prompt -->
-      <InstallPrompt client:load />
+      <!-- Native APK Download Modal & Trigger -->
+      <DownloadApkButton client:load />
 
       <!-- Universal Hamburger Menu (All Devices) -->
       <HamburgerMenu client:load activeCategory={activeCategory} />
