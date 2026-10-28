@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Sportivo",
+    "slug": "sportivo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "sportivo",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#080a0b"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "np.com.dipeshsapkota7.sportivo"
+    },
+    "android": {
+      "package": "np.com.dipeshsapkota7.sportivo",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#080a0b"
+      },
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "VIBRATE",
+        "WAKE_LOCK",
+        "RECEIVE_BOOT_COMPLETED",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#c9f36b",
+          "sounds": []
+        }
+      ]
+    ]
+  }
+}

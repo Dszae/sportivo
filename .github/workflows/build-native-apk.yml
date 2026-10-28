@@ -1,0 +1,56 @@
+name: Build Real Native Android APK (React Native)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/build-native-apk.yml'
+
+jobs:
+  build-native-apk:
+    name: Compile Native Android APK (Gradle)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'mobile/package.json'
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Mobile Dependencies
+        run: |
+          cd mobile
+          npm install
+
+      - name: Expo Prebuild (Generate Native Android Project)
+        run: |
+          cd mobile
+          npx expo prebuild --platform android --clean
+
+      - name: Compile Native Android APK with Gradle
+        run: |
+          cd mobile/android
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon || ./gradlew assembleDebug --no-daemon
+
+      - name: Upload Native Sportivo APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sportivo-Native-Android-APK
+          path: mobile/android/app/build/outputs/apk/**/*.apk
+          retention-days: 30
