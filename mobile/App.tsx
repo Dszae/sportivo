@@ -31,7 +31,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <NavigationContainer theme={SportivoDarkTheme}>
-        <StatusBar style="light" backgroundColor="#080a0b" />
+        <StatusBar style="light" backgroundColor="#080a0b" translucent={false} />
         <RootNavigator />
       </NavigationContainer>
     </SafeAreaProvider>

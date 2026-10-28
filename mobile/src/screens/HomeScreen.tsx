@@ -26,7 +26,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [watchlistCount, setWatchlistCount] = useState(0);
 
-  const topPadding = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0) + 12;
+  const topPadding = Platform.OS === 'android' ? 24 : insets.top + 8;
 
   const loadData = async () => {
     try {
@@ -103,7 +103,7 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: topPadding }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#080a0b" translucent={true} />
+      <StatusBar barStyle="light-content" backgroundColor="#080a0b" translucent={false} />
 
       {/* Top Header with Safe Area Clearance */}
       <View style={styles.header}>
@@ -122,22 +122,11 @@ export default function HomeScreen() {
 
         <View style={styles.headerRightActions}>
           <TouchableOpacity
-            style={styles.creatorHeaderBtn}
-            onPress={() => navigation.navigate('AboutCreator')}
-            accessibilityLabel="About Dipesh Sapkota"
-          >
-            <Image
-              source={require('../../assets/dipesh-sapkota-profile.webp')}
-              style={styles.headerAvatar}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity
             style={styles.settingsButton}
             onPress={() => navigation.navigate('NotificationSettings')}
             accessibilityLabel="Notification Settings"
           >
-            <Ionicons name="notifications-outline" size={18} color="#cbd5e1" />
+            <Ionicons name="notifications-outline" size={20} color="#cbd5e1" />
           </TouchableOpacity>
         </View>
       </View>
@@ -153,30 +142,6 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Creator Banner: Dipesh Sapkota */}
-        <TouchableOpacity
-          style={styles.creatorBanner}
-          onPress={() => navigation.navigate('AboutCreator')}
-          activeOpacity={0.85}
-        >
-          <Image
-            source={require('../../assets/dipesh-sapkota-profile.webp')}
-            style={styles.bannerAvatar}
-          />
-          <View style={styles.bannerInfo}>
-            <View style={styles.bannerBadgeRow}>
-              <Text style={styles.bannerBadgeText}>DEVELOPED BY</Text>
-              <View style={styles.verifiedBadge}>
-                <Ionicons name="checkmark-circle" size={12} color="#c9f36b" />
-                <Text style={styles.verifiedText}>Creator</Text>
-              </View>
-            </View>
-            <Text style={styles.bannerName}>Dipesh Sapkota</Text>
-            <Text style={styles.bannerSubtext}>Engineering Student · Nepal Desk Publisher</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color="#c9f36b" />
-        </TouchableOpacity>
-
         {/* Hero Welcome Card */}
         <View style={styles.heroCard}>
           <View style={styles.heroBadgeRow}>
