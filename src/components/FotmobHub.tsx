@@ -306,12 +306,15 @@ export default function FotmobHub({ initialCategory = 'all' }: Props) {
           <div className="flex items-center gap-2">
             <NotificationCenter />
             <a
-              href="https://github.com/Dszae/sportivo/actions"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#00e676] px-3 py-1.5 text-xs font-black text-[#080a0b] hover:bg-[#00c966] transition shadow-md"
+              href="/download/sportivo.apk"
+              download="sportivo.apk"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#00e676] px-3 py-1.5 text-xs font-black text-[#080a0b] hover:bg-[#00c966] transition shadow-md active:scale-95"
             >
-              <span>📲</span>
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
               <span className="hidden sm:inline">Download</span> APK
             </a>
           </div>
@@ -320,7 +323,12 @@ export default function FotmobHub({ initialCategory = 'all' }: Props) {
         {/* Search Bar Input */}
         <div className="max-w-7xl mx-auto mt-3">
           <div className="relative">
-            <span className="absolute left-3.5 top-2.5 text-slate-400 text-sm">🔍</span>
+            <span className="absolute left-3.5 top-2.5 text-slate-400">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
             <input
               type="text"
               value={searchQuery}
@@ -430,14 +438,21 @@ export default function FotmobHub({ initialCategory = 'all' }: Props) {
                       onClick={() => setActiveDetailMatch(featuredTvMatch)}
                       className="inline-flex items-center gap-2 rounded-xl bg-[#00e676] px-4 py-2 text-xs font-black text-[#080a0b] hover:bg-[#00c966] transition shadow-md"
                     >
-                      <span>▶ Watch Live Feed</span>
+                      <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                      </svg>
+                      <span>Watch Live Feed</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setActiveTab('livetv')}
                       className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold text-white hover:bg-white/10 transition"
                     >
-                      <span>📺 Multi-Server Streams</span>
+                      <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                        <polyline points="17 2 12 7 7 2"></polyline>
+                      </svg>
+                      <span>Multi-Server Streams</span>
                     </button>
                   </div>
                 </div>
@@ -551,10 +566,17 @@ export default function FotmobHub({ initialCategory = 'all' }: Props) {
                           <div className="text-xs font-black text-white">{titleOf(m)}</div>
                           <div className="text-[10px] text-slate-400 mt-0.5">{m.league || 'Sports Stream'}</div>
                         </div>
-                        <span className={`rounded-xl px-3 py-1 text-xs font-bold ${
+                        <span className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1 text-xs font-bold ${
                           isLive ? 'bg-red-600 text-white font-black' : 'bg-white/10 text-slate-300'
                         }`}>
-                          {isLive ? '▶ Watch Live' : '⏰ Schedule'}
+                          {isLive ? (
+                            <>
+                              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                              Watch Live
+                            </>
+                          ) : (
+                            'Schedule'
+                          )}
                         </span>
                       </div>
                     );
@@ -645,10 +667,15 @@ export default function FotmobHub({ initialCategory = 'all' }: Props) {
 
               {/* Watchlist Section */}
               <div className="rounded-3xl border border-white/10 bg-[#0e1715] p-6 shadow-xl">
-                <h3 className="text-sm font-black text-white mb-3">⭐ My Watchlist ({favorites.length})</h3>
+                <div className="flex items-center gap-2 mb-3">
+                  <svg className="h-4 w-4 text-amber-400 fill-amber-400" viewBox="0 0 24 24">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                  <h3 className="text-sm font-black text-white">My Watchlist ({favorites.length})</h3>
+                </div>
                 {favorites.length === 0 ? (
                   <p className="text-xs text-slate-400">
-                    You haven't followed any matches yet. Tap the ☆ star icon on any match to receive 5-minute pre-match notifications.
+                    You haven't followed any matches yet. Tap the star icon on any match to receive 5-minute pre-match notifications.
                   </p>
                 ) : (
                   <div className="space-y-2">
@@ -671,15 +698,33 @@ export default function FotmobHub({ initialCategory = 'all' }: Props) {
               {/* Settings Links */}
               <div className="rounded-3xl border border-white/10 bg-[#0e1715] divide-y divide-white/[0.06] overflow-hidden text-xs">
                 <a href="/privacy/" className="flex items-center justify-between p-4 hover:bg-white/[0.02]">
-                  <span>🔒 Privacy Policy</span>
+                  <span className="flex items-center gap-2">
+                    <svg className="h-3.5 w-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    Privacy Policy
+                  </span>
                   <span className="text-slate-500">›</span>
                 </a>
                 <a href="/about-dipesh-sapkota/" className="flex items-center justify-between p-4 hover:bg-white/[0.02]">
-                  <span>ℹ️ About the Creator</span>
+                  <span className="flex items-center gap-2">
+                    <svg className="h-3.5 w-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    About the Creator
+                  </span>
                   <span className="text-slate-500">›</span>
                 </a>
                 <a href="/api-docs/" className="flex items-center justify-between p-4 hover:bg-white/[0.02]">
-                  <span>⚡ Developer API Docs</span>
+                  <span className="flex items-center gap-2">
+                    <svg className="h-3.5 w-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    Developer API Docs
+                  </span>
                   <span className="text-slate-500">›</span>
                 </a>
               </div>
@@ -715,9 +760,14 @@ export default function FotmobHub({ initialCategory = 'all' }: Props) {
 
           {/* Quick Watchlist Widget */}
           <div className="rounded-3xl border border-white/10 bg-[#0e1715] p-5 shadow-xl">
-            <h3 className="text-xs font-black uppercase tracking-wider text-amber-400 mb-2">
-              ⭐ Watchlist Alerts
-            </h3>
+            <div className="flex items-center gap-2 mb-2">
+              <svg className="h-4 w-4 text-amber-400 fill-amber-400" viewBox="0 0 24 24">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              <h3 className="text-xs font-black uppercase tracking-wider text-amber-400">
+                Watchlist Alerts
+              </h3>
+            </div>
             <p className="text-xs text-slate-400 leading-relaxed">
               Sportivo automatically warns you 5 minutes before kickoff for all your starred fixtures.
             </p>

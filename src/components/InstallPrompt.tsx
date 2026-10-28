@@ -81,9 +81,8 @@ export default function DownloadApkButton() {
             {/* Download Actions */}
             <div className="space-y-3 pt-2">
               <a
-                href="https://github.com/Dszae/sportivo/actions/workflows/build-native-apk.yml"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/download/sportivo.apk"
+                download="sportivo.apk"
                 className="flex items-center justify-center gap-2 w-full rounded-2xl bg-[#c9f36b] px-4 py-3 text-sm font-black text-[#080a0b] hover:bg-[#b5e05c] transition-all shadow-lg shadow-[#c9f36b]/20 active:scale-98"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -91,28 +90,19 @@ export default function DownloadApkButton() {
                   <polyline points="7 10 12 15 17 10"></polyline>
                   <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
-                <span>Download Compiled APK (GitHub Runner)</span>
+                <span>Download APK (Release v1.0.0 · 60 MB)</span>
               </a>
 
               <div className="rounded-xl border border-white/10 bg-[#121c1a] p-3 text-center space-y-1.5">
                 <p className="text-[11px] text-slate-300">
-                  <strong>Installation Guide:</strong> Download the APK from the latest successful build artifact, open it on Android, and select <em>Allow from this source</em>.
+                  <strong>Installation Guide:</strong> Once downloaded, tap <em>Open</em> and select <em>Install</em> (or <em>Allow from this source</em> if prompted).
                 </p>
                 <div className="flex items-center justify-center gap-4 pt-1">
-                  <a
-                    href="https://github.com/Dszae/sportivo/actions"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[11px] text-slate-400 hover:text-white underline"
-                  >
-                    Build Pipelines
-                  </a>
-                  <span className="text-slate-600">·</span>
                   <a
                     href="/privacy/"
                     className="text-[11px] text-[#c9f36b] hover:underline"
                   >
-                    Play Store Privacy Policy &rarr;
+                    Privacy Policy & Terms &rarr;
                   </a>
                 </div>
               </div>
