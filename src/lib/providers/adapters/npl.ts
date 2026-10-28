@@ -150,25 +150,32 @@ export const nplAdapter: ProviderAdapter = {
         provider: 'NetTV Action Sports HD',
         streams: [
           {
-            embedUrl: 'https://yonotv-now.pages.dev/plyrr?src=https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_live/tracks-v1a1/mono.m3u8',
+            embedUrl: 'https://yonotv-now.pages.dev/plyrr?src=https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
             hd: true,
             isNativeVideo: false,
             isSandboxedIframe: false,
             language: 'Action Sports HD (Web Player)',
           },
           {
-            embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_live/tracks-v1a1/mono.m3u8',
+            embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
             hd: true,
             isNativeVideo: true,
             isSandboxedIframe: false,
             language: 'Direct HLS Native Stream',
           },
           {
-            embedUrl: 'https://yonotv-now.pages.dev/plyrr?src=https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
+            embedUrl: 'https://yonotv-now.pages.dev/plyrr?src=https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_live/tracks-v1a1/mono.m3u8',
             hd: true,
             isNativeVideo: false,
             isSandboxedIframe: false,
-            language: 'Action Sports HD (Backup Server)',
+            language: 'Action Sports HD (Server 2)',
+          },
+          {
+            embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_live/tracks-v1a1/mono.m3u8',
+            hd: true,
+            isNativeVideo: true,
+            isSandboxedIframe: false,
+            language: 'Direct HLS Server 2',
           },
         ],
       };

@@ -184,7 +184,7 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "status": "LIVE",
     "broadcast": {
       "provider": "NetTV / Action Sports HD",
-      "authorizedEmbedUrl": "https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_live/tracks-v1a1/mono.m3u8",
+      "authorizedEmbedUrl": "https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8",
       "isHls": true,
       "availabilityStatus": "online"
     },
