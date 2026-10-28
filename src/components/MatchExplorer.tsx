@@ -28,6 +28,7 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const [showWatchlistOnly, setShowWatchlistOnly] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [favoriteTeams, setFavoriteTeams] = useState<string[]>([]);
   const [timeZone, setTimeZone] = useState<'Asia/Kathmandu' | string>('Asia/Kathmandu');
   const [visibleCount, setVisibleCount] = useState(16);
 
@@ -37,16 +38,18 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
     setVisibleCount(16);
   }, [selectedLeague, dateFilter, query, showWatchlistOnly]);
 
-  // Sync client preferences (starred matches & timezone)
+  // Sync client preferences (starred matches, favorite teams & timezone)
   useEffect(() => {
     const prefs = loadUserPreferences();
     setFavorites(prefs.starredMatches || []);
+    setFavoriteTeams(prefs.favoriteTeams || []);
     if (prefs.timeZone) setTimeZone(prefs.timeZone);
 
     const handlePrefChange = (e: Event) => {
       const customEvent = e as CustomEvent<UserPreferences>;
       const current = customEvent.detail || loadUserPreferences();
       setFavorites(current.starredMatches || []);
+      setFavoriteTeams(current.favoriteTeams || []);
       if (current.timeZone) setTimeZone(current.timeZone);
     };
 
@@ -57,6 +60,30 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
       window.removeEventListener('storage', handlePrefChange);
     };
   }, []);
+
+  // Check if a match belongs to the user's watchlist (via starred matches or followed teams)
+  const isMatchInWatchlist = (match: Match) => {
+    const title = titleOf(match);
+    const slug = slugify(title);
+    if (favorites.includes(slug)) return true;
+    if (favoriteTeams.length > 0) {
+      const titleLower = title.toLowerCase();
+      if (favoriteTeams.some((team) => titleLower.includes(team.toLowerCase()))) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Only count active fixtures in THIS category/explorer that belong to the user's watchlist
+  const activeWatchlistMatches = useMemo(() => {
+    return matches.filter((m) => {
+      if (statusOf(m) === 'Final') return false;
+      return isMatchInWatchlist(m);
+    });
+  }, [matches, favorites, favoriteTeams]);
+
+  const watchlistCount = activeWatchlistMatches.length;
 
   const toggleFavorite = (slug: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -121,7 +148,7 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
 
     // Filter by Watchlist
     if (showWatchlistOnly) {
-      list = list.filter((m) => favorites.includes(slugify(titleOf(m))));
+      list = list.filter((m) => isMatchInWatchlist(m));
     }
 
     // Filter by League (football)
@@ -147,7 +174,7 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
       const timeB = typeof b.date === 'number' ? b.date : new Date(b.date || b.startTime || b.start_at || b.timestamp || 0).getTime() || 0;
       return timeA - timeB;
     });
-  }, [category, dateFilter, favorites, matches, query, selectedLeague, showWatchlistOnly, timeZone]);
+  }, [category, dateFilter, favorites, favoriteTeams, matches, query, selectedLeague, showWatchlistOnly, timeZone]);
 
   const liveMatches = useMemo(() => filtered.filter((m) => statusOf(m) === 'Live'), [filtered]);
   const upcomingMatches = useMemo(() => filtered.filter((m) => statusOf(m) === 'Upcoming'), [filtered]);
@@ -183,7 +210,7 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
   const renderCard = (match: Match, index: number) => {
     const title = titleOf(match);
     const slug = slugify(title);
-    const isFav = favorites.includes(slug);
+    const isFav = isMatchInWatchlist(match);
     const status = statusOf(match);
     const isLive = status === 'Live';
     const { first, second } = teamParts(title);
@@ -409,7 +436,7 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
       </div>
 
       {/* Streamlined Filter Pills (Only shown when meaningful choices exist) */}
-      {(availableLeagues.length > 2 || availableDateFilters.length > 2 || favorites.length > 0) && (
+      {(availableLeagues.length > 2 || availableDateFilters.length > 2 || watchlistCount > 0 || showWatchlistOnly) && (
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           {/* Active League Pills (Only leagues that actually have active matches) */}
           <div className="flex flex-wrap items-center gap-1.5">
@@ -462,11 +489,20 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
             )}
           </div>
 
-          {/* Watchlist Filter Pill */}
-          {favorites.length > 0 && (
+          {/* Watchlist Filter Pill: Accurately reflects active matches in this section */}
+          {(watchlistCount > 0 || showWatchlistOnly) && (
             <button
               type="button"
-              onClick={() => setShowWatchlistOnly(!showWatchlistOnly)}
+              onClick={() => {
+                if (!showWatchlistOnly) {
+                  setSelectedLeague('All');
+                  setDateFilter('all');
+                  setQuery('');
+                  setShowWatchlistOnly(true);
+                } else {
+                  setShowWatchlistOnly(false);
+                }
+              }}
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all ${
                 showWatchlistOnly
                   ? 'border border-amber-400/50 bg-amber-400/20 text-amber-300 shadow-sm'
@@ -474,7 +510,9 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
               }`}
             >
               <span>★ Watchlist</span>
-              <span className="rounded-full bg-amber-400/20 px-1 text-[10px] text-amber-300">{favorites.length}</span>
+              <span className="rounded-full bg-amber-400/20 px-1.5 py-0.2 text-[10px] font-black text-amber-300">
+                {watchlistCount}
+              </span>
             </button>
           )}
         </div>
@@ -483,12 +521,25 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
       {/* Main Grid Content */}
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-white/5 bg-[#090d0c] py-12 px-6 text-center">
-          <p className="font-bold text-slate-300">No active fixtures found for this selection.</p>
-          <p className="mt-1.5 text-xs text-slate-500">
-            {showWatchlistOnly
-              ? 'Tap the ☆ star on any fixture card to add it to your personal watchlist.'
-              : 'Try selecting "All Leagues" or resetting the date filter.'}
-          </p>
+          {showWatchlistOnly ? (
+            <>
+              <p className="font-bold text-slate-300">No active {categoryLabel} fixtures in your watchlist.</p>
+              <p className="mt-1.5 text-xs text-slate-400 max-w-sm mx-auto">
+                Tap the ☆ star on any fixture card or follow teams in{' '}
+                <a href="/dashboard/" className="text-[#c9f36b] hover:underline font-bold">
+                  My Watchlist
+                </a>{' '}
+                to monitor them here.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-bold text-slate-300">No active fixtures found for this selection.</p>
+              <p className="mt-1.5 text-xs text-slate-500">
+                Try selecting "All Leagues" or resetting the date filter.
+              </p>
+            </>
+          )}
           {(selectedLeague !== 'All' || showWatchlistOnly || dateFilter !== 'all' || query) && (
             <button
               type="button"
