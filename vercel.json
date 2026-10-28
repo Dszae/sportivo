@@ -1,11 +1,5 @@
 {
   "trailingSlash": true,
-  "crons": [
-    {
-      "path": "/api/cron/match-alerts/",
-      "schedule": "*/2 * * * *"
-    }
-  ],
   "headers": [
     {
       "source": "/_astro/(.*)",
