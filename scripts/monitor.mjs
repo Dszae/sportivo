@@ -41,7 +41,7 @@ for (const path of paths) {
       try {
         const data = JSON.parse(body);
         detail = Array.isArray(data) ? `${data.length} fixtures` : 'JSON object';
-        if (!Array.isArray(data)) failures++;
+        if (path !== '/api/cron/match-alerts/' && !Array.isArray(data)) failures++;
       } catch {
         detail = 'invalid JSON';
         failures++;
