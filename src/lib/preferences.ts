@@ -1,12 +1,31 @@
+export interface NotificationSettings {
+  enabled: boolean;
+  notifyKickoff5Min: boolean;
+  notifyMatchStart: boolean;
+  notifyKeyMoments: boolean;
+  soundEnabled: boolean;
+}
+
 export interface UserPreferences {
   favoriteSports: string[];
   favoriteLeagues: string[];
   favoriteTeams: string[];
   starredMatches: string[]; // match slugs
   timeZone: string; // e.g. "Asia/Kathmandu", "UTC", "America/New_York"
+  notifications: NotificationSettings;
 }
 
 export const POPULAR_TEAMS = [
+  // Nepal Premier League (NPL 2026)
+  { name: 'Biratnagar Kings', sport: 'cricket', league: 'NPL' },
+  { name: 'Chitwan Rhinos', sport: 'cricket', league: 'NPL' },
+  { name: 'Janakpur Bolts', sport: 'cricket', league: 'NPL' },
+  { name: 'Karnali Yaks', sport: 'cricket', league: 'NPL' },
+  { name: 'Kathmandu Gurkhas', sport: 'cricket', league: 'NPL' },
+  { name: 'Lumbini Lions', sport: 'cricket', league: 'NPL' },
+  { name: 'Pokhara Avengers', sport: 'cricket', league: 'NPL' },
+  { name: 'Sudurpaschim Royals', sport: 'cricket', league: 'NPL' },
+  // Football
   { name: 'Real Madrid', sport: 'football', league: 'La Liga' },
   { name: 'Barcelona', sport: 'football', league: 'La Liga' },
   { name: 'Manchester City', sport: 'football', league: 'Premier League' },
@@ -37,6 +56,7 @@ export const POPULAR_TEAMS = [
 ];
 
 export const POPULAR_COMPETITIONS = [
+  { name: 'NPL', sport: 'cricket' },
   { name: 'Champions League', sport: 'football' },
   { name: 'Premier League', sport: 'football' },
   { name: 'La Liga', sport: 'football' },
@@ -68,10 +88,17 @@ const LEGACY_FAVS_KEY = 'sportivo_favs';
 export function getDefaultPreferences(): UserPreferences {
   return {
     favoriteSports: ['football', 'cricket', 'basketball'],
-    favoriteLeagues: ['Premier League', 'Champions League'],
+    favoriteLeagues: ['Premier League', 'Champions League', 'NPL'],
     favoriteTeams: [],
     starredMatches: [],
     timeZone: 'Asia/Kathmandu',
+    notifications: {
+      enabled: true,
+      notifyKickoff5Min: true,
+      notifyMatchStart: true,
+      notifyKeyMoments: true,
+      soundEnabled: true,
+    },
   };
 }
 
@@ -81,7 +108,7 @@ export function loadUserPreferences(): UserPreferences {
 
   try {
     const raw = localStorage.getItem(PREFS_KEY);
-    let prefs: UserPreferences = raw ? JSON.parse(raw) : defaults;
+    let prefs: Partial<UserPreferences> = raw ? JSON.parse(raw) : defaults;
 
     // Migrate legacy sportivo_favs if present
     const legacyFavs = localStorage.getItem(LEGACY_FAVS_KEY);
@@ -101,6 +128,13 @@ export function loadUserPreferences(): UserPreferences {
       favoriteTeams: Array.isArray(prefs.favoriteTeams) ? prefs.favoriteTeams : defaults.favoriteTeams,
       starredMatches: Array.isArray(prefs.starredMatches) ? prefs.starredMatches : defaults.starredMatches,
       timeZone: prefs.timeZone || defaults.timeZone,
+      notifications: {
+        enabled: prefs.notifications?.enabled ?? defaults.notifications.enabled,
+        notifyKickoff5Min: prefs.notifications?.notifyKickoff5Min ?? defaults.notifications.notifyKickoff5Min,
+        notifyMatchStart: prefs.notifications?.notifyMatchStart ?? defaults.notifications.notifyMatchStart,
+        notifyKeyMoments: prefs.notifications?.notifyKeyMoments ?? defaults.notifications.notifyKeyMoments,
+        soundEnabled: prefs.notifications?.soundEnabled ?? defaults.notifications.soundEnabled,
+      },
     };
   } catch {
     return defaults;
@@ -115,5 +149,29 @@ export function saveUserPreferences(prefs: UserPreferences): void {
     localStorage.setItem(LEGACY_FAVS_KEY, JSON.stringify(prefs.starredMatches));
     window.dispatchEvent(new CustomEvent('sportivo:preferences-changed', { detail: prefs }));
   } catch {}
+}
+
+export function isTeamFavorited(teamName: string, prefs?: UserPreferences): boolean {
+  const current = prefs || loadUserPreferences();
+  const target = teamName.trim().toLowerCase();
+  return current.favoriteTeams.some((t) => t.trim().toLowerCase() === target);
+}
+
+export function toggleFavoriteTeam(teamName: string): UserPreferences {
+  const current = loadUserPreferences();
+  const trimmed = teamName.trim();
+  const lower = trimmed.toLowerCase();
+  const exists = current.favoriteTeams.some((t) => t.trim().toLowerCase() === lower);
+
+  const updatedTeams = exists
+    ? current.favoriteTeams.filter((t) => t.trim().toLowerCase() !== lower)
+    : [...current.favoriteTeams, trimmed];
+
+  const next: UserPreferences = {
+    ...current,
+    favoriteTeams: updatedTeams,
+  };
+  saveUserPreferences(next);
+  return next;
 }
 

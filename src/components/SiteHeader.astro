@@ -1,5 +1,6 @@
 ---
 import { categories, type Category } from '../lib/sportivo';
+import NotificationCenter from './NotificationCenter';
 
 interface Props {
   activeCategory?: Category | 'creator' | 'api-docs' | 'dashboard' | 'npl';
@@ -54,6 +55,8 @@ const { activeCategory } = Astro.props;
         </svg>
         <span itemprop="name">My Watchlist</span>
       </a>
+
+      <NotificationCenter client:load />
 
       <a
         href="/npl/"

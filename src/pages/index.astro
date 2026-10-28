@@ -4,7 +4,6 @@ import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import MatchExplorer from '../components/MatchExplorer';
 import HeroShowcase from '../components/HeroShowcase';
-import NplSchedule from '../components/NplSchedule';
 import { categories, fetchMatches, type Match } from '../lib/sportivo';
 
 const data = await Promise.all(
@@ -361,32 +360,6 @@ const homepageJsonLd = {
 
     <!-- Fixture Explorers: Distinct Sport Arenas with Generous Clear Gaps -->
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8 pb-24 space-y-16 sm:space-y-24" aria-label="Sports fixtures categories">
-      {/* Nepal Premier League (NPL) Arena */}
-      <section id="npl" class="scroll-mt-24 rounded-3xl border border-[#c9f36b]/30 bg-[#0a0f0e]/80 p-6 sm:p-8 lg:p-10 backdrop-blur-sm shadow-2xl shadow-black/40 ring-1 ring-[#c9f36b]/20">
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/10 pb-6">
-          <div>
-            <div class="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-xs font-bold text-red-400 mb-2">
-              <span class="h-2 w-2 rounded-full bg-red-500 animate-pulse" aria-hidden="true"></span>
-              Nepal Premier League 2026 Official Fixtures
-            </div>
-            <h2 class="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              NPL Live Match &amp; Real-Time Scores
-            </h2>
-            <p class="mt-1 text-sm text-slate-300">
-              Live ball-by-ball scoreboards, official stream feeds, and complete tournament match schedule in Nepal Standard Time (NST).
-            </p>
-          </div>
-          <a
-            href="/npl/"
-            class="inline-flex items-center gap-2 rounded-xl border border-[#c9f36b]/40 bg-[#c9f36b]/10 px-5 py-2.5 text-xs font-bold text-[#c9f36b] hover:bg-[#c9f36b] hover:text-[#080a0b] transition shadow-md shrink-0 self-start sm:self-auto"
-          >
-            <span>Full NPL 2026 Hub</span>
-            <span aria-hidden="true">&rarr;</span>
-          </a>
-        </div>
-        <NplSchedule client:load />
-      </section>
-
       {/* Football Arena */}
       <section id="football" class="scroll-mt-24 rounded-3xl border border-white/[0.08] bg-[#0a0f0e]/60 p-6 sm:p-8 lg:p-10 backdrop-blur-sm shadow-2xl shadow-black/40">
         <MatchExplorer

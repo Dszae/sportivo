@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { NPL_FIXTURES_2026, type NplMatch } from '../lib/data/nplData';
 import { slugify, publicUrl } from '../lib/sportivo';
+import { loadUserPreferences, saveUserPreferences, type UserPreferences } from '../lib/preferences';
+import { playNotificationChime, requestNotificationPermission } from '../lib/notificationService';
 
 type Tab = 'today' | 'upcoming' | 'all';
 
@@ -102,6 +104,57 @@ export default function NplSchedule() {
     };
   }, []);
 
+  const [prefs, setPrefs] = useState<UserPreferences>(() => loadUserPreferences());
+
+  useEffect(() => {
+    const handlePrefs = (e: Event) => {
+      const ce = e as CustomEvent<UserPreferences>;
+      if (ce.detail) setPrefs(ce.detail);
+      else setPrefs(loadUserPreferences());
+    };
+    window.addEventListener('sportivo:preferences-changed', handlePrefs);
+    return () => window.removeEventListener('sportivo:preferences-changed', handlePrefs);
+  }, []);
+
+  const toggleFollowNplMatch = (match: FormattedNplMatch) => {
+    const slug = `npl-match-${match.matchNumber}`;
+    const isStarred = prefs.starredMatches.includes(slug);
+    const nextStarred = isStarred
+      ? prefs.starredMatches.filter((s) => s !== slug)
+      : [...prefs.starredMatches, slug];
+
+    if (!isStarred && typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+      requestNotificationPermission();
+    }
+
+    const updated: UserPreferences = {
+      ...prefs,
+      starredMatches: nextStarred,
+    };
+    saveUserPreferences(updated);
+    setPrefs(updated);
+
+    if (!isStarred) {
+      if (prefs.notifications?.soundEnabled) playNotificationChime();
+      window.dispatchEvent(
+        new CustomEvent('sportivo:live-toast', {
+          detail: {
+            id: `toast-${Date.now()}`,
+            type: '5min_warning',
+            title: `🔔 Match Alert Set!`,
+            message: `You'll get notified 5 mins before ${match.homeTeam} vs ${match.awayTeam} starts and on key score moments!`,
+            matchTitle: `${match.homeTeam} vs ${match.awayTeam}`,
+            matchUrl: '/npl/',
+            category: 'cricket',
+            badgeText: 'ALERT ACTIVE',
+            timestamp: Date.now(),
+            read: true,
+          },
+        })
+      );
+    }
+  };
+
   const todayYmd = useMemo(() => getKathmanduYmd(), []);
 
   // Classify matches into Today, Upcoming, and All
@@ -155,6 +208,11 @@ export default function NplSchedule() {
     const isLive = m.status === 'LIVE';
     const isCompleted = m.status === 'COMPLETED';
     const hasAuthorizedBroadcast = Boolean(m.broadcast && m.broadcast.authorizedEmbedUrl);
+    const isFollowed =
+      prefs.starredMatches.includes(`npl-match-${m.matchNumber}`) ||
+      prefs.favoriteTeams.some(
+        (t) => t.toLowerCase() === m.homeTeam.toLowerCase() || t.toLowerCase() === m.awayTeam.toLowerCase()
+      );
 
     return (
       <div
@@ -173,6 +231,22 @@ export default function NplSchedule() {
             <span className="font-bold text-slate-400">Match {m.matchNumber}</span>
             <span className="text-white/20">•</span>
             <span className="text-slate-400 font-medium">{m.round}</span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleFollowNplMatch(m);
+              }}
+              title={isFollowed ? 'Alert active for this match — click to disable' : 'Remind me 5m before kickoff & on wickets'}
+              className={`ml-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold transition-all border ${
+                isFollowed
+                  ? 'border-[#c9f36b] bg-[#c9f36b]/20 text-[#c9f36b]'
+                  : 'border-white/10 bg-white/5 text-slate-400 hover:border-[#c9f36b]/40 hover:text-white'
+              }`}
+            >
+              <span>{isFollowed ? '🔔 Alerting' : '🔔 Remind me'}</span>
+            </button>
           </div>
 
           <div>
@@ -322,9 +396,9 @@ export default function NplSchedule() {
           </span>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
                 Nepal Premier League (NPL) 2026
-              </h2>
+              </h1>
               {todayMatches.some((m) => m.status === 'LIVE') && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/15 border border-red-500/30 px-2.5 py-0.5 text-[11px] font-black text-red-400">
                   <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />

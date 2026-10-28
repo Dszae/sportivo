@@ -12,6 +12,7 @@ import {
   titleOf,
 } from '../lib/sportivo';
 import { loadUserPreferences, saveUserPreferences, type UserPreferences } from '../lib/preferences';
+import { playNotificationChime } from '../lib/notificationService';
 
 type Props = { category: Category; matches: Match[]; exploreUrl?: string };
 type DateFilter = 'all' | 'today' | 'tomorrow' | 'week';
@@ -61,12 +62,33 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
     e.preventDefault();
     e.stopPropagation();
     const currentPrefs = loadUserPreferences();
-    const nextFavorites = currentPrefs.starredMatches.includes(slug)
-      ? currentPrefs.starredMatches.filter((s) => s !== slug)
-      : [...currentPrefs.starredMatches, slug];
+    const isAdding = !currentPrefs.starredMatches.includes(slug);
+    const nextFavorites = isAdding
+      ? [...currentPrefs.starredMatches, slug]
+      : currentPrefs.starredMatches.filter((s) => s !== slug);
 
     saveUserPreferences({ ...currentPrefs, starredMatches: nextFavorites });
     setFavorites(nextFavorites);
+
+    if (isAdding) {
+      if (currentPrefs.notifications?.soundEnabled) playNotificationChime();
+      window.dispatchEvent(
+        new CustomEvent('sportivo:live-toast', {
+          detail: {
+            id: `toast-${Date.now()}`,
+            type: '5min_warning',
+            title: '⭐ Match Added to Watchlist!',
+            message: "You'll be alerted 5 minutes before kickoff and during live moments.",
+            matchTitle: slug,
+            matchUrl: `/${category}/match/${encodeURIComponent(slug)}/`,
+            category,
+            badgeText: 'ALERT SET',
+            timestamp: Date.now(),
+            read: true,
+          },
+        })
+      );
+    }
   };
 
   // Only count active fixtures (exclude finished/Final results per user instruction)

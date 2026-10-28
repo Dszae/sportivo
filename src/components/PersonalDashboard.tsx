@@ -24,6 +24,7 @@ import {
   loadUserPreferences,
   saveUserPreferences,
 } from '../lib/preferences';
+import { requestNotificationPermission, dispatchNotification } from '../lib/notificationService';
 
 type Props = {
   allMatchesByCategory: Record<string, Match[]>;
@@ -711,6 +712,115 @@ export default function PersonalDashboard({ allMatchesByCategory }: Props) {
                   </button>
                 );
               })}
+            </div>
+          </div>
+
+          {/* 4. Match Notifications & Alerts */}
+          <div className="border-t border-white/5 pt-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[#e5b94f]">
+                  4. Match Notifications &amp; Live Alerts
+                </h4>
+                <p className="mt-1 text-xs text-slate-400">
+                  Receive 5-minute pre-match kickoff warnings, live stream alerts, and key moments (wickets, milestones, goals).
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  const perm = await requestNotificationPermission();
+                  if (perm === 'granted') {
+                    dispatchNotification({
+                      key: `test-dashboard:${Date.now()}`,
+                      type: '5min_warning',
+                      title: '⚡ Notifications Enabled!',
+                      message: 'You will receive 5-minute kickoff warnings and live score updates for your followed teams.',
+                      matchTitle: 'Sportivo Alerts',
+                      matchUrl: '/dashboard/',
+                      category: 'all',
+                      badgeText: 'ACTIVE',
+                    });
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#c9f36b]/40 bg-[#c9f36b]/10 px-3.5 py-1.5 text-xs font-bold text-[#c9f36b] hover:bg-[#c9f36b] hover:text-black transition shrink-0"
+              >
+                <span>🔔 Allow Browser Push</span>
+              </button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <label className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 cursor-pointer hover:border-[#c9f36b]/40 transition">
+                <div>
+                  <span className="block text-xs font-bold text-white">5-Min Warning</span>
+                  <span className="text-[10px] text-slate-400">Alert 5 mins before kickoff</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={prefs.notifications?.notifyKickoff5Min ?? true}
+                  onChange={(e) =>
+                    updatePreferences((prev) => ({
+                      ...prev,
+                      notifications: { ...(prev.notifications || {}), notifyKickoff5Min: e.target.checked },
+                    }))
+                  }
+                  className="rounded border-white/20 bg-white/10 text-[#c9f36b] focus:ring-0"
+                />
+              </label>
+
+              <label className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 cursor-pointer hover:border-[#c9f36b]/40 transition">
+                <div>
+                  <span className="block text-xs font-bold text-white">Match Started</span>
+                  <span className="text-[10px] text-slate-400">Instant LIVE status notification</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={prefs.notifications?.notifyMatchStart ?? true}
+                  onChange={(e) =>
+                    updatePreferences((prev) => ({
+                      ...prev,
+                      notifications: { ...(prev.notifications || {}), notifyMatchStart: e.target.checked },
+                    }))
+                  }
+                  className="rounded border-white/20 bg-white/10 text-[#c9f36b] focus:ring-0"
+                />
+              </label>
+
+              <label className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 cursor-pointer hover:border-[#c9f36b]/40 transition">
+                <div>
+                  <span className="block text-xs font-bold text-white">Key Moments</span>
+                  <span className="text-[10px] text-slate-400">Wickets, goals &amp; final results</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={prefs.notifications?.notifyKeyMoments ?? true}
+                  onChange={(e) =>
+                    updatePreferences((prev) => ({
+                      ...prev,
+                      notifications: { ...(prev.notifications || {}), notifyKeyMoments: e.target.checked },
+                    }))
+                  }
+                  className="rounded border-white/20 bg-white/10 text-[#c9f36b] focus:ring-0"
+                />
+              </label>
+
+              <label className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 cursor-pointer hover:border-[#c9f36b]/40 transition">
+                <div>
+                  <span className="block text-xs font-bold text-white">Audio Chime</span>
+                  <span className="text-[10px] text-slate-400">Play soft chime on alert</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={prefs.notifications?.soundEnabled ?? true}
+                  onChange={(e) =>
+                    updatePreferences((prev) => ({
+                      ...prev,
+                      notifications: { ...(prev.notifications || {}), soundEnabled: e.target.checked },
+                    }))
+                  }
+                  className="rounded border-white/20 bg-white/10 text-[#c9f36b] focus:ring-0"
+                />
+              </label>
             </div>
           </div>
 
