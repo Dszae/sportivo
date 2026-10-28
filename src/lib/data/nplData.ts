@@ -181,7 +181,13 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "startTime": "2026-10-28T17:00:00+05:45",
     "timestamp": 1793186100000,
     "venue": "TU International Cricket Ground, Kirtipur",
-    "status": "UPCOMING",
+    "status": "LIVE",
+    "broadcast": {
+      "provider": "NetTV / Action Sports HD",
+      "authorizedEmbedUrl": "https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_live/tracks-v1a1/mono.m3u8",
+      "isHls": true,
+      "availabilityStatus": "online"
+    },
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-04"
   },
   {

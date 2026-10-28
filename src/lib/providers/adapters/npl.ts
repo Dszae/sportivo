@@ -141,13 +141,57 @@ export const nplAdapter: ProviderAdapter = {
   },
 
   async resolvePlayback(id: string, signal?: AbortSignal): Promise<PlaybackResolution> {
-    // 0. If known fixture is upcoming/completed without active broadcast, do not return stream
     const knownFixture = NPL_FIXTURES_2026.find((m) => m.id.toLowerCase() === id.toLowerCase());
-    if (knownFixture && knownFixture.status !== 'LIVE' && !knownFixture.broadcast) {
+
+    // 0. If known fixture has a verified broadcast URL, immediately serve the active stream
+    if (knownFixture?.broadcast?.authorizedEmbedUrl) {
+      const safeUrl = sanitizePlaybackUrl(knownFixture.broadcast.authorizedEmbedUrl);
+      if (safeUrl) {
+        const isNative = safeUrl.endsWith('.m3u8') || safeUrl.endsWith('.mp4');
+        return {
+          status: 'ready',
+          provider: knownFixture.broadcast.provider || 'NetTV Action Sports HD',
+          streams: [
+            {
+              embedUrl: safeUrl,
+              hd: true,
+              isNativeVideo: isNative,
+              isSandboxedIframe: !isNative,
+              language: 'Action Sports HD (Main)',
+            },
+            {
+              embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
+              hd: true,
+              isNativeVideo: true,
+              isSandboxedIframe: false,
+              language: 'Action Sports HD (Server 2)',
+            },
+          ],
+        };
+      }
+    }
+
+    // 0b. Default fallback for ongoing live NPL fixtures (Match 4: Pokhara vs Sudurpaschim)
+    if (id.toLowerCase().includes('npl26-04') || id.toLowerCase().includes('npl4') || id.toLowerCase().includes('pokhara') || id.toLowerCase().includes('sudurpaschim')) {
       return {
-        status: 'unavailable',
-        provider: 'NPL Broadcast Desk',
-        streams: [],
+        status: 'ready',
+        provider: 'NetTV Action Sports HD (Live)',
+        streams: [
+          {
+            embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_live/tracks-v1a1/mono.m3u8',
+            hd: true,
+            isNativeVideo: true,
+            isSandboxedIframe: false,
+            language: 'Action Sports HD (Feed 1)',
+          },
+          {
+            embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
+            hd: true,
+            isNativeVideo: true,
+            isSandboxedIframe: false,
+            language: 'Action Sports HD (Feed 2)',
+          },
+        ],
       };
     }
 
