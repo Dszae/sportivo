@@ -102,6 +102,9 @@ export default function MatchPlayer({ match }: Props) {
             const hls = new Hls({
               enableWorker: true,
               lowLatencyMode: true,
+              liveSyncDurationCount: 1,
+              liveMaxLatencyDurationCount: 2,
+              maxLiveSyncPlaybackRate: 1.15,
             });
             hlsInstance = hls;
             hls.loadSource(url);
