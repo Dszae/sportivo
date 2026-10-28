@@ -2,6 +2,7 @@
 import { categories, type Category } from '../lib/sportivo';
 import NotificationCenter from './NotificationCenter';
 import MobileNav from './MobileNav.astro';
+import InstallPrompt from './InstallPrompt';
 
 interface Props {
   activeCategory?: Category | 'creator' | 'api-docs' | 'dashboard' | 'npl';
@@ -95,6 +96,8 @@ const { activeCategory } = Astro.props;
         </svg>
         <span itemprop="name">About</span>
       </a>
+
+      <InstallPrompt client:load />
     </nav>
   </div>
 
@@ -150,6 +153,8 @@ const { activeCategory } = Astro.props;
       >
         All Desk
       </a>
+
+      <InstallPrompt client:load />
 
       <a
         href="/football/"

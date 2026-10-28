@@ -1,0 +1,58 @@
+name: Build Android APK (Sportivo PWA)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'public/manifest.webmanifest'
+      - '.github/workflows/build-apk.yml'
+
+jobs:
+  build-apk:
+    name: Generate Android APK via Bubblewrap
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Bubblewrap CLI
+        run: npm install -g @bubblewrap/cli
+
+      - name: Initialize and Build Android APK
+        run: |
+          mkdir -p build-android
+          cd build-android
+          
+          # Initialize TWA project from live manifest
+          bubblewrap init --manifest="https://sportivo.dipeshsapkota7.com.np/manifest.webmanifest" --skipVersionCheck || true
+          
+          # Generate debug signing keystore if not exists
+          keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Sportivo, OU=Sports, O=DipeshSapkota, L=Kathmandu, C=NP"
+          
+          # Build APK
+          bubblewrap build --skipPwaValidation || true
+          
+          # Find output apk
+          find . -name "*.apk"
+
+      - name: Upload Sportivo APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sportivo-Android-APK
+          path: build-android/**/*.apk
+          retention-days: 30
