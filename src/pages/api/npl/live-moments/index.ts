@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { fetchLiveBallMoments } from '../../../lib/scoreService';
+import { fetchLiveBallMoments } from '../../../../lib/scoreService';
 
 export const prerender = false;
 
