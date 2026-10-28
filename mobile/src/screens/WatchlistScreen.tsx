@@ -17,7 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Match, RootStackParamList } from '../types';
 import { fetchMatches, fetchNplFixtures, formatKathmanduTime } from '../services/api';
 import { loadPreferences, toggleFavoriteTeam } from '../services/storage';
-import { triggerButtonHaptic } from '../services/notifications';
+import { triggerButtonHaptic, autoScheduleAllMatchAlerts } from '../services/notifications';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -74,6 +74,14 @@ export default function WatchlistScreen() {
       });
 
       setMatchedFixtures(matched);
+      if (matched.length > 0) {
+        autoScheduleAllMatchAlerts(
+          matched.map((m) => ({
+            title: m.title,
+            timestamp: m.timestamp || (m as any).startTime || (m as any).date || 0,
+          }))
+        );
+      }
     } finally {
       setLoading(false);
     }

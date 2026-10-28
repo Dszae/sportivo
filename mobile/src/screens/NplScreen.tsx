@@ -17,7 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NplMatch, RootStackParamList } from '../types';
 import { fetchNplFixtures, formatKathmanduTime, formatKathmanduDate } from '../services/api';
 import { loadPreferences, toggleStarredMatch } from '../services/storage';
-import { triggerButtonHaptic } from '../services/notifications';
+import { triggerButtonHaptic, autoScheduleAllMatchAlerts } from '../services/notifications';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -39,6 +39,12 @@ export default function NplScreen() {
       ]);
       setFixtures(data);
       setStarredSlugs(prefs.starredMatches);
+      autoScheduleAllMatchAlerts(
+        data.map((f) => ({
+          title: `${f.homeTeam} vs ${f.awayTeam}`,
+          timestamp: f.timestamp,
+        }))
+      );
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -58,6 +64,15 @@ export default function NplScreen() {
     await triggerButtonHaptic();
     const updated = await toggleStarredMatch(matchId);
     setStarredSlugs(updated);
+    const match = fixtures.find((f) => f.id === matchId);
+    if (match && updated.includes(matchId)) {
+      await autoScheduleAllMatchAlerts([
+        {
+          title: `${match.homeTeam} vs ${match.awayTeam}`,
+          timestamp: match.timestamp,
+        },
+      ]);
+    }
   };
 
   const filteredFixtures = fixtures.filter((m) => {

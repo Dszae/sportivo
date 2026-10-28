@@ -1,7 +1,7 @@
 {
-  "version": "1.0.4",
-  "versionCode": 5,
+  "version": "1.0.5",
+  "versionCode": 6,
   "downloadUrl": "https://sportivo.dipeshsapkota7.com.np/download/sportivo.apk",
-  "releaseNotes": "Resolved manifestLoadError for live video streams: enabled SSL bypass for stream CDNs, cleartext network traffic, and Referer headers.",
+  "releaseNotes": "Auto-scheduled NPL kickoff notifications (30m reminder, 5m reminder, and starting-soon alerts).",
   "publishedAt": "2026-10-28"
 }

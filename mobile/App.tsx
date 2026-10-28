@@ -6,7 +6,9 @@ import RootNavigator from './src/navigation/RootNavigator';
 import {
   setupNotificationChannels,
   requestNativeNotificationPermission,
+  autoScheduleAllMatchAlerts,
 } from './src/services/notifications';
+import { fetchNplFixtures } from './src/services/api';
 
 const SportivoDarkTheme = {
   ...DarkTheme,
@@ -25,6 +27,19 @@ export default function App() {
     (async () => {
       await setupNotificationChannels();
       await requestNativeNotificationPermission();
+      try {
+        const npl = await fetchNplFixtures();
+        if (npl && npl.length > 0) {
+          await autoScheduleAllMatchAlerts(
+            npl.map((f) => ({
+              title: `${f.homeTeam} vs ${f.awayTeam}`,
+              timestamp: f.timestamp,
+            }))
+          );
+        }
+      } catch (e) {
+        console.warn('Auto schedule NPL alerts failed', e);
+      }
     })();
   }, []);
 
@@ -37,4 +52,3 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
-
