@@ -74,26 +74,39 @@ export default function DownloadApkButton() {
             {/* Download Actions */}
             <div className="space-y-3 pt-2">
               <a
-                href="https://github.com/Dszae/sportivo/actions"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="https://github.com/Dszae/sportivo/releases/download/v1.0.0-apk/app-debug.apk"
                 className="flex items-center justify-center gap-2 w-full rounded-2xl bg-[#c9f36b] px-4 py-3 text-sm font-black text-[#080a0b] hover:bg-[#b5e05c] transition-all shadow-lg shadow-[#c9f36b]/20 active:scale-98"
+                download="Sportivo-v1.0.0.apk"
               >
-                <span>📦</span>
-                <span>Download APK from GitHub Actions</span>
-                <span>&rarr;</span>
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Direct Download Native APK (v1.0.0)</span>
               </a>
 
-              <div className="rounded-xl border border-white/10 bg-[#121c1a] p-3 text-center">
+              <div className="rounded-xl border border-white/10 bg-[#121c1a] p-3 text-center space-y-1.5">
                 <p className="text-[11px] text-slate-300">
-                  <strong>Play Store Submission:</strong> Android App Bundle (<code className="text-white">.aab</code>) is generated and compliant with Google Play Console.
+                  <strong>Installation Guide:</strong> Once downloaded, tap the file in your notification bar and choose <em>Allow installation from this source</em> to launch Sportivo.
                 </p>
-                <a
-                  href="/privacy/"
-                  className="mt-1.5 inline-block text-[11px] text-[#c9f36b] hover:underline"
-                >
-                  View Store Privacy Policy &rarr;
-                </a>
+                <div className="flex items-center justify-center gap-4 pt-1">
+                  <a
+                    href="https://github.com/Dszae/sportivo/releases"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-slate-400 hover:text-white underline"
+                  >
+                    All Releases
+                  </a>
+                  <span className="text-slate-600">·</span>
+                  <a
+                    href="/privacy/"
+                    className="text-[11px] text-[#c9f36b] hover:underline"
+                  >
+                    Play Store Privacy Policy &rarr;
+                  </a>
+                </div>
               </div>
             </div>
           </div>

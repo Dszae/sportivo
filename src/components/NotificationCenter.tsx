@@ -249,6 +249,16 @@ export default function NotificationCenter() {
                   Mark read
                 </button>
               )}
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="rounded-lg p-1 text-slate-400 hover:text-white hover:bg-white/10 transition border border-transparent hover:border-white/10"
+                aria-label="Close notification drawer"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           </div>
 

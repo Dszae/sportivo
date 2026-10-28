@@ -3,9 +3,14 @@ name: Build Real Native Android APK (React Native)
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     paths:
       - 'mobile/**'
       - '.github/workflows/build-native-apk.yml'
+
+permissions:
+  contents: write
 
 jobs:
   build-native-apk:
@@ -36,6 +41,8 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-read-only: false
 
       - name: Compile Native Android APK with Gradle
         run: |
@@ -43,12 +50,27 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
 
-      - name: Upload Native Sportivo APK
+      - name: Upload Native Sportivo APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Sportivo-Native-Android-APK
           path: mobile/android/app/build/outputs/apk/**/*.apk
           retention-days: 30
 
-
-
+      - name: Publish Direct APK Download Link via GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: success()
+        with:
+          tag_name: v1.0.0-apk
+          name: Sportivo Native Android App v1.0.0 (FotMob Edition)
+          body: |
+            ### 📱 Sportivo Official Android App (Native APK)
+            - **App ID**: `np.com.dipeshsapkota7.sportivo`
+            - **Developer**: Dipesh Sapkota
+            - **Features**: Live FotMob matchday layout, ExoPlayer streaming, NPL 2026 cricket scores, Nepal Standard Time (NST) kickoff alerts.
+            
+            Tap `app-debug.apk` below to download directly onto your Android device.
+          files: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
