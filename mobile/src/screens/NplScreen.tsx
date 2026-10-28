@@ -17,7 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NplMatch, RootStackParamList } from '../types';
 import { fetchNplFixtures, formatKathmanduTime, formatKathmanduDate } from '../services/api';
 import { loadPreferences, toggleStarredMatch } from '../services/storage';
-import { triggerButtonHaptic, autoScheduleAllMatchAlerts } from '../services/notifications';
+import { triggerButtonHaptic } from '../services/notifications';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -39,15 +39,6 @@ export default function NplScreen() {
       ]);
       setFixtures(data);
       setStarredSlugs(prefs.starredMatches);
-      // Only schedule alerts for genuinely upcoming future matches
-      autoScheduleAllMatchAlerts(
-        data
-          .filter((f) => f.status === 'UPCOMING' && f.timestamp > Date.now())
-          .map((f) => ({
-            title: `${f.homeTeam} vs ${f.awayTeam}`,
-            timestamp: f.timestamp,
-          }))
-      );
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -67,15 +58,6 @@ export default function NplScreen() {
     await triggerButtonHaptic();
     const updated = await toggleStarredMatch(matchId);
     setStarredSlugs(updated);
-    const match = fixtures.find((f) => f.id === matchId);
-    if (match && updated.includes(matchId)) {
-      await autoScheduleAllMatchAlerts([
-        {
-          title: `${match.homeTeam} vs ${match.awayTeam}`,
-          timestamp: match.timestamp,
-        },
-      ]);
-    }
   };
 
   const filteredFixtures = fixtures.filter((m) => {
@@ -211,14 +193,6 @@ export default function NplScreen() {
                         embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
                         streamUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
                         isDirectStream: true,
-                        hd: true,
-                      },
-                      {
-                        id: 'npl-youtube',
-                        source: 'npl',
-                        label: 'Official Stadium Direct (0 Delay HD)',
-                        embedUrl: 'https://www.youtube-nocookie.com/embed/Z_yjma948Ug?autoplay=1&modestbranding=1&rel=0',
-                        isDirectStream: false,
                         hd: true,
                       },
                       {

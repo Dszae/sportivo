@@ -73,10 +73,43 @@ export default function NotificationCenter() {
     };
   }, []);
 
-  // Real-time Match Poller (high-speed 4s polling for live matches, 20s for general fixtures)
+  // Real-time Match Poller & CREX Ground Scorer Engine (3.5s ball-by-ball updates)
   useEffect(() => {
     let isMounted = true;
     let pollTimer: any = null;
+    let scorerTimer: any = null;
+
+    const pollGroundScorerMoments = async () => {
+      try {
+        const res = await fetch(`/api/npl/live-moments/?_t=${Date.now()}`, {
+          cache: 'no-store',
+          signal: AbortSignal.timeout(3500),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.moments) && data.moments.length > 0) {
+            for (const moment of data.moments) {
+              dispatchNotification({
+                key: `moment:${moment.ballId}`,
+                type: moment.type === 'WICKET' ? 'wicket' : 'goal',
+                filterCategory: 'moments',
+                title: moment.title,
+                message: moment.message,
+                matchTitle: 'Pokhara Avengers vs Sudurpaschim Royals',
+                matchUrl: '/npl/',
+                category: 'cricket',
+                competition: 'Nepal Premier League',
+                score: moment.teamScore || data.score,
+                badgeText: moment.type,
+              });
+            }
+          }
+        }
+      } catch {}
+      if (isMounted) {
+        scorerTimer = setTimeout(pollGroundScorerMoments, 3500);
+      }
+    };
 
     const pollLiveNpl = async () => {
       try {
@@ -123,7 +156,6 @@ export default function NotificationCenter() {
 
     const runLoop = async () => {
       const hasLiveMatch = await pollLiveNpl();
-      // Fast 4s poll if live match is underway, otherwise 15s
       const nextDelay = hasLiveMatch ? 4000 : 15000;
       if (isMounted) {
         pollTimer = setTimeout(runLoop, nextDelay);
@@ -132,12 +164,14 @@ export default function NotificationCenter() {
 
     // Immediate initial poll
     runLoop();
+    pollGroundScorerMoments();
     pollAllSports();
     const allSportsInterval = setInterval(pollAllSports, 30000);
 
     return () => {
       isMounted = false;
       if (pollTimer) clearTimeout(pollTimer);
+      if (scorerTimer) clearTimeout(scorerTimer);
       clearInterval(allSportsInterval);
     };
   }, []);

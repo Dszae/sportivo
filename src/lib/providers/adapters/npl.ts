@@ -147,14 +147,14 @@ export const nplAdapter: ProviderAdapter = {
     if (id.toLowerCase().includes('npl26-04') || id.toLowerCase().includes('npl4') || id.toLowerCase().includes('pokhara') || id.toLowerCase().includes('sudurpaschim') || knownFixture?.status === 'LIVE') {
       return {
         status: 'ready',
-        provider: 'NPL Official Broadcast',
+        provider: 'Action Sports HD Direct',
         streams: [
           {
-            embedUrl: 'https://www.youtube-nocookie.com/embed/Z_yjma948Ug?autoplay=1&modestbranding=1&rel=0',
+            embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
             hd: true,
-            isNativeVideo: false,
+            isNativeVideo: true,
             isSandboxedIframe: false,
-            language: 'Official Stadium Direct (0 Delay HD)',
+            language: 'Action Sports HD (Direct Native - 0 Delay)',
           },
           {
             embedUrl: 'https://yonotv-now.pages.dev/plyrr?src=https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
@@ -164,25 +164,18 @@ export const nplAdapter: ProviderAdapter = {
             language: 'Action Sports HD (Web Player)',
           },
           {
-            embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
+            embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_live/tracks-v1a1/mono.m3u8',
             hd: true,
             isNativeVideo: true,
             isSandboxedIframe: false,
-            language: 'Direct HLS Native Stream',
+            language: 'Action Sports HD (Server 2)',
           },
           {
             embedUrl: 'https://yonotv-now.pages.dev/plyrr?src=https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_live/tracks-v1a1/mono.m3u8',
             hd: true,
             isNativeVideo: false,
             isSandboxedIframe: false,
-            language: 'Action Sports HD (Server 2)',
-          },
-          {
-            embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_live/tracks-v1a1/mono.m3u8',
-            hd: true,
-            isNativeVideo: true,
-            isSandboxedIframe: false,
-            language: 'Direct HLS Server 2',
+            language: 'Action Sports HD (Server 2 Web Player)',
           },
         ],
       };

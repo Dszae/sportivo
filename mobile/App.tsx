@@ -2,14 +2,13 @@ import React, { useEffect } from 'react';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as Notifications from 'expo-notifications';
 import RootNavigator from './src/navigation/RootNavigator';
 import {
   setupNotificationChannels,
   requestNativeNotificationPermission,
-  autoScheduleAllMatchAlerts,
 } from './src/services/notifications';
-import { fetchNplFixtures } from './src/services/api';
-import { startLiveMomentPoller } from './src/services/matchMomentService';
+import { startGroundScorePoller } from './src/services/scoreService';
 
 const SportivoDarkTheme = {
   ...DarkTheme,
@@ -28,23 +27,14 @@ export default function App() {
     (async () => {
       await setupNotificationChannels();
       await requestNativeNotificationPermission();
+      // Purge all legacy / phantom scheduled notifications completely
       try {
-        const npl = await fetchNplFixtures();
-        if (npl && npl.length > 0) {
-          await autoScheduleAllMatchAlerts(
-            npl.map((f) => ({
-              title: `${f.homeTeam} vs ${f.awayTeam}`,
-              timestamp: f.timestamp,
-            }))
-          );
-        }
-      } catch (e) {
-        console.warn('Auto schedule NPL alerts failed', e);
-      }
+        await Notifications.cancelAllScheduledNotificationsAsync();
+      } catch {}
     })();
 
-    // Start background live moment poller (wickets, 4s, 6s, milestones)
-    const stopPoller = startLiveMomentPoller(12000);
+    // Start real-time ground scorer poller (3.5s ball-by-ball 4s, 6s, wickets, wides, no-balls)
+    const stopPoller = startGroundScorePoller();
     return () => {
       stopPoller();
     };

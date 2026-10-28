@@ -142,14 +142,6 @@ export async function resolveMatchStreams(match: Match): Promise<StreamSource[]>
         hd: true,
       },
       {
-        id: 'npl-youtube-direct',
-        source: 'npl',
-        label: 'Official Stadium Direct (0 Delay HD)',
-        embedUrl: 'https://www.youtube-nocookie.com/embed/Z_yjma948Ug?autoplay=1&modestbranding=1&rel=0',
-        isDirectStream: false,
-        hd: true,
-      },
-      {
         id: 'npl-nettv-server2',
         source: 'npl',
         label: 'Action Sports HD (Server 2)',

@@ -1,7 +1,7 @@
 {
-  "version": "1.0.7",
-  "versionCode": 8,
+  "version": "1.0.8",
+  "versionCode": 9,
   "downloadUrl": "https://sportivo.dipeshsapkota7.com.np/download/sportivo.apk",
-  "releaseNotes": "Zero-latency live player sync, hardware-accelerated in-app live stream playback, removed browser redirect.",
+  "releaseNotes": "Zero-latency NetTV direct stream, purged phantom future notifications, CREX ground scorer real-time engine.",
   "publishedAt": "2026-10-28"
 }
