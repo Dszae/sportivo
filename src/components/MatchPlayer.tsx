@@ -38,7 +38,6 @@ export default function MatchPlayer({ match }: Props) {
   const [streams, setStreams] = useState<StreamItem[]>([]);
   const [activeStream, setActiveStream] = useState<StreamItem | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
-  const [streamDrift, setStreamDrift] = useState<number>(0);
   const [failoverToast, setFailoverToast] = useState<string | null>(null);
   const [shortcutToast, setShortcutToast] = useState<string | null>(null);
 
@@ -103,19 +102,17 @@ export default function MatchPlayer({ match }: Props) {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  // Jump to Live Edge (Synced to live broadcast)
+  // Jump to Live Edge on explicit user request
   const jumpToLiveEdge = () => {
     const video = videoRef.current;
     const hls = hlsInstanceRef.current;
     if (video) {
       if (hls && typeof hls.liveSyncPosition === 'number' && hls.liveSyncPosition > 0) {
-        // Jump to safe live edge (holding ~6s buffer so video never pauses or stalls)
-        video.currentTime = Math.max(0, hls.liveSyncPosition - 6);
+        video.currentTime = hls.liveSyncPosition;
       } else if (video.seekable && video.seekable.length > 0) {
-        video.currentTime = Math.max(0, video.seekable.end(video.seekable.length - 1) - 4);
+        video.currentTime = video.seekable.end(video.seekable.length - 1);
       }
       video.playbackRate = 1.0;
-      setStreamDrift(0);
       video.play().catch(() => {});
       setShortcutToast('⚡ Synced to Live Edge');
       setTimeout(() => setShortcutToast(null), 2000);
@@ -167,7 +164,7 @@ export default function MatchPlayer({ match }: Props) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Poll Ground Scorer Ball Commentary & Moments (every 3.5s)
+  // Poll Ground Scorer Ball Commentary & Moments (every 4s)
   useEffect(() => {
     let isMounted = true;
     let timer: any = null;
@@ -181,21 +178,21 @@ export default function MatchPlayer({ match }: Props) {
         if (res.ok && isMounted) {
           const data = await res.json();
           if (data) {
-            if (data.score) setLiveScore(data.score);
-            if (data.overs) setLiveOvers(data.overs);
-            if (data.crr) setLiveCrr(data.crr);
+            if (data.score) setLiveScore((prev) => (prev !== data.score ? data.score : prev));
+            if (data.overs) setLiveOvers((prev) => (prev !== data.overs ? data.overs : prev));
+            if (data.crr) setLiveCrr((prev) => (prev !== data.crr ? data.crr : prev));
             if (Array.isArray(data.recentBalls) && data.recentBalls.length > 0) {
-              setRecentBalls(data.recentBalls);
+              setRecentBalls((prev) => (prev.length !== data.recentBalls.length ? data.recentBalls : prev));
             }
             if (Array.isArray(data.commentary) && data.commentary.length > 0) {
-              setCommentaryList(data.commentary);
+              setCommentaryList((prev) => (prev.length !== data.commentary.length ? data.commentary : prev));
             }
           }
         }
       } catch {}
 
       if (isMounted) {
-        timer = setTimeout(pollLiveDesk, 3500);
+        timer = setTimeout(pollLiveDesk, 4000);
       }
     };
 
@@ -207,132 +204,103 @@ export default function MatchPlayer({ match }: Props) {
     };
   }, []);
 
-  // Ultra-Low Latency HLS Engine with Active Drift Watchdog & Zero-Downtime Auto-Failover
+  // Continuous HLS Streaming Engine - isolated strictly to stream URL changes
+  const streamUrl = activeStream?.embedUrl;
+  const isNative = activeStream?.isNativeVideo;
+
   useEffect(() => {
     let hls: any = null;
-    let watchdogTimer: any = null;
 
-    if ((playerState === 'ready' || playerState === 'playing') && activeStream?.isNativeVideo && videoRef.current) {
-      const video = videoRef.current;
-      const url = activeStream.embedUrl;
+    if (!streamUrl || !isNative || !videoRef.current) return;
+    const video = videoRef.current;
 
-      if (url.includes('.m3u8')) {
-        import('hls.js').then(({ default: Hls }) => {
-          if (Hls.isSupported()) {
-            // Resilient live HLS configuration preventing buffering pauses on 10s segments
-            hls = new Hls({
-              enableWorker: true,
-              lowLatencyMode: false,
-              liveSyncDurationCount: 2,         // Safe 2-segment broadcast buffer (~20s)
-              liveMaxLatencyDurationCount: 4,   // Soft upper bound before micro-acceleration
-              maxLiveSyncPlaybackRate: 1.15,    // Smooth native catch-up without abrupt seeking
-              maxBufferLength: 30,              // Hold up to 30 seconds of buffer
-              maxMaxBufferLength: 60,
-              backBufferLength: 15,             // Retain 15s of played content
-              liveDurationInfinity: true,
-              highBufferWatchdogPeriod: 2,
-            });
-            hlsInstanceRef.current = hls;
-
-            hls.loadSource(url);
-            hls.attachMedia(video);
-
-            // Start playback smoothly at the live edge without starving the buffer
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-              setPlayerState('playing');
-              const playPromise = video.play();
-              if (playPromise !== undefined) {
-                playPromise.catch(() => {
-                  // Browser blocked unmuted autoplay -> play muted
-                  video.muted = true;
-                  video.play().catch(() => {});
-                });
-              }
-            });
-
-            // Zero-Downtime Auto-Failover on persistent network failure
-            let consecutiveFailures = 0;
-            hls.on(Hls.Events.ERROR, (_event: any, data: any) => {
-              if (data.fatal) {
-                switch (data.type) {
-                  case Hls.ErrorTypes.NETWORK_ERROR:
-                    consecutiveFailures++;
-                    if (consecutiveFailures >= 2) {
-                      consecutiveFailures = 0;
-                      const currentIdx = streams.findIndex((s) => s.embedUrl === activeStream.embedUrl);
-                      if (currentIdx >= 0 && currentIdx < streams.length - 1) {
-                        const nextStream = streams[currentIdx + 1];
-                        hls.destroy();
-                        hlsInstanceRef.current = null;
-                        setActiveStream(nextStream);
-                        setFailoverToast(`⚡ Auto-failover: Switched to ${nextStream.language || `Server ${currentIdx + 2}`}`);
-                        setTimeout(() => setFailoverToast(null), 4000);
-                        return;
-                      }
-                    }
-                    hls.startLoad();
-                    break;
-                  case Hls.ErrorTypes.MEDIA_ERROR:
-                    hls.recoverMediaError();
-                    break;
-                  default:
-                    hls.destroy();
-                    hlsInstanceRef.current = null;
-                    setPlayerState('failed');
-                    setErrorMessage('Broadcast feed is reconnecting...');
-                    break;
-                }
-              }
-            });
-
-            // Smooth Drift Telemetry & Gentle Micro-Acceleration (Never abruptly seek!)
-            watchdogTimer = setInterval(() => {
-              if (hls && typeof hls.liveSyncPosition === 'number' && hls.liveSyncPosition > 0 && !video.paused) {
-                const drift = hls.liveSyncPosition - video.currentTime;
-                setStreamDrift(Math.max(0, Math.round(drift * 10) / 10));
-
-                if (drift > 45) {
-                  // Huge desync (e.g. tab inactive for minutes) -> jump to safe live buffer point
-                  video.currentTime = Math.max(0, hls.liveSyncPosition - 10);
-                  video.playbackRate = 1.0;
-                } else if (drift > 20) {
-                  // Gentle micro-acceleration (1.1x) to seamlessly catch up without audio pitch distortion
-                  video.playbackRate = 1.1;
-                } else {
-                  // In sync -> normal 1.0x speed
-                  video.playbackRate = 1.0;
-                }
-              }
-            }, 2500);
-
-          } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = url;
+    if (streamUrl.includes('.m3u8')) {
+      import('hls.js').then(({ default: Hls }) => {
+        if (!Hls.isSupported()) {
+          if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = streamUrl;
             video.play().catch(() => {
               video.muted = true;
               video.play().catch(() => {});
             });
           } else {
             setPlayerState('unsupported');
-            setErrorMessage('Your browser does not support native HLS video streaming.');
+            setErrorMessage('Your browser does not support native HLS streaming.');
           }
-        }).catch(() => {
-          setPlayerState('failed');
-          setErrorMessage('Could not initialize video streaming engine.');
+          return;
+        }
+
+        // Rock-solid continuous streaming config:
+        // NetTV broadcasts 10-12s chunks. Maintaining a 3-segment buffer (~30s) prevents underruns, pauses, and decoder stalls.
+        hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: false,
+          liveSyncDurationCount: 3,         // 3 segments buffer for continuous, uninterrupted playback
+          liveMaxLatencyDurationCount: 6,   // Smooth maximum latency
+          maxBufferLength: 30,              // Keep 30s of video in memory ahead of playhead
+          maxMaxBufferLength: 60,
+          backBufferLength: 30,             // Retain 30s of played content
+          liveDurationInfinity: true,
         });
-      } else {
-        video.src = url;
-        video.play().catch(() => {});
-      }
+        hlsInstanceRef.current = hls;
+
+        hls.loadSource(streamUrl);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          setPlayerState('playing');
+          video.play().catch(() => {
+            // Autoplay with sound blocked -> fallback to muted
+            video.muted = true;
+            video.play().catch(() => {});
+          });
+        });
+
+        // Failover only on fatal unrecoverable errors
+        hls.on(Hls.Events.ERROR, (_event: any, data: any) => {
+          if (!data.fatal) return;
+
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              hls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              hls.recoverMediaError();
+              break;
+            default:
+              const currentIdx = streams.findIndex((s) => s.embedUrl === streamUrl);
+              if (currentIdx >= 0 && currentIdx < streams.length - 1) {
+                const nextStream = streams[currentIdx + 1];
+                hls.destroy();
+                hlsInstanceRef.current = null;
+                setActiveStream(nextStream);
+                setFailoverToast(`⚡ Auto-failover: Switched to ${nextStream.language || `Server ${currentIdx + 2}`}`);
+                setTimeout(() => setFailoverToast(null), 3500);
+              } else {
+                hls.destroy();
+                hlsInstanceRef.current = null;
+                setPlayerState('failed');
+                setErrorMessage('Broadcast feed is reconnecting to upstream servers.');
+              }
+              break;
+          }
+        });
+      }).catch(() => {
+        setPlayerState('failed');
+        setErrorMessage('Could not initialize video streaming engine.');
+      });
+    } else {
+      video.src = streamUrl;
+      video.play().catch(() => {});
     }
 
     return () => {
-      if (watchdogTimer) clearInterval(watchdogTimer);
       if (hls) {
         hls.destroy();
         hlsInstanceRef.current = null;
       }
     };
-  }, [activeStream, playerState]);
+  }, [streamUrl, isNative]);
 
   // Resolves playback signals on explicit user action
   async function resolvePlayback() {
@@ -552,16 +520,15 @@ export default function MatchPlayer({ match }: Props) {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Live Edge 0.0s Sync Button */}
+            {/* Live Edge Sync Button */}
             <button
               type="button"
               onClick={jumpToLiveEdge}
               className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/50 bg-red-500/10 px-3 py-1.5 text-xs font-black text-red-400 hover:bg-red-500 hover:text-white transition shadow-sm active:scale-95"
-              title="Press 'L' key to jump directly to live broadcast edge (0.0s delay)"
+              title="Press 'L' key to jump directly to live broadcast edge"
             >
               <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
-              <span>LIVE 0.0s</span>
-              {streamDrift > 0 && <span className="text-[10px] opacity-75 font-mono">({streamDrift}s)</span>}
+              <span>LIVE</span>
             </button>
 
             {/* Keyboard Shortcuts Guide Pill */}
@@ -727,18 +694,6 @@ export default function MatchPlayer({ match }: Props) {
                   playsInline
                   className="h-full w-full"
                   src={activeStream.embedUrl.includes('.m3u8') ? undefined : activeStream.embedUrl}
-                  onLoadedMetadata={() => setPlayerState('playing')}
-                  onPlaying={() => setPlayerState('playing')}
-                  onCanPlay={() => {
-                    if (videoRef.current && videoRef.current.paused && playerState === 'playing') {
-                      videoRef.current.play().catch(() => {});
-                    }
-                  }}
-                  onWaiting={() => {
-                    if (videoRef.current) {
-                      videoRef.current.playbackRate = 1.0;
-                    }
-                  }}
                 ></video>
               ) : (
                 <iframe
@@ -781,7 +736,7 @@ export default function MatchPlayer({ match }: Props) {
               title="Sync playback directly to live broadcast edge"
             >
               <span className="h-2 w-2 rounded-full bg-[#c9f36b] animate-ping"></span>
-              <span>⚡ Live Edge (0.0s)</span>
+              <span>⚡ Live Edge</span>
             </button>
           </div>
         )}
