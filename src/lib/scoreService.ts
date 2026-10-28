@@ -1,6 +1,7 @@
 /**
  * Real-time Ground Scorer Event Engine (CREX / Goscorer Engine)
- * Extracts real-time ball-by-ball match moments: 4s, 6s, Wickets, Wides, No Balls
+ * Extracts real-time ball-by-ball match moments: 4s, 6s, Wickets, Wides, No Balls,
+ * along with detailed live ball commentary and over history.
  */
 
 export interface BallMoment {
@@ -12,6 +13,34 @@ export interface BallMoment {
   type: 'FOUR' | 'SIX' | 'WICKET' | 'WIDE' | 'NO_BALL' | 'RUNS';
   title: string;
   message: string;
+}
+
+export interface RecentBall {
+  over: number;
+  delivery: number;
+  code: string;
+  teamScore?: string;
+  isBoundary: boolean;
+  isWicket: boolean;
+  isExtra: boolean;
+}
+
+export interface CommentaryLine {
+  ball: string;
+  bowlerToBatsman: string;
+  text: string;
+  outcome?: string;
+  isBoundary?: boolean;
+  isWicket?: boolean;
+}
+
+export interface LiveScorerPayload {
+  score: string;
+  overs: string;
+  crr?: string;
+  moments: BallMoment[];
+  recentBalls: RecentBall[];
+  commentary: CommentaryLine[];
 }
 
 const seenBalls = new Set<string>();
@@ -53,11 +82,7 @@ export async function discoverActiveMatchUrl(): Promise<string | null> {
 /**
  * 2. Fetch and decode live scoring state from app-root-state
  */
-export async function fetchLiveBallMoments(): Promise<{
-  score: string;
-  overs: string;
-  moments: BallMoment[];
-} | null> {
+export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> {
   const matchUrl = await discoverActiveMatchUrl();
   if (!matchUrl) return null;
 
@@ -75,13 +100,40 @@ export async function fetchLiveBallMoments(): Promise<{
     const raw = match[1];
     const scoreMatch = raw.match(/&q;score1&q;:&q;([^&]+)&q;/);
     const overMatch = raw.match(/&q;over1&q;:&q;([^&]+)&q;/);
+    const crrMatch = raw.match(/&q;crr&q;:&q;([^&]+)&q;/);
     const score = scoreMatch ? scoreMatch[1].replace('-', '/') : '';
     const overs = overMatch ? overMatch[1] : '';
+    const crr = crrMatch ? crrMatch[1] : '';
+
+    // Extract commentary lines (c1 = bowler to batsman, c2 = description, delivery = ball number)
+    const commentary: CommentaryLine[] = [];
+    const commRegex = /&q;c1&q;:&q;([^&]+)&q;,&q;c2&q;:&q;([^&]+)&q;.*?&q;delivery&q;:(\d+)/g;
+    let cm: RegExpExecArray | null;
+    while ((cm = commRegex.exec(raw)) !== null) {
+      const c1 = cm[1];
+      const c2 = cm[2];
+      const delivery = parseInt(cm[3], 10);
+      const overNum = Math.floor((delivery - 1) / 6);
+      const ballInOver = ((delivery - 1) % 6) + 1;
+      const ballLabel = `${overNum}.${ballInOver}`;
+      const isFour = c2.toLowerCase().includes('four') || c2.startsWith('FOUR');
+      const isSix = c2.toLowerCase().includes('six') || c2.startsWith('SIX');
+      const isWicket = c2.toLowerCase().includes('wicket') || c2.toLowerCase().includes('out') || c2.startsWith('WICKET');
+
+      commentary.push({
+        ball: ballLabel,
+        bowlerToBatsman: c1,
+        text: c2,
+        outcome: isSix ? '6' : isFour ? '4' : isWicket ? 'W' : undefined,
+        isBoundary: isFour || isSix,
+        isWicket,
+      });
+    }
 
     // Extract Recent Balls matrix (rb array)
     const rbIdx = raw.indexOf('&q;rb&q;:');
     if (rbIdx === -1) {
-      return { score, overs, moments: [] };
+      return { score, overs, crr, moments: [], recentBalls: [], commentary };
     }
 
     const rbStart = raw.indexOf('[', rbIdx);
@@ -105,29 +157,38 @@ export async function fetchLiveBallMoments(): Promise<{
       b?: Array<{ d: number; u: string }>;
     }> = JSON.parse(rbJson);
 
+    const recentBalls: RecentBall[] = [];
     const newMoments: BallMoment[] = [];
 
-    // First boot: mark all historical balls as seen
-    if (!isInitialized) {
-      for (const overObj of rbList) {
-        if (!overObj.b) continue;
-        for (const b of overObj.b) {
-          const ballId = `${overObj.o}.${b.d}:${b.u}`;
-          seenBalls.add(ballId);
-        }
+    // Collect recent balls for live ribbon display
+    for (const overObj of rbList) {
+      if (!overObj.b) continue;
+      for (const b of overObj.b) {
+        const resCode = (b.u || '').toLowerCase().trim();
+        const isBoundary = resCode === '4' || resCode === '6';
+        const isWkt = resCode.includes('w') && !resCode.includes('wd');
+        const isExt = resCode.includes('wd') || resCode.includes('nb') || resCode.includes('by') || resCode.includes('lb');
+
+        recentBalls.push({
+          over: overObj.o,
+          delivery: b.d,
+          code: b.u,
+          teamScore: overObj.ts,
+          isBoundary,
+          isWicket: isWkt,
+          isExtra: isExt,
+        });
       }
-      isInitialized = true;
-      return { score, overs, moments: [] };
     }
 
-    // Process new deliveries
+    // Process new deliveries for live push dispatch
     for (const overObj of rbList) {
       if (!overObj.b) continue;
       for (const b of overObj.b) {
         const resCode = (b.u || '').toLowerCase().trim();
         const ballId = `${overObj.o}.${b.d}:${resCode}`;
 
-        if (seenBalls.has(ballId)) continue;
+        if (isInitialized && seenBalls.has(ballId)) continue;
         seenBalls.add(ballId);
 
         const currentScore = overObj.ts || score;
@@ -192,9 +253,18 @@ export async function fetchLiveBallMoments(): Promise<{
       }
     }
 
-    return { score, overs, moments: newMoments };
+    // Set initialized after first run
+    isInitialized = true;
+
+    return {
+      score,
+      overs,
+      crr,
+      moments: newMoments,
+      recentBalls,
+      commentary,
+    };
   } catch {
     return null;
   }
 }
-

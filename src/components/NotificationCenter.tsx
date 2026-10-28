@@ -103,6 +103,35 @@ export default function NotificationCenter() {
                 badgeText: moment.type,
               });
             }
+          } else if (data && Array.isArray(data.recentBalls) && getNotificationHistory().length === 0) {
+            // Hydrate recent key moments so Notification Center is immediately populated with live match events
+            const keyBalls = data.recentBalls.filter((b: any) => b.isBoundary || b.isWicket);
+            for (const b of keyBalls.slice(-10)) {
+              const isWkt = b.isWicket;
+              const isSix = (b.code || '').toLowerCase() === '6';
+              const type = isWkt ? 'wicket' : 'goal';
+              const badgeText = isWkt ? 'WICKET' : isSix ? 'SIX' : 'FOUR';
+              const title = isWkt
+                ? '💥 WICKET FALLEN!'
+                : isSix
+                ? '🚀 MAXIMUM SIX! (6 Runs)'
+                : '🏏 FOUR BOUNDARY! (4 Runs)';
+              const message = `${isWkt ? 'Wicket is down' : 'Boundary hit'}! Score: ${b.teamScore || data.score} (${b.over}.${b.delivery} ov)`;
+
+              dispatchNotification({
+                key: `moment:${b.over}.${b.delivery}:${b.code}`,
+                type,
+                filterCategory: 'moments',
+                title,
+                message,
+                matchTitle: 'Pokhara Avengers vs Sudurpaschim Royals',
+                matchUrl: '/npl/',
+                category: 'cricket',
+                competition: 'Nepal Premier League',
+                score: b.teamScore || data.score,
+                badgeText,
+              });
+            }
           }
         }
       } catch {}

@@ -185,6 +185,16 @@ export async function autoScheduleAllMatchAlerts(
 
     for (const match of matches) {
       if (!match.timestamp || !match.title) continue;
+      const lower = match.title.toLowerCase();
+      if (
+        lower.includes('determined') ||
+        lower.includes('qualifier') ||
+        lower.includes('eliminator') ||
+        lower.includes('place vs') ||
+        lower.includes('tbd')
+      ) {
+        continue;
+      }
 
       const now = Date.now();
       const diffMs = match.timestamp - now;

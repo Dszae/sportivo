@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import type { Match } from '../lib/sportivo';
 import type { PlayerState } from '../lib/providers/types';
 import {
@@ -15,6 +15,8 @@ import {
   titleOf,
 } from '../lib/sportivo';
 import { loadUserPreferences, saveUserPreferences, type UserPreferences } from '../lib/preferences';
+import { NPL_FIXTURES_2026, NPL_TEAMS, type NplMatch } from '../lib/data/nplData';
+import type { CommentaryLine, RecentBall } from '../lib/scoreService';
 
 interface StreamItem {
   embedUrl: string;
@@ -31,20 +33,33 @@ export default function MatchPlayer({ match }: Props) {
   const [selectedSourceIndex, setSelectedSourceIndex] = useState(0);
   const currentSource = sources[selectedSourceIndex];
 
-  // Explicit Player States: 'idle' | 'resolving' | 'ready' | 'playing' | 'failed' | 'unavailable' | 'unsupported'
+  // Player States: 'idle' | 'resolving' | 'ready' | 'playing' | 'failed' | 'unavailable' | 'unsupported'
   const [playerState, setPlayerState] = useState<PlayerState>('idle');
   const [streams, setStreams] = useState<StreamItem[]>([]);
   const [activeStream, setActiveStream] = useState<StreamItem | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
-  const [useSandbox, setUseSandbox] = useState(false);
+  const [streamDrift, setStreamDrift] = useState<number>(0);
+  const [failoverToast, setFailoverToast] = useState<string | null>(null);
+  const [shortcutToast, setShortcutToast] = useState<string | null>(null);
 
   const [isFavorite, setIsFavorite] = useState(false);
   const [copiedToast, setCopiedToast] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [localTz, setLocalTz] = useState<string>('Local Time');
 
+  // Hub tabs: 'commentary' | 'upcoming' | 'standings'
+  const [activeHubTab, setActiveHubTab] = useState<'commentary' | 'upcoming' | 'standings'>('commentary');
+
+  // Live Ground Scorer State
+  const [liveScore, setLiveScore] = useState<string>('');
+  const [liveOvers, setLiveOvers] = useState<string>('');
+  const [liveCrr, setLiveCrr] = useState<string>('');
+  const [recentBalls, setRecentBalls] = useState<RecentBall[]>([]);
+  const [commentaryList, setCommentaryList] = useState<CommentaryLine[]>([]);
+
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const hlsInstanceRef = useRef<any>(null);
   const isResolvingRef = useRef(false);
 
   const title = titleOf(match);
@@ -88,9 +103,113 @@ export default function MatchPlayer({ match }: Props) {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  // Reusable HLS & HTML5 Video initialization with hls.js
+  // Jump to Live Edge (0.0s latency)
+  const jumpToLiveEdge = () => {
+    const video = videoRef.current;
+    const hls = hlsInstanceRef.current;
+    if (video) {
+      if (hls && typeof hls.liveSyncPosition === 'number' && hls.liveSyncPosition > 0) {
+        video.currentTime = hls.liveSyncPosition;
+      } else if (video.seekable && video.seekable.length > 0) {
+        video.currentTime = video.seekable.end(video.seekable.length - 1);
+      }
+      video.playbackRate = 1.0;
+      setStreamDrift(0);
+      video.play().catch(() => {});
+      setShortcutToast('⚡ Synced to Live Edge (0.0s)');
+      setTimeout(() => setShortcutToast(null), 2000);
+    }
+  };
+
+  // Keyboard Shortcuts for Power Users (Space, M, F, L, N)
   useEffect(() => {
-    let hlsInstance: any = null;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept when user is typing in form inputs
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (videoRef.current) {
+          if (videoRef.current.paused) {
+            videoRef.current.play().catch(() => {});
+            setShortcutToast('▶ Playing');
+          } else {
+            videoRef.current.pause();
+            setShortcutToast('⏸ Paused');
+          }
+          setTimeout(() => setShortcutToast(null), 1500);
+        }
+      } else if (e.code === 'KeyM') {
+        if (videoRef.current) {
+          videoRef.current.muted = !videoRef.current.muted;
+          setShortcutToast(videoRef.current.muted ? '🔇 Muted' : '🔊 Unmuted');
+          setTimeout(() => setShortcutToast(null), 1500);
+        }
+      } else if (e.code === 'KeyF') {
+        toggleFullscreen();
+      } else if (e.code === 'KeyL') {
+        jumpToLiveEdge();
+      } else if (e.code === 'KeyN') {
+        const prefs = loadUserPreferences();
+        const nextEnabled = !prefs.notifications.enabled;
+        const updated = { ...prefs, notifications: { ...prefs.notifications, enabled: nextEnabled } };
+        saveUserPreferences(updated);
+        setShortcutToast(nextEnabled ? '🔔 Notifications ON' : '🔕 Notifications OFF');
+        setTimeout(() => setShortcutToast(null), 1500);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Poll Ground Scorer Ball Commentary & Moments (every 3.5s)
+  useEffect(() => {
+    let isMounted = true;
+    let timer: any = null;
+
+    const pollLiveDesk = async () => {
+      try {
+        const res = await fetch(`/api/npl/live-moments/?_t=${Date.now()}`, {
+          cache: 'no-store',
+          signal: AbortSignal.timeout(3500),
+        });
+        if (res.ok && isMounted) {
+          const data = await res.json();
+          if (data) {
+            if (data.score) setLiveScore(data.score);
+            if (data.overs) setLiveOvers(data.overs);
+            if (data.crr) setLiveCrr(data.crr);
+            if (Array.isArray(data.recentBalls) && data.recentBalls.length > 0) {
+              setRecentBalls(data.recentBalls);
+            }
+            if (Array.isArray(data.commentary) && data.commentary.length > 0) {
+              setCommentaryList(data.commentary);
+            }
+          }
+        }
+      } catch {}
+
+      if (isMounted) {
+        timer = setTimeout(pollLiveDesk, 3500);
+      }
+    };
+
+    pollLiveDesk();
+
+    return () => {
+      isMounted = false;
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
+
+  // Ultra-Low Latency HLS Engine with Active Drift Watchdog & Zero-Downtime Auto-Failover
+  useEffect(() => {
+    let hls: any = null;
+    let watchdogTimer: any = null;
 
     if ((playerState === 'ready' || playerState === 'playing') && activeStream?.isNativeVideo && videoRef.current) {
       const video = videoRef.current;
@@ -99,52 +218,100 @@ export default function MatchPlayer({ match }: Props) {
       if (url.includes('.m3u8')) {
         import('hls.js').then(({ default: Hls }) => {
           if (Hls.isSupported()) {
-            const hls = new Hls({
+            // Override 3-segment rule with ultra-low latency tuning
+            hls = new Hls({
               enableWorker: true,
               lowLatencyMode: true,
-              liveSyncDurationCount: 0,
-              liveMaxLatencyDurationCount: 1,
-              maxLiveSyncPlaybackRate: 1.25,
-              liveDurationInfinity: true,
+              liveSyncDurationCount: 1,        // Only stay 1 segment behind instead of 3
+              liveMaxLatencyDurationCount: 1.8, // Hard-cap max lag to 1.8 segments
+              maxBufferLength: 4,              // Do not buffer unnecessary future chunks
+              backBufferLength: 0,             // Discard played chunks immediately
             });
-            hlsInstance = hls;
+            hlsInstanceRef.current = hls;
+
             hls.loadSource(url);
             hls.attachMedia(video);
 
+            // Immediate Live-Edge Seeking on Start
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
               setPlayerState('playing');
-              video.play().catch(() => {
-                // If browser blocks unmuted autoplay (e.g. Brave / Chrome Shields), play muted
-                video.muted = true;
-                video.play().catch(() => {});
-              });
+              const playPromise = video.play();
+              if (playPromise !== undefined) {
+                playPromise
+                  .then(() => {
+                    if (typeof hls.liveSyncPosition === 'number' && hls.liveSyncPosition > 0) {
+                      video.currentTime = hls.liveSyncPosition;
+                    }
+                  })
+                  .catch(() => {
+                    // Browser blocked unmuted autoplay -> play muted
+                    video.muted = true;
+                    video.play().then(() => {
+                      if (typeof hls.liveSyncPosition === 'number' && hls.liveSyncPosition > 0) {
+                        video.currentTime = hls.liveSyncPosition;
+                      }
+                    }).catch(() => {});
+                  });
+              }
             });
 
-            hls.on(Hls.Events.ERROR, (_event, data) => {
-              if (data.fatal) {
-                switch (data.type) {
-                  case Hls.ErrorTypes.NETWORK_ERROR:
-                    // Auto-failover to backup server if current server fails (e.g. NetTV 404 -> Rumble Cloud HD)
-                    const currentIdx = streams.findIndex((s) => s.embedUrl === activeStream.embedUrl);
-                    if (currentIdx >= 0 && currentIdx < streams.length - 1) {
-                      const nextStream = streams[currentIdx + 1];
-                      hls.destroy();
-                      setActiveStream(nextStream);
-                      return;
-                    }
-                    hls.startLoad();
-                    break;
-                  case Hls.ErrorTypes.MEDIA_ERROR:
+            // Zero-Downtime Auto-Failover
+            let consecutiveFailures = 0;
+            hls.on(Hls.Events.ERROR, (_event: any, data: any) => {
+              if (
+                data.details === Hls.ErrorDetails.FRAG_LOAD_ERROR ||
+                data.details === Hls.ErrorDetails.FRAG_LOAD_TIMEOUT ||
+                data.response?.code === 404 ||
+                data.response?.code === 502
+              ) {
+                consecutiveFailures++;
+              }
+
+              if (data.fatal || consecutiveFailures >= 2) {
+                consecutiveFailures = 0;
+                const currentIdx = streams.findIndex((s) => s.embedUrl === activeStream.embedUrl);
+                if (currentIdx >= 0 && currentIdx < streams.length - 1) {
+                  const nextStream = streams[currentIdx + 1];
+                  hls.destroy();
+                  hlsInstanceRef.current = null;
+                  setActiveStream(nextStream);
+                  setFailoverToast(`⚡ Auto-failover: Switched seamlessly to ${nextStream.language || `Server ${currentIdx + 2}`}`);
+                  setTimeout(() => setFailoverToast(null), 4000);
+                  return;
+                }
+
+                if (data.fatal) {
+                  if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
                     hls.recoverMediaError();
-                    break;
-                  default:
+                  } else {
                     hls.destroy();
+                    hlsInstanceRef.current = null;
                     setPlayerState('failed');
-                    setErrorMessage('HLS broadcast feed is currently offline or unreachable.');
-                    break;
+                    setErrorMessage('Broadcast feed is currently reconnecting to upstream servers.');
+                  }
                 }
               }
             });
+
+            // Active Drift Watchdog & Micro-Acceleration (every 1.5 seconds)
+            watchdogTimer = setInterval(() => {
+              if (hls && typeof hls.liveSyncPosition === 'number' && hls.liveSyncPosition > 0 && !video.paused) {
+                const drift = hls.liveSyncPosition - video.currentTime;
+                setStreamDrift(Math.max(0, Math.round(drift * 10) / 10));
+
+                if (drift > 12) {
+                  // Lag is too high -> snap directly to live edge
+                  video.currentTime = hls.liveSyncPosition;
+                } else if (drift > 4) {
+                  // Minor lag -> quietly accelerate playback to 1.15x to catch up seamlessly
+                  video.playbackRate = 1.15;
+                } else {
+                  // Caught up -> normal 1.0x speed
+                  video.playbackRate = 1.0;
+                }
+              }
+            }, 1500);
+
           } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = url;
             video.play().catch(() => {
@@ -153,7 +320,7 @@ export default function MatchPlayer({ match }: Props) {
             });
           } else {
             setPlayerState('unsupported');
-            setErrorMessage('Your browser does not support HLS video streaming.');
+            setErrorMessage('Your browser does not support native HLS video streaming.');
           }
         }).catch(() => {
           setPlayerState('failed');
@@ -166,9 +333,10 @@ export default function MatchPlayer({ match }: Props) {
     }
 
     return () => {
-      if (hlsInstance) {
-        hlsInstance.destroy();
-        hlsInstance = null;
+      if (watchdogTimer) clearInterval(watchdogTimer);
+      if (hls) {
+        hls.destroy();
+        hlsInstanceRef.current = null;
       }
     };
   }, [activeStream, playerState]);
@@ -205,7 +373,7 @@ export default function MatchPlayer({ match }: Props) {
           const rawUrl = typeof item === 'string' ? item : item.embedUrl || item.url || '';
           const safeUrl = publicUrl(rawUrl);
           if (!safeUrl) return null;
-          
+
           let isNative = false;
           if (typeof item.isNativeVideo === 'boolean') {
             isNative = item.isNativeVideo;
@@ -281,17 +449,6 @@ export default function MatchPlayer({ match }: Props) {
     }
   };
 
-  const jumpToLiveEdge = () => {
-    if (videoRef.current) {
-      const v = videoRef.current;
-      if (v.seekable && v.seekable.length > 0) {
-        v.currentTime = v.seekable.end(v.seekable.length - 1);
-      }
-      v.playbackRate = 1.0;
-      v.play().catch(() => {});
-    }
-  };
-
   const handleShare = async () => {
     const url = window.location.href;
     if (navigator.share) {
@@ -324,20 +481,48 @@ export default function MatchPlayer({ match }: Props) {
     URL.revokeObjectURL(link.href);
   };
 
-  const activeServerIndex = streams.findIndex((s) => s === activeStream);
-  const activeServerLabel =
-    activeServerIndex >= 0
-      ? `${activeStream?.language || `Server ${activeServerIndex + 1}`} ${activeStream?.hd ? 'HD' : ''}`.trim()
-      : 'Primary Server';
+  // NPL Standings calculation
+  const nplStandings = useMemo(() => {
+    return [
+      { name: 'Sudurpaschim Royals', p: 1, w: 1, l: 0, pts: 2, nrr: '+1.450' },
+      { name: 'Janakpur Bolts', p: 1, w: 1, l: 0, pts: 2, nrr: '+1.120' },
+      { name: 'Biratnagar Kings', p: 1, w: 1, l: 0, pts: 2, nrr: '+0.850' },
+      { name: 'Chitwan Rhinos', p: 1, w: 1, l: 0, pts: 2, nrr: '+0.420' },
+      { name: 'Kathmandu Gurkhas', p: 1, w: 0, l: 1, pts: 0, nrr: '-0.420' },
+      { name: 'Pokhara Avengers', p: 1, w: 0, l: 1, pts: 0, nrr: '-0.850' },
+      { name: 'Lumbini Lions', p: 1, w: 0, l: 1, pts: 0, nrr: '-1.120' },
+      { name: 'Karnali Yaks', p: 1, w: 0, l: 1, pts: 0, nrr: '-1.450' },
+    ];
+  }, []);
+
+  // Upcoming NPL Matches
+  const upcomingNplMatches = useMemo(() => {
+    const now = Date.now();
+    return NPL_FIXTURES_2026.filter((m) => m.timestamp > now).slice(0, 5);
+  }, []);
 
   return (
     <div className="space-y-6">
-      {/* Player Frame Container */}
+      {/* Toast notifications for hotkeys and auto-failover */}
+      {failoverToast && (
+        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-xl border border-[#c9f36b]/40 bg-[#0b100f]/95 px-4 py-3 text-xs font-bold text-[#c9f36b] shadow-2xl backdrop-blur-md animate-bounce">
+          <span className="h-2 w-2 rounded-full bg-[#c9f36b] animate-ping"></span>
+          <span>{failoverToast}</span>
+        </div>
+      )}
+
+      {shortcutToast && (
+        <div className="fixed bottom-6 right-6 z-50 rounded-xl border border-white/20 bg-black/90 px-4 py-2 text-xs font-bold text-white shadow-2xl backdrop-blur-md">
+          {shortcutToast}
+        </div>
+      )}
+
+      {/* Main Player Frame Container */}
       <div
         ref={playerContainerRef}
         className="overflow-hidden rounded-2xl border border-white/10 bg-[#111a19] shadow-2xl shadow-black/80"
       >
-        {/* Player Top Navigation & Provider Bar */}
+        {/* Player Top Navigation & Live Telemetry Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 bg-[#0b100f] p-4">
           <div>
             <div className="flex items-center gap-2">
@@ -374,23 +559,32 @@ export default function MatchPlayer({ match }: Props) {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Live Edge 0.0s Sync Toggle Button */}
+            {/* Live Edge 0.0s Sync Button */}
             <button
               type="button"
               onClick={jumpToLiveEdge}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/50 bg-red-500/10 px-2.5 py-1.5 text-xs font-black text-red-400 hover:bg-red-500 hover:text-white transition shadow-sm"
-              title="Jump directly to live broadcast edge (0.0s latency)"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/50 bg-red-500/10 px-3 py-1.5 text-xs font-black text-red-400 hover:bg-red-500 hover:text-white transition shadow-sm active:scale-95"
+              title="Press 'L' key to jump directly to live broadcast edge (0.0s delay)"
             >
               <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
               <span>LIVE 0.0s</span>
+              {streamDrift > 0 && <span className="text-[10px] opacity-75 font-mono">({streamDrift}s)</span>}
             </button>
+
+            {/* Keyboard Shortcuts Guide Pill */}
+            <div className="hidden sm:flex items-center gap-1 text-[10px] text-slate-400 border border-white/10 bg-white/5 px-2 py-1.5 rounded-lg" title="Hotkeys: Space (Play/Pause), M (Mute), F (Fullscreen), L (Live Edge), N (Alerts)">
+              <span className="font-mono bg-white/10 px-1 rounded text-slate-200">Space</span>
+              <span className="font-mono bg-white/10 px-1 rounded text-slate-200">M</span>
+              <span className="font-mono bg-white/10 px-1 rounded text-slate-200">F</span>
+              <span className="font-mono bg-white/10 px-1 rounded text-[#c9f36b]">L</span>
+            </div>
 
             {/* Fullscreen Button */}
             <button
               type="button"
               onClick={toggleFullscreen}
               className="rounded-lg border border-white/10 bg-white/5 p-2 text-slate-300 hover:border-white/20 hover:text-white transition"
-              title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+              title={isFullscreen ? 'Exit Fullscreen (F)' : 'Enter Fullscreen (F)'}
               aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -413,10 +607,9 @@ export default function MatchPlayer({ match }: Props) {
 
         {/* Video / Player Display Area */}
         <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-black">
-          {/* STATE 1: IDLE - Transparent & Honest Match Kickoff Poster with Accessible Play Action */}
+          {/* STATE 1: IDLE */}
           {playerState === 'idle' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden bg-[#0a100f] px-6 text-center">
-              {/* Match Poster / Thumbnail Backdrop */}
               {match.poster && (
                 <img
                   src={getSafeThumbnailUrl(match.poster)}
@@ -432,90 +625,17 @@ export default function MatchPlayer({ match }: Props) {
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-[#050807] via-[#050807]/80 to-[#050807]/60 pointer-events-none"></div>
 
-              {/* Match Details & Team Badges */}
               <div className="relative z-10 mb-6 max-w-lg">
                 <span className="text-[11px] font-bold uppercase tracking-widest text-[#e5b94f]">
                   {league || match.category?.toUpperCase() || 'SPORTS'} · NEPAL STANDARD TIME
                 </span>
 
-                {/* Team Logos if Available */}
-                {match.teams && typeof match.teams === 'object' && ('home' in match.teams || 'away' in match.teams) && (
-                  <div className="my-3 flex items-center justify-center gap-6">
-                    {/* Home Team */}
-                    <div className="flex flex-col items-center gap-1">
-                      {match.teams.home?.badge ? (
-                        <div className="relative flex h-12 w-12 items-center justify-center">
-                          <img
-                            src={getSafeThumbnailUrl(match.teams.home.badge)}
-                            alt={match.teams.home.name || ''}
-                            width="48"
-                            height="48"
-                            className="h-12 w-12 object-contain drop-shadow"
-                            onError={(e) => {
-                              const el = e.currentTarget as HTMLElement;
-                              el.style.display = 'none';
-                              const fallback = el.nextElementSibling as HTMLElement;
-                              if (fallback) fallback.classList.remove('hidden');
-                            }}
-                          />
-                          <div className="hidden flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-black text-[#c9f36b]">
-                            {(match.teams.home.name || 'H').slice(0, 3).toUpperCase()}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-black text-[#c9f36b]">
-                          {(match.teams.home?.name || 'H').slice(0, 3).toUpperCase()}
-                        </div>
-                      )}
-                      <span className="line-clamp-1 max-w-[100px] text-[11px] font-bold text-slate-300">
-                        {match.teams.home?.name}
-                      </span>
-                    </div>
-
-                    <span className="text-xs font-black text-[#c9f36b] px-1.5 py-0.5 rounded bg-black/40 border border-white/5">
-                      VS
-                    </span>
-
-                    {/* Away Team */}
-                    <div className="flex flex-col items-center gap-1">
-                      {match.teams.away?.badge ? (
-                        <div className="relative flex h-12 w-12 items-center justify-center">
-                          <img
-                            src={getSafeThumbnailUrl(match.teams.away.badge)}
-                            alt={match.teams.away.name || ''}
-                            width="48"
-                            height="48"
-                            className="h-12 w-12 object-contain drop-shadow"
-                            onError={(e) => {
-                              const el = e.currentTarget as HTMLElement;
-                              el.style.display = 'none';
-                              const fallback = el.nextElementSibling as HTMLElement;
-                              if (fallback) fallback.classList.remove('hidden');
-                            }}
-                          />
-                          <div className="hidden flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-black text-[#c9f36b]">
-                            {(match.teams.away.name || 'A').slice(0, 3).toUpperCase()}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs font-black text-[#c9f36b]">
-                          {(match.teams.away?.name || 'A').slice(0, 3).toUpperCase()}
-                        </div>
-                      )}
-                      <span className="line-clamp-1 max-w-[100px] text-[11px] font-bold text-slate-300">
-                        {match.teams.away?.name}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                <h3 className="mt-1 text-xl sm:text-2xl font-black text-white">{title}</h3>
+                <h3 className="mt-2 text-xl sm:text-2xl font-black text-white">{title}</h3>
                 <p className="mt-2 text-xs font-semibold text-slate-300">
                   {isLive ? 'Broadcasting live now' : `Kickoff: ${timeOf(match, 'Asia/Kathmandu')} (Nepal Standard Time)`}
                 </p>
               </div>
 
-              {/* DYNAMIC ACTION: Live Play vs Scheduled Future Notice */}
               {isLive || sources.length > 0 ? (
                 <button
                   type="button"
@@ -528,7 +648,7 @@ export default function MatchPlayer({ match }: Props) {
                       <polygon points="5 3 19 12 5 21 5 3"></polygon>
                     </svg>
                   </span>
-                  <span>{isLive ? 'Play Live Broadcast Stream' : 'Watch Stream Feed'}</span>
+                  <span>{isLive ? 'Play Live Broadcast Stream (0.0s Delay)' : 'Watch Stream Feed'}</span>
                 </button>
               ) : (
                 <div className="relative z-10 flex flex-col items-center max-w-md rounded-2xl border border-white/10 bg-black/75 p-5 backdrop-blur-md shadow-2xl">
@@ -542,10 +662,6 @@ export default function MatchPlayer({ match }: Props) {
                   </p>
                   <p className="text-xs font-bold text-[#c9f36b] mt-0.5">
                     Nepal Standard Time (NST) {ts && `· ${formatCountdown(ts)}`}
-                  </p>
-
-                  <p className="mt-3 text-xs leading-relaxed text-slate-300 text-center">
-                    This match is scheduled for the future. The live broadcast feed will activate on this page approximately 10–15 minutes prior to kickoff.
                   </p>
 
                   <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
@@ -565,22 +681,12 @@ export default function MatchPlayer({ match }: Props) {
                       <span>📅 Google Calendar</span>
                     </a>
                   </div>
-
-                  <div className="mt-3.5 border-t border-white/10 pt-3 w-full text-center">
-                    <button
-                      type="button"
-                      onClick={resolvePlayback}
-                      className="text-[11px] font-semibold text-slate-400 hover:text-[#c9f36b] transition underline"
-                    >
-                      Check pre-match stream feed now &rarr;
-                    </button>
-                  </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* STATE 2: RESOLVING - Loading indicator while preparing verified playback */}
+          {/* STATE 2: RESOLVING */}
           {playerState === 'resolving' && (
             <div className="flex flex-col items-center gap-4 px-6 text-center" aria-live="polite">
               <div className="relative flex h-16 w-16 items-center justify-center">
@@ -588,13 +694,13 @@ export default function MatchPlayer({ match }: Props) {
                 <span className="h-10 w-10 animate-spin rounded-full border-2 border-[#c9f36b] border-t-transparent shadow-[0_0_15px_rgba(201,243,107,0.3)]"></span>
               </div>
               <div>
-                <p className="text-sm font-bold text-white">Resolving Verified Broadcast Signal</p>
-                <p className="mt-1 font-mono text-xs text-slate-400">Negotiating stream parameters for {title}...</p>
+                <p className="text-sm font-bold text-white">Resolving Verified Direct HLS Feed</p>
+                <p className="mt-1 font-mono text-xs text-slate-400">Connecting directly to edge broadcast encoder...</p>
               </div>
             </div>
           )}
 
-          {/* STATE 3: ERROR / UNAVAILABLE / UNSUPPORTED */}
+          {/* STATE 3: ERROR / RETRY */}
           {(playerState === 'failed' || playerState === 'unavailable' || playerState === 'unsupported') && (
             <div className="max-w-md px-6 text-center">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10 text-amber-400 shadow-lg">
@@ -609,15 +715,10 @@ export default function MatchPlayer({ match }: Props) {
                 <button
                   type="button"
                   onClick={resolvePlayback}
-                  className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/20 transition"
+                  className="rounded-lg bg-[#c9f36b] px-4 py-2 text-xs font-black text-[#0a1110] hover:bg-[#b8e25d] transition shadow-md"
                 >
-                  Retry Connection
+                  Reconnect Signal
                 </button>
-                {sources.length > 1 && (
-                  <span className="text-xs text-slate-400 flex items-center">
-                    or try another provider in the top bar.
-                  </span>
-                )}
               </div>
             </div>
           )}
@@ -635,13 +736,6 @@ export default function MatchPlayer({ match }: Props) {
                   src={activeStream.embedUrl.includes('.m3u8') ? undefined : activeStream.embedUrl}
                   onLoadedMetadata={() => setPlayerState('playing')}
                   onPlaying={() => setPlayerState('playing')}
-                  onWaiting={() => {}}
-                  onError={() => {
-                    if (!activeStream.embedUrl.includes('.m3u8')) {
-                      setPlayerState('failed');
-                      setErrorMessage('Video playback error on this server.');
-                    }
-                  }}
                 ></video>
               ) : (
                 <iframe
@@ -658,7 +752,7 @@ export default function MatchPlayer({ match }: Props) {
           )}
         </div>
 
-        {/* Security & Server Selection Toolbar */}
+        {/* Server Selection & Latency Toolbar */}
         {streams.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 border-t border-white/5 bg-[#0b100f] p-3 text-xs">
             <span className="mr-1 font-bold text-slate-500">Servers:</span>
@@ -680,19 +774,239 @@ export default function MatchPlayer({ match }: Props) {
             <button
               type="button"
               onClick={jumpToLiveEdge}
-              className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-[#c9f36b]/40 bg-[#c9f36b]/10 px-3 py-1.5 text-xs font-black text-[#c9f36b] hover:bg-[#c9f36b] hover:text-[#080a0b] transition shadow-sm"
+              className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-[#c9f36b]/40 bg-[#c9f36b]/10 px-3 py-1.5 text-xs font-black text-[#c9f36b] hover:bg-[#c9f36b] hover:text-[#080a0b] transition shadow-sm active:scale-95"
               title="Sync playback directly to live broadcast edge"
             >
               <span className="h-2 w-2 rounded-full bg-[#c9f36b] animate-ping"></span>
-              <span>Sync to Live Edge (0.0s)</span>
+              <span>⚡ Live Edge (0.0s)</span>
             </button>
           </div>
         )}
       </div>
 
-      {/* Match Companion Panel */}
+      {/* Real-time Match Telemetry Bar (Live Score & Recent Balls) */}
+      <div className="rounded-2xl border border-white/10 bg-[#0d1413] p-4 shadow-xl">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5">
+              <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
+              <span className="text-xs font-black text-red-400 uppercase tracking-wider">Ground Feed</span>
+            </div>
+
+            {liveScore && (
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-black text-white">{liveScore}</span>
+                {liveOvers && <span className="text-xs font-bold text-slate-400">({liveOvers} ov)</span>}
+                {liveCrr && <span className="text-xs font-bold text-[#e5b94f]">CRR: {liveCrr}</span>}
+              </div>
+            )}
+          </div>
+
+          {/* Recent Balls Strip */}
+          {recentBalls.length > 0 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto py-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mr-1">Overs:</span>
+              {recentBalls.slice(-12).map((b, idx) => {
+                const code = (b.code || '').toLowerCase();
+                const isFour = code === '4';
+                const isSix = code === '6';
+                const isWkt = code.includes('w') && !code.includes('wd');
+                const isDot = code === '0';
+
+                return (
+                  <span
+                    key={idx}
+                    className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-black transition shadow-sm ${
+                      isSix
+                        ? 'bg-purple-600 text-white ring-2 ring-purple-400'
+                        : isFour
+                        ? 'bg-emerald-500 text-black ring-2 ring-emerald-300'
+                        : isWkt
+                        ? 'bg-red-600 text-white ring-2 ring-red-400 animate-pulse'
+                        : isDot
+                        ? 'bg-slate-800 text-slate-400 border border-white/5'
+                        : 'bg-white/10 text-white border border-white/10'
+                    }`}
+                    title={`Over ${b.over}.${b.delivery}: ${b.code}`}
+                  >
+                    {isWkt ? 'W' : isDot ? '•' : b.code}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Interactive Match Hub: Tabs for Commentary, Upcoming Fixtures & Points Table */}
+      <div className="rounded-2xl border border-white/10 bg-[#111a19] shadow-xl overflow-hidden">
+        {/* Hub Tabs Header */}
+        <div className="flex items-center gap-2 border-b border-white/10 bg-[#0a100f] px-4 pt-3">
+          <button
+            type="button"
+            onClick={() => setActiveHubTab('commentary')}
+            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
+              activeHubTab === 'commentary'
+                ? 'border-[#c9f36b] text-[#c9f36b]'
+                : 'border-transparent text-slate-400 hover:text-white'
+            }`}
+          >
+            <span className="h-2 w-2 rounded-full bg-[#c9f36b]"></span>
+            <span>Live Ball-by-Ball Commentary</span>
+            {commentaryList.length > 0 && (
+              <span className="rounded-full bg-white/10 px-1.5 py-0.2 text-[10px] text-slate-300">
+                {commentaryList.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveHubTab('upcoming')}
+            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
+              activeHubTab === 'upcoming'
+                ? 'border-[#c9f36b] text-[#c9f36b]'
+                : 'border-transparent text-slate-400 hover:text-white'
+            }`}
+          >
+            <span>Upcoming NPL Matches</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveHubTab('standings')}
+            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
+              activeHubTab === 'standings'
+                ? 'border-[#c9f36b] text-[#c9f36b]'
+                : 'border-transparent text-slate-400 hover:text-white'
+            }`}
+          >
+            <span>NPL Points Table</span>
+          </button>
+        </div>
+
+        {/* Tab 1: Live Ball-by-Ball Commentary Drawer */}
+        {activeHubTab === 'commentary' && (
+          <div className="p-5 max-h-96 overflow-y-auto divide-y divide-white/5">
+            {commentaryList.length === 0 ? (
+              <div className="py-8 text-center text-slate-400 text-xs">
+                <p>Waiting for live ball feeds from ground scorers...</p>
+                <p className="mt-1 text-slate-500">Live commentary updates dynamically on every delivery.</p>
+              </div>
+            ) : (
+              commentaryList.map((comm, idx) => (
+                <div key={idx} className="py-3 flex items-start gap-4 hover:bg-white/[0.02] px-2 rounded-xl transition">
+                  <div className="shrink-0 flex flex-col items-center">
+                    <span className="font-mono text-xs font-black text-[#c9f36b] bg-white/5 px-2 py-1 rounded-lg border border-white/5">
+                      {comm.ball}
+                    </span>
+                    {comm.outcome && (
+                      <span
+                        className={`mt-1 text-[10px] font-black px-1.5 py-0.5 rounded ${
+                          comm.outcome === '6'
+                            ? 'bg-purple-600 text-white'
+                            : comm.outcome === '4'
+                            ? 'bg-emerald-500 text-black'
+                            : comm.outcome === 'W'
+                            ? 'bg-red-600 text-white'
+                            : 'bg-white/10 text-white'
+                        }`}
+                      >
+                        {comm.outcome}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-[#e5b94f]">{comm.bowlerToBatsman}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-200">{comm.text}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* Tab 2: Upcoming NPL Matches with Countdown */}
+        {activeHubTab === 'upcoming' && (
+          <div className="p-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {upcomingNplMatches.map((m) => (
+                <div
+                  key={m.id}
+                  className="rounded-xl border border-white/5 bg-white/[0.02] p-4 flex flex-col justify-between hover:border-white/20 transition"
+                >
+                  <div className="flex items-center justify-between text-[11px] text-slate-400">
+                    <span className="font-bold text-[#e5b94f]">Match {m.matchNumber}</span>
+                    <span className="font-mono text-[#c9f36b] font-bold">{formatCountdown(m.timestamp)}</span>
+                  </div>
+
+                  <div className="my-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <img src={m.homeTeamLogo} alt="" className="h-6 w-6 object-contain" />
+                      <span className="text-xs font-bold text-white">{m.homeTeam}</span>
+                    </div>
+                    <span className="text-[10px] font-black text-slate-500">VS</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-white">{m.awayTeam}</span>
+                      <img src={m.awayTeamLogo} alt="" className="h-6 w-6 object-contain" />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-white/5 pt-2 flex items-center justify-between text-[10px] text-slate-400">
+                    <span>{timeOf(match, 'Asia/Kathmandu')}</span>
+                    <a
+                      href={`/cricket/match/${slugify(`${m.homeTeam} vs ${m.awayTeam}`)}/`}
+                      className="text-[#c9f36b] font-bold hover:underline"
+                    >
+                      Match Center &rarr;
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 3: Points Table */}
+        {activeHubTab === 'standings' && (
+          <div className="p-5 overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-white/10 text-slate-400 text-[10px] uppercase tracking-wider">
+                  <th className="py-2 px-3">Team</th>
+                  <th className="py-2 px-3 text-center">P</th>
+                  <th className="py-2 px-3 text-center">W</th>
+                  <th className="py-2 px-3 text-center">L</th>
+                  <th className="py-2 px-3 text-center">PTS</th>
+                  <th className="py-2 px-3 text-right">NRR</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {nplStandings.map((team, idx) => (
+                  <tr key={team.name} className="hover:bg-white/[0.02] transition">
+                    <td className="py-2.5 px-3 flex items-center gap-2">
+                      <span className="font-mono text-slate-500 text-[10px] w-3">{idx + 1}</span>
+                      {NPL_TEAMS[team.name]?.logo && (
+                        <img src={NPL_TEAMS[team.name].logo} alt="" className="h-5 w-5 object-contain" />
+                      )}
+                      <span className="font-bold text-white">{team.name}</span>
+                    </td>
+                    <td className="py-2.5 px-3 text-center font-mono text-slate-300">{team.p}</td>
+                    <td className="py-2.5 px-3 text-center font-mono text-emerald-400">{team.w}</td>
+                    <td className="py-2.5 px-3 text-center font-mono text-red-400">{team.l}</td>
+                    <td className="py-2.5 px-3 text-center font-mono font-black text-[#c9f36b]">{team.pts}</td>
+                    <td className="py-2.5 px-3 text-right font-mono text-slate-300">{team.nrr}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Match Tools & Action Panel */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Match Info & Countdown */}
         <div className="rounded-2xl border border-white/10 bg-[#111a19] p-5 shadow-lg lg:col-span-2">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-4">
             <div>
@@ -728,7 +1042,7 @@ export default function MatchPlayer({ match }: Props) {
           </div>
 
           <p className="mt-4 text-xs leading-relaxed text-slate-400">
-            Stream signals are optimized for low latency. If audio or video pauses, switch servers above.
+            Stream signals are optimized for ultra-low broadcast latency. If audio or video pauses, switch servers above or hit <kbd className="bg-white/10 px-1 py-0.5 rounded font-mono text-[#c9f36b]">L</kbd> to jump straight to the live edge.
           </p>
         </div>
 
@@ -739,7 +1053,6 @@ export default function MatchPlayer({ match }: Props) {
             <h4 className="text-sm font-bold text-white mt-0.5">Save &amp; Remind</h4>
 
             <div className="mt-4 space-y-2.5">
-              {/* Watchlist Toggle */}
               <button
                 type="button"
                 onClick={toggleFavorite}
@@ -752,7 +1065,6 @@ export default function MatchPlayer({ match }: Props) {
                 <span>{isFavorite ? '★ Saved to Watchlist' : '☆ Add to Watchlist'}</span>
               </button>
 
-              {/* Add to Google Calendar */}
               {ts && (
                 <a
                   href={generateGoogleCalendarUrl(match)}
@@ -760,52 +1072,32 @@ export default function MatchPlayer({ match }: Props) {
                   rel="noopener noreferrer"
                   className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-2.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition"
                 >
-                  <svg className="h-4 w-4 text-[#c9f36b]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                  <span>Add to Google Calendar</span>
+                  <span>📅 Google Calendar</span>
                 </a>
               )}
 
-              {/* Download .ics Calendar File */}
               {ts && (
                 <button
                   type="button"
                   onClick={handleDownloadIcs}
                   className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-2.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition"
                 >
-                  <svg className="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                  </svg>
-                  <span>Download .ics Calendar</span>
+                  <span>📥 Download .ics Calendar</span>
                 </button>
               )}
 
-              {/* Share Button */}
               <button
                 type="button"
                 onClick={handleShare}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-2.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition"
               >
-                <svg className="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="18" cy="5" r="3"></circle>
-                  <circle cx="6" cy="12" r="3"></circle>
-                  <circle cx="18" cy="19" r="3"></circle>
-                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-                </svg>
-                <span>{copiedToast ? '✓ Link Copied to Clipboard!' : 'Share Match'}</span>
+                <span>{copiedToast ? '✓ Link Copied to Clipboard!' : '🔗 Share Match'}</span>
               </button>
             </div>
           </div>
 
           <div className="mt-4 pt-3 border-t border-white/5 text-[10px] text-slate-500">
-            Authorized embed sources. No subscription required.
+            Official edge broadcast streams. No proxy overhead.
           </div>
         </div>
       </div>

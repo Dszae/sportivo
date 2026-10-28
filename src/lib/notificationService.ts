@@ -470,6 +470,16 @@ export function evaluateMatchesForNotifications(
     const home = match.homeTeam || (match as any).team1?.name || (match as any).team1 || 'Home Team';
     const away = match.awayTeam || (match as any).team2?.name || (match as any).team2 || 'Away Team';
     const matchTitle = `${home} vs ${away}`;
+    const lowerTitle = matchTitle.toLowerCase();
+    if (
+      lowerTitle.includes('determined') ||
+      lowerTitle.includes('qualifier') ||
+      lowerTitle.includes('eliminator') ||
+      lowerTitle.includes('place vs') ||
+      lowerTitle.includes('tbd')
+    ) {
+      continue;
+    }
     const matchUrl = `/npl/`;
     const venue = match.venue || 'Tribhuvan University Cricket Ground, Kirtipur';
     const competition = match.competition || 'Nepal Premier League (NPL) 2026';
