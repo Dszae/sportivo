@@ -17,6 +17,7 @@ import { FootballIcon, TrophyIcon, CricketIcon, BookmarkIcon, BellIcon, ArrowFor
 import { RootStackParamList } from '../types';
 import { loadPreferences } from '../services/storage';
 import { triggerButtonHaptic } from '../services/notifications';
+import { checkForAppUpdate, openAppUpdate, AppVersionInfo } from '../services/updateService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -25,6 +26,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [watchlistCount, setWatchlistCount] = useState(0);
+  const [updateInfo, setUpdateInfo] = useState<AppVersionInfo | null>(null);
 
   const topPadding = Platform.OS === 'android' ? 24 : insets.top + 8;
 
@@ -32,6 +34,10 @@ export default function HomeScreen() {
     try {
       const prefs = await loadPreferences();
       setWatchlistCount(prefs.starredMatches.length + prefs.favoriteTeams.length);
+      const update = await checkForAppUpdate();
+      if (update && update.hasUpdate) {
+        setUpdateInfo(update);
+      }
     } finally {
       setRefreshing(false);
     }
@@ -134,6 +140,28 @@ export default function HomeScreen() {
           />
         }
       >
+        {/* In-App Direct Update Banner */}
+        {updateInfo?.hasUpdate && (
+          <View style={styles.updateCard}>
+            <View style={styles.updateHeaderRow}>
+              <View style={styles.updateBadge}>
+                <Text style={styles.updateBadgeText}>UPDATE AVAILABLE · v{updateInfo.version}</Text>
+              </View>
+              <TouchableOpacity onPress={() => setUpdateInfo(null)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Text style={styles.dismissBtn}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.updateTitle}>New Sportivo Version Ready</Text>
+            <Text style={styles.updateNotes}>{updateInfo.releaseNotes}</Text>
+            <TouchableOpacity
+              style={styles.updateActionBtn}
+              onPress={() => openAppUpdate(updateInfo.downloadUrl)}
+            >
+              <Text style={styles.updateActionText}>Update Directly (v{updateInfo.version}) &rarr;</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Hero Welcome Card */}
         <View style={styles.heroCard}>
           <View style={styles.heroBadgeRow}>
@@ -293,6 +321,64 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.12)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  updateCard: {
+    backgroundColor: '#122216',
+    borderWidth: 1.5,
+    borderColor: '#c9f36b',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#c9f36b',
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  updateHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  updateBadge: {
+    backgroundColor: 'rgba(201, 243, 107, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  updateBadgeText: {
+    color: '#c9f36b',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  dismissBtn: {
+    color: '#94a3b8',
+    fontSize: 16,
+    paddingHorizontal: 6,
+  },
+  updateTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#ffffff',
+    marginBottom: 4,
+  },
+  updateNotes: {
+    fontSize: 12,
+    color: '#cbd5e1',
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  updateActionBtn: {
+    backgroundColor: '#c9f36b',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  updateActionText: {
+    color: '#080a0b',
+    fontSize: 12,
+    fontWeight: '900',
   },
   scrollContent: {
     padding: 16,

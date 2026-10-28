@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,15 +9,34 @@ import {
   StyleSheet,
   Platform,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { ArrowBackIcon, LocationIcon, ClockIcon, GlobeIcon, ChevronForwardIcon, GithubIcon, LinkedinIcon, MailIcon } from '../components/Icons';
+import { checkForAppUpdate, openAppUpdate, CURRENT_VERSION } from '../services/updateService';
 
 export default function AboutScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const topPadding = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0) + 12;
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<string | null>(null);
+
+  const handleCheckUpdate = async () => {
+    setCheckingUpdate(true);
+    setUpdateStatus('Checking for latest updates...');
+    const info = await checkForAppUpdate();
+    setCheckingUpdate(false);
+    if (!info) {
+      setUpdateStatus('Could not reach update server. Check your connection.');
+    } else if (info.hasUpdate) {
+      setUpdateStatus(`Version v${info.version} ready! Launching update...`);
+      openAppUpdate(info.downloadUrl);
+    } else {
+      setUpdateStatus(`You are using the latest version (v${CURRENT_VERSION})!`);
+    }
+  };
 
   const openLink = async (url: string) => {
     try {
@@ -137,6 +156,29 @@ export default function AboutScreen() {
             </View>
             <ChevronForwardIcon size={16} color="#64748b" />
           </TouchableOpacity>
+        </View>
+
+        {/* Direct In-App Updater Section */}
+        <View style={styles.updateCheckSection}>
+          <Text style={styles.updateCheckTitle}>App Updates</Text>
+          <Text style={styles.updateCheckSubtitle}>
+            Sportivo checks for verified updates directly without needing to open the browser.
+          </Text>
+          <TouchableOpacity
+            style={styles.updateCheckBtn}
+            onPress={handleCheckUpdate}
+            disabled={checkingUpdate}
+            activeOpacity={0.8}
+          >
+            {checkingUpdate ? (
+              <ActivityIndicator size="small" color="#080a0b" />
+            ) : (
+              <Text style={styles.updateCheckBtnText}>Check for Updates Now</Text>
+            )}
+          </TouchableOpacity>
+          {updateStatus ? (
+            <Text style={styles.updateStatusText}>{updateStatus}</Text>
+          ) : null}
         </View>
 
         {/* Legal & App Version Info */}
@@ -291,6 +333,45 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     marginTop: 1,
+  },
+  updateCheckSection: {
+    backgroundColor: '#0c1413',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(201, 243, 107, 0.2)',
+  },
+  updateCheckTitle: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '900',
+    marginBottom: 4,
+  },
+  updateCheckSubtitle: {
+    color: '#94a3b8',
+    fontSize: 11,
+    lineHeight: 16,
+    marginBottom: 12,
+  },
+  updateCheckBtn: {
+    backgroundColor: '#c9f36b',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  updateCheckBtnText: {
+    color: '#080a0b',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  updateStatusText: {
+    color: '#cbd5e1',
+    fontSize: 11,
+    marginTop: 8,
+    textAlign: 'center',
+    fontWeight: '600',
   },
   footerBox: {
     alignItems: 'center',
