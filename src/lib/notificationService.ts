@@ -624,20 +624,68 @@ export function evaluateMatchesForNotifications(
 
         if (currentRuns > lastRuns && lastRuns > 0) {
           const runDiff = currentRuns - lastRuns;
-          if (runDiff === 4 || runDiff === 6) {
+          if (runDiff === 6) {
             dispatchNotification({
               key: `boundary:${matchId}:${teamName}:${currentRuns}`,
               type: 'goal',
               filterCategory: 'moments',
-              title: runDiff === 6 ? `💥 MAXIMUM SIX! (${teamName})` : `🏏 FOUR BOUNDARY! (${teamName})`,
-              message: `${teamName} hits a ${runDiff === 6 ? 'huge SIX' : 'cracking FOUR'}! Now ${scoreStr}`,
+              title: `💥 MAXIMUM SIX! (${teamName})`,
+              message: `${teamName} hits a huge SIX! Score: ${scoreStr}`,
               matchTitle,
               matchUrl,
               category: 'cricket',
               competition,
               score: scoreStr,
-              badgeText: runDiff === 6 ? 'SIX' : 'FOUR',
+              badgeText: 'SIX',
             });
+          } else if (runDiff === 4) {
+            dispatchNotification({
+              key: `boundary:${matchId}:${teamName}:${currentRuns}`,
+              type: 'goal',
+              filterCategory: 'moments',
+              title: `🏏 FOUR BOUNDARY! (${teamName})`,
+              message: `${teamName} hits a cracking FOUR! Score: ${scoreStr}`,
+              matchTitle,
+              matchUrl,
+              category: 'cricket',
+              competition,
+              score: scoreStr,
+              badgeText: 'FOUR',
+            });
+          } else if (runDiff > 4) {
+            dispatchNotification({
+              key: `bigover:${matchId}:${teamName}:${currentRuns}`,
+              type: 'goal',
+              filterCategory: 'moments',
+              title: `🏏 BIG OVER! +${runDiff} Runs (${teamName})`,
+              message: `${teamName} accelerates! Current score: ${scoreStr}`,
+              matchTitle,
+              matchUrl,
+              category: 'cricket',
+              competition,
+              score: scoreStr,
+              badgeText: `+${runDiff} RUNS`,
+            });
+          }
+
+          // Milestones
+          const milestones = [50, 100, 150, 200];
+          for (const ms of milestones) {
+            if (lastRuns < ms && currentRuns >= ms) {
+              dispatchNotification({
+                key: `milestone:${matchId}:${teamName}:${ms}`,
+                type: 'goal',
+                filterCategory: 'moments',
+                title: `🎯 ${ms} RUNS MILESTONE! (${teamName})`,
+                message: `${teamName} reaches ${ms} runs! Score: ${scoreStr}`,
+                matchTitle,
+                matchUrl,
+                category: 'cricket',
+                competition,
+                score: scoreStr,
+                badgeText: `${ms} RUNS`,
+              });
+            }
           }
         }
         if (currentRuns > 0) {

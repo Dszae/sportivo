@@ -24,7 +24,8 @@ let cachedUpstreamUpdates: Map<string, Partial<NplMatch>> = new Map();
  */
 async function fetchOfficialScoreUpdates(): Promise<Map<string, Partial<NplMatch>>> {
   const now = Date.now();
-  if (now - lastUpstreamSync < 30000 && cachedUpstreamUpdates.size > 0) {
+  // Ultra-fast live sync: 3s cache when upstream is healthy
+  if (now - lastUpstreamSync < 3000 && cachedUpstreamUpdates.size > 0) {
     return cachedUpstreamUpdates;
   }
 
@@ -197,7 +198,9 @@ export const GET: APIRoute = async () => {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=30, stale-while-revalidate=60',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'CDN-Cache-Control': 'no-store',
+        'Vercel-CDN-Cache-Control': 'no-store',
       },
     }
   );

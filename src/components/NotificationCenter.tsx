@@ -73,24 +73,36 @@ export default function NotificationCenter() {
     };
   }, []);
 
-  // Background Match Poller (checks every 25 seconds)
+  // Real-time Match Poller (high-speed 4s polling for live matches, 20s for general fixtures)
   useEffect(() => {
     let isMounted = true;
+    let pollTimer: any = null;
 
-    const pollMatches = async () => {
+    const pollLiveNpl = async () => {
       try {
-        const [nplRes, footballRes, cricketRes, basketballRes] = await Promise.allSettled([
-          fetch('/api/npl/fixtures/', { signal: AbortSignal.timeout(6000) }),
+        const res = await fetch(`/api/npl/fixtures/?_t=${Date.now()}`, {
+          cache: 'no-store',
+          signal: AbortSignal.timeout(4000),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          const nplData: NplMatch[] = json.fixtures || [];
+          if (isMounted) {
+            evaluateMatchesForNotifications({}, nplData);
+          }
+          return nplData.some((m) => m.status === 'LIVE');
+        }
+      } catch {}
+      return false;
+    };
+
+    const pollAllSports = async () => {
+      try {
+        const [footballRes, cricketRes, basketballRes] = await Promise.allSettled([
           fetch('/api/matches/football/', { signal: AbortSignal.timeout(6000) }),
           fetch('/api/matches/cricket/', { signal: AbortSignal.timeout(6000) }),
           fetch('/api/matches/basketball/', { signal: AbortSignal.timeout(6000) }),
         ]);
-
-        let nplData: NplMatch[] = [];
-        if (nplRes.status === 'fulfilled' && nplRes.value.ok) {
-          const json = await nplRes.value.json();
-          nplData = json.fixtures || [];
-        }
 
         const sportsMap: Record<string, Match[]> = {};
         if (footballRes.status === 'fulfilled' && footballRes.value.ok) {
@@ -104,18 +116,29 @@ export default function NotificationCenter() {
         }
 
         if (isMounted) {
-          evaluateMatchesForNotifications(sportsMap, nplData);
+          evaluateMatchesForNotifications(sportsMap, []);
         }
       } catch {}
     };
 
-    const initialTimer = setTimeout(pollMatches, 1500);
-    const interval = setInterval(pollMatches, 25000);
+    const runLoop = async () => {
+      const hasLiveMatch = await pollLiveNpl();
+      // Fast 4s poll if live match is underway, otherwise 15s
+      const nextDelay = hasLiveMatch ? 4000 : 15000;
+      if (isMounted) {
+        pollTimer = setTimeout(runLoop, nextDelay);
+      }
+    };
+
+    // Immediate initial poll
+    runLoop();
+    pollAllSports();
+    const allSportsInterval = setInterval(pollAllSports, 30000);
 
     return () => {
       isMounted = false;
-      clearTimeout(initialTimer);
-      clearInterval(interval);
+      if (pollTimer) clearTimeout(pollTimer);
+      clearInterval(allSportsInterval);
     };
   }, []);
 

@@ -128,11 +128,11 @@ export const GET: APIRoute = async () => {
 
     // 2. Evaluate NPL 2026 Fixtures
     for (const fixture of NPL_FIXTURES_2026) {
-      if (fixture.status === 'completed') continue;
+      if (fixture.status === 'COMPLETED') continue;
 
-      const title = `${fixture.team1} vs ${fixture.team2}`;
+      const title = `${fixture.homeTeam} vs ${fixture.awayTeam}`;
       const slug = `npl-match-${fixture.matchNumber}`;
-      const kickoffTime = new Date(fixture.kickoffIso).getTime();
+      const kickoffTime = fixture.timestamp || (fixture.startTime ? new Date(fixture.startTime).getTime() : 0);
 
       if (kickoffTime && kickoffTime > now) {
         const diffMinutes = Math.round((kickoffTime - now) / 60000);
@@ -146,12 +146,12 @@ export const GET: APIRoute = async () => {
               key,
               type: '5min_warning',
               title: '🔔 NPL Kickoff in 5 Minutes!',
-              message: `${fixture.team1} 🆚 ${fixture.team2} · Match ${fixture.matchNumber} at TU Cricket Ground!`,
+              message: `${fixture.homeTeam} 🆚 ${fixture.awayTeam} · Match ${fixture.matchNumber} at TU Cricket Ground!`,
               matchTitle: title,
               matchUrl: `/npl/`,
               category: 'cricket',
               slug,
-              teams: [fixture.team1, fixture.team2],
+              teams: [fixture.homeTeam, fixture.awayTeam],
             });
             totalDispatched += sent;
           }
@@ -166,12 +166,12 @@ export const GET: APIRoute = async () => {
               key,
               type: '30min_warning',
               title: '🏏 NPL Match Reminder (30m)',
-              message: `${fixture.team1} vs ${fixture.team2} begins in 30 minutes at ${fixture.venue}!`,
+              message: `${fixture.homeTeam} vs ${fixture.awayTeam} begins in 30 minutes at ${fixture.venue}!`,
               matchTitle: title,
               matchUrl: `/npl/`,
               category: 'cricket',
               slug,
-              teams: [fixture.team1, fixture.team2],
+              teams: [fixture.homeTeam, fixture.awayTeam],
             });
             totalDispatched += sent;
           }
