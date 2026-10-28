@@ -170,10 +170,10 @@ export default function NotificationCenter() {
         onClick={handleToggleDropdown}
         aria-label="Match Notifications"
         title="Sportivo Match Alerts & Live Moments"
-        className={`relative inline-flex items-center justify-center rounded-full p-2 text-xs font-bold transition-all border ${
+        className={`relative inline-flex items-center justify-center rounded-full p-2 text-xs font-bold transition-all border shadow-sm ${
           isOpen || unreadCount > 0
-            ? 'border-[#c9f36b]/60 bg-[#c9f36b]/15 text-[#c9f36b]'
-            : 'border-white/10 bg-white/5 text-slate-300 hover:border-[#c9f36b]/40 hover:text-[#c9f36b]'
+            ? 'border-[#c9f36b] bg-[#c9f36b]/20 text-[#c9f36b] shadow-[0_0_12px_rgba(201,243,107,0.3)]'
+            : 'border-white/15 bg-[#141f1d] text-slate-200 hover:border-[#c9f36b]/60 hover:text-[#c9f36b] hover:bg-[#1a2926]'
         }`}
       >
         <svg
@@ -181,7 +181,7 @@ export default function NotificationCenter() {
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2"
+          strokeWidth="2.2"
           strokeLinecap="round"
           strokeLinejoin="round"
         >
@@ -190,7 +190,7 @@ export default function NotificationCenter() {
         </svg>
 
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white shadow-md animate-pulse">
+          <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-black text-white shadow-md ring-2 ring-[#101716] animate-pulse">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -198,17 +198,17 @@ export default function NotificationCenter() {
 
       {/* Dropdown Modal: Notification Center */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-84 sm:w-[420px] rounded-2xl border border-white/15 bg-[#101716]/98 shadow-2xl backdrop-blur-2xl z-50 overflow-hidden text-slate-100 ring-1 ring-white/10 animate-in fade-in zoom-in-95 duration-150">
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 bg-white/[0.02]">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#c9f36b] opacity-75"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#c9f36b]"></span>
+        <div className="absolute right-0 sm:right-0 mt-2.5 w-[92vw] max-w-[420px] sm:w-[420px] rounded-2xl border-2 border-white/20 bg-[#0b1110] shadow-[0_20px_60px_rgba(0,0,0,0.95)] z-50 overflow-hidden text-slate-100 ring-1 ring-[#c9f36b]/20">
+          {/* Header (100% Solid) */}
+          <div className="flex items-center justify-between border-b border-white/15 px-4 py-3 bg-[#131d1b]">
+            <div className="flex items-center gap-2.5">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#c9f36b] opacity-80"></span>
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#c9f36b]"></span>
               </span>
-              <h3 className="text-sm font-black text-white">Match Alerts</h3>
+              <h3 className="text-sm font-black text-white tracking-wide">Match Alerts</h3>
               {unreadCount > 0 && (
-                <span className="rounded-full bg-red-500/20 border border-red-500/30 px-2 py-0.2 text-[10px] font-bold text-red-400">
+                <span className="rounded-full bg-red-500/25 border border-red-500/40 px-2 py-0.5 text-[10px] font-black text-red-300">
                   {unreadCount} new
                 </span>
               )}
@@ -219,10 +219,10 @@ export default function NotificationCenter() {
                 type="button"
                 onClick={() => setShowPreferences(!showPreferences)}
                 title="Notification Settings"
-                className={`rounded-lg px-2 py-1 text-[11px] font-semibold transition border ${
+                className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition border ${
                   showPreferences
-                    ? 'border-[#c9f36b] bg-[#c9f36b]/15 text-[#c9f36b]'
-                    : 'border-white/10 bg-white/5 text-slate-300 hover:text-white'
+                    ? 'border-[#c9f36b] bg-[#c9f36b] text-[#070b0a] shadow-sm'
+                    : 'border-white/15 bg-[#1b2725] text-slate-200 hover:border-[#c9f36b]/50 hover:text-white'
                 }`}
               >
                 ⚙ Preferences
@@ -231,7 +231,7 @@ export default function NotificationCenter() {
                 <button
                   type="button"
                   onClick={markAllNotificationsAsRead}
-                  className="text-[11px] text-slate-400 hover:text-[#c9f36b] transition"
+                  className="rounded-lg border border-white/10 bg-[#172321] px-2 py-1 text-[11px] font-medium text-slate-300 hover:text-[#c9f36b] hover:border-[#c9f36b]/40 transition"
                   title="Mark all as read"
                 >
                   Mark read
@@ -242,35 +242,35 @@ export default function NotificationCenter() {
 
           {/* Preferences Drawer / Modal */}
           {showPreferences ? (
-            <div className="p-4 space-y-4 bg-[#0a0f0e] border-b border-white/10 text-xs">
-              <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                <span className="font-bold text-white uppercase tracking-wider text-[11px] text-[#e5b94f]">
-                  Notification Preferences
+            <div className="p-4 space-y-3.5 bg-[#0e1615] border-b border-white/10 text-xs">
+              <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+                <span className="font-black text-[#e5b94f] uppercase tracking-wider text-[11px]">
+                  Alert Preferences
                 </span>
                 <button
                   type="button"
                   onClick={handleSendTestAlert}
-                  className="rounded bg-[#c9f36b]/15 border border-[#c9f36b]/40 px-2 py-0.5 text-[10px] font-bold text-[#c9f36b] hover:bg-[#c9f36b] hover:text-[#080a0b] transition"
+                  className="rounded-lg bg-[#c9f36b] px-2.5 py-1 text-[11px] font-black text-[#080a0b] hover:bg-[#b5e05c] transition shadow-sm"
                 >
-                  Send Test Alert
+                  🔔 Send Test Alert
                 </button>
               </div>
 
               {/* Browser Push Banner */}
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3 flex items-center justify-between gap-3">
+              <div className="rounded-xl border border-white/15 bg-[#14201e] p-3 flex items-center justify-between gap-3 shadow-sm">
                 <div>
-                  <span className="block font-bold text-white text-[11px]">Browser Push Delivery</span>
-                  <span className="text-[10px] text-slate-400">
+                  <span className="block font-bold text-white text-xs">Browser Push Notifications</span>
+                  <span className="text-[11px] text-slate-300 leading-tight">
                     {permission === 'granted'
-                      ? '✓ Native device notifications are active.'
-                      : 'Receive alerts even when Sportivo is in another tab.'}
+                      ? '✓ Active! You will get alerts even when Sportivo is closed.'
+                      : 'Get live kickoff & score alerts on your desktop / phone.'}
                   </span>
                 </div>
                 {permission !== 'granted' && (
                   <button
                     type="button"
                     onClick={handleRequestPush}
-                    className="rounded-lg bg-[#c9f36b] px-3 py-1 text-xs font-bold text-[#080a0b] hover:bg-[#b0d859] transition shadow-sm shrink-0"
+                    className="rounded-lg bg-[#c9f36b] px-3 py-1.5 text-xs font-black text-[#080a0b] hover:bg-[#b0d859] transition shadow-md shrink-0"
                   >
                     Enable Push
                   </button>
@@ -279,10 +279,10 @@ export default function NotificationCenter() {
 
               {/* Toggles Grid */}
               <div className="space-y-2">
-                <label className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2 cursor-pointer hover:bg-white/5 transition">
-                  <div>
-                    <span className="block font-semibold text-white">5-Minute Kickoff Alert</span>
-                    <span className="text-[10px] text-slate-400">Notify 5m before start with venue &amp; time</span>
+                <label className="flex items-center justify-between rounded-xl border border-white/10 bg-[#14201e] p-3 cursor-pointer hover:border-[#c9f36b]/40 hover:bg-[#182624] transition">
+                  <div className="pr-2">
+                    <span className="block font-bold text-white text-xs">5-Minute Kickoff Alert</span>
+                    <span className="text-[11px] text-slate-300">Warns 5 min before start with venue &amp; time</span>
                   </div>
                   <input
                     type="checkbox"
@@ -293,14 +293,14 @@ export default function NotificationCenter() {
                         notifications: { ...prev.notifications, remind5Min: e.target.checked },
                       }))
                     }
-                    className="rounded border-white/20 bg-white/10 text-[#c9f36b] focus:ring-0"
+                    className="h-4 w-4 rounded border-white/30 bg-[#0b1110] text-[#c9f36b] focus:ring-0 cursor-pointer accent-[#c9f36b]"
                   />
                 </label>
 
-                <label className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2 cursor-pointer hover:bg-white/5 transition">
-                  <div>
-                    <span className="block font-semibold text-white">30-Minute Kickoff Reminder</span>
-                    <span className="text-[10px] text-slate-400">Matchday heads-up 30m before kickoff</span>
+                <label className="flex items-center justify-between rounded-xl border border-white/10 bg-[#14201e] p-3 cursor-pointer hover:border-[#c9f36b]/40 hover:bg-[#182624] transition">
+                  <div className="pr-2">
+                    <span className="block font-bold text-white text-xs">30-Minute Kickoff Reminder</span>
+                    <span className="text-[11px] text-slate-300">Matchday heads-up 30m before kickoff</span>
                   </div>
                   <input
                     type="checkbox"
@@ -311,14 +311,14 @@ export default function NotificationCenter() {
                         notifications: { ...prev.notifications, remind30Min: e.target.checked },
                       }))
                     }
-                    className="rounded border-white/20 bg-white/10 text-[#c9f36b] focus:ring-0"
+                    className="h-4 w-4 rounded border-white/30 bg-[#0b1110] text-[#c9f36b] focus:ring-0 cursor-pointer accent-[#c9f36b]"
                   />
                 </label>
 
-                <label className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2 cursor-pointer hover:bg-white/5 transition">
-                  <div>
-                    <span className="block font-semibold text-white">Live Goals &amp; Wickets</span>
-                    <span className="text-[10px] text-slate-400">Score changes, equalizers &amp; wickets</span>
+                <label className="flex items-center justify-between rounded-xl border border-white/10 bg-[#14201e] p-3 cursor-pointer hover:border-[#c9f36b]/40 hover:bg-[#182624] transition">
+                  <div className="pr-2">
+                    <span className="block font-bold text-white text-xs">Live Goals &amp; Wickets</span>
+                    <span className="text-[11px] text-slate-300">Score changes, equalizers &amp; fall of wickets</span>
                   </div>
                   <input
                     type="checkbox"
@@ -329,14 +329,14 @@ export default function NotificationCenter() {
                         notifications: { ...prev.notifications, notifyGoalsWickets: e.target.checked },
                       }))
                     }
-                    className="rounded border-white/20 bg-white/10 text-[#c9f36b] focus:ring-0"
+                    className="h-4 w-4 rounded border-white/30 bg-[#0b1110] text-[#c9f36b] focus:ring-0 cursor-pointer accent-[#c9f36b]"
                   />
                 </label>
 
-                <label className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2 cursor-pointer hover:bg-white/5 transition">
-                  <div>
-                    <span className="block font-semibold text-white">Full-Time &amp; Match Results</span>
-                    <span className="text-[10px] text-slate-400">Final scores and winning margins</span>
+                <label className="flex items-center justify-between rounded-xl border border-white/10 bg-[#14201e] p-3 cursor-pointer hover:border-[#c9f36b]/40 hover:bg-[#182624] transition">
+                  <div className="pr-2">
+                    <span className="block font-bold text-white text-xs">Full-Time &amp; Match Results</span>
+                    <span className="text-[11px] text-slate-300">Final scores, winning margins &amp; winners</span>
                   </div>
                   <input
                     type="checkbox"
@@ -347,14 +347,14 @@ export default function NotificationCenter() {
                         notifications: { ...prev.notifications, notifyFullTime: e.target.checked },
                       }))
                     }
-                    className="rounded border-white/20 bg-white/10 text-[#c9f36b] focus:ring-0"
+                    className="h-4 w-4 rounded border-white/30 bg-[#0b1110] text-[#c9f36b] focus:ring-0 cursor-pointer accent-[#c9f36b]"
                   />
                 </label>
 
-                <label className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.02] p-2 cursor-pointer hover:bg-white/5 transition">
-                  <div>
-                    <span className="block font-semibold text-white">Audio Chime</span>
-                    <span className="text-[10px] text-slate-400">Subtle sound ping when alert fires</span>
+                <label className="flex items-center justify-between rounded-xl border border-white/10 bg-[#14201e] p-3 cursor-pointer hover:border-[#c9f36b]/40 hover:bg-[#182624] transition">
+                  <div className="pr-2">
+                    <span className="block font-bold text-white text-xs">Audio Chime</span>
+                    <span className="text-[11px] text-slate-300">Play subtle sound ping when alert arrives</span>
                   </div>
                   <input
                     type="checkbox"
@@ -365,17 +365,17 @@ export default function NotificationCenter() {
                         notifications: { ...prev.notifications, soundEnabled: e.target.checked },
                       }))
                     }
-                    className="rounded border-white/20 bg-white/10 text-[#c9f36b] focus:ring-0"
+                    className="h-4 w-4 rounded border-white/30 bg-[#0b1110] text-[#c9f36b] focus:ring-0 cursor-pointer accent-[#c9f36b]"
                   />
                 </label>
               </div>
 
-              <div className="flex items-center justify-between border-t border-white/10 pt-2 text-[11px]">
-                <span className="text-slate-400">Alerts fire for teams in your Watchlist.</span>
+              <div className="flex items-center justify-between border-t border-white/10 pt-3 text-xs">
+                <span className="text-slate-300 text-[11px]">Auto-monitors teams in your Watchlist.</span>
                 <button
                   type="button"
                   onClick={() => setShowPreferences(false)}
-                  className="font-bold text-[#c9f36b] hover:underline"
+                  className="rounded-lg bg-[#c9f36b] px-3 py-1 font-black text-[#080a0b] hover:bg-[#b0d859] transition shadow-sm"
                 >
                   Done
                 </button>
@@ -383,15 +383,15 @@ export default function NotificationCenter() {
             </div>
           ) : (
             <>
-              {/* Category Filter Pills */}
-              <div className="flex items-center gap-1 border-b border-white/10 bg-white/[0.01] px-4 py-2 text-xs overflow-x-auto">
+              {/* Category Filter Pills (Solid Background) */}
+              <div className="flex items-center gap-1.5 border-b border-white/15 bg-[#0e1715] px-4 py-2.5 text-xs overflow-x-auto">
                 <button
                   type="button"
                   onClick={() => setActiveFilter('all')}
-                  className={`rounded-full px-3 py-1 font-bold transition ${
+                  className={`rounded-full px-3 py-1 text-xs font-bold transition shrink-0 ${
                     activeFilter === 'all'
-                      ? 'bg-[#c9f36b] text-[#080a0b]'
-                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                      ? 'bg-[#c9f36b] text-[#080a0b] shadow-sm font-black'
+                      : 'border border-white/10 bg-[#162321] text-slate-300 hover:text-white hover:border-white/20'
                   }`}
                 >
                   All ({history.length})
@@ -399,10 +399,10 @@ export default function NotificationCenter() {
                 <button
                   type="button"
                   onClick={() => setActiveFilter('matches')}
-                  className={`rounded-full px-3 py-1 font-bold transition ${
+                  className={`rounded-full px-3 py-1 text-xs font-bold transition shrink-0 ${
                     activeFilter === 'matches'
-                      ? 'bg-[#c9f36b] text-[#080a0b]'
-                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                      ? 'bg-[#c9f36b] text-[#080a0b] shadow-sm font-black'
+                      : 'border border-white/10 bg-[#162321] text-slate-300 hover:text-white hover:border-white/20'
                   }`}
                 >
                   Matches
@@ -410,10 +410,10 @@ export default function NotificationCenter() {
                 <button
                   type="button"
                   onClick={() => setActiveFilter('moments')}
-                  className={`rounded-full px-3 py-1 font-bold transition ${
+                  className={`rounded-full px-3 py-1 text-xs font-bold transition shrink-0 ${
                     activeFilter === 'moments'
-                      ? 'bg-[#c9f36b] text-[#080a0b]'
-                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                      ? 'bg-[#c9f36b] text-[#080a0b] shadow-sm font-black'
+                      : 'border border-white/10 bg-[#162321] text-slate-300 hover:text-white hover:border-white/20'
                   }`}
                 >
                   Goals &amp; Wickets
@@ -421,23 +421,23 @@ export default function NotificationCenter() {
                 <button
                   type="button"
                   onClick={() => setActiveFilter('results')}
-                  className={`rounded-full px-3 py-1 font-bold transition ${
+                  className={`rounded-full px-3 py-1 text-xs font-bold transition shrink-0 ${
                     activeFilter === 'results'
-                      ? 'bg-[#c9f36b] text-[#080a0b]'
-                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                      ? 'bg-[#c9f36b] text-[#080a0b] shadow-sm font-black'
+                      : 'border border-white/10 bg-[#162321] text-slate-300 hover:text-white hover:border-white/20'
                   }`}
                 >
                   Results
                 </button>
               </div>
 
-              {/* Notification List */}
-              <div className="max-h-96 overflow-y-auto divide-y divide-white/5 custom-scrollbar">
+              {/* Notification List (Solid Cards) */}
+              <div className="max-h-[420px] overflow-y-auto p-3 space-y-2.5 bg-[#0b1110] custom-scrollbar">
                 {filteredHistory.length === 0 ? (
-                  <div className="p-8 text-center text-xs text-slate-400">
+                  <div className="rounded-xl border border-white/10 bg-[#121c1a] p-6 text-center text-xs text-slate-300 my-1">
                     <span className="inline-block text-3xl mb-2">🔔</span>
-                    <p className="font-bold text-white text-sm">No match alerts in this tab</p>
-                    <p className="mt-1.5 text-[11px] text-slate-400 max-w-xs mx-auto leading-relaxed">
+                    <p className="font-black text-white text-sm">No match alerts in this tab</p>
+                    <p className="mt-1.5 text-xs text-slate-300 max-w-xs mx-auto leading-relaxed">
                       Follow your favorite teams in{' '}
                       <a href="/dashboard/" className="text-[#c9f36b] hover:underline font-bold">
                         My Watchlist
@@ -446,43 +446,47 @@ export default function NotificationCenter() {
                       <a href="/npl/" className="text-red-400 hover:underline font-bold">
                         NPL 2026
                       </a>
-                      . Sportivo will notify you 5 minutes before kickoff and during live moments!
+                      . Sportivo will alert you 5 minutes before kickoff and during live moments!
                     </p>
                   </div>
                 ) : (
                   filteredHistory.map((item) => (
                     <div
                       key={item.id}
-                      className={`relative p-3.5 hover:bg-white/[0.04] transition group ${
-                        !item.read ? 'bg-[#c9f36b]/[0.03]' : ''
+                      className={`relative rounded-xl border p-3.5 transition group shadow-sm ${
+                        !item.read
+                          ? 'border-l-4 border-l-[#c9f36b] border-white/15 bg-[#162522]'
+                          : 'border-white/10 bg-[#131d1b] hover:border-[#c9f36b]/40 hover:bg-[#182623]'
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start justify-between gap-2.5">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span
-                            className={`rounded-md px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                            className={`rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-sm ${
                               item.type === '5min_warning'
-                                ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30'
+                                ? 'bg-amber-400 text-black'
+                                : item.type === '30min_reminder'
+                                ? 'bg-sky-400 text-black'
                                 : item.type === 'goal' || item.type === 'equalizer'
-                                ? 'bg-[#c9f36b]/20 text-[#c9f36b] border border-[#c9f36b]/30'
+                                ? 'bg-[#c9f36b] text-black'
                                 : item.type === 'wicket'
-                                ? 'bg-red-500/20 text-red-300 border border-red-500/30'
+                                ? 'bg-red-500 text-white'
                                 : item.type === 'full_time'
-                                ? 'bg-sky-400/20 text-sky-300 border border-sky-400/30'
-                                : 'bg-white/10 text-slate-300'
+                                ? 'bg-emerald-400 text-black'
+                                : 'bg-white/20 text-white'
                             }`}
                           >
                             {item.badgeText || item.type.replace('_', ' ')}
                           </span>
 
                           {item.competition && (
-                            <span className="text-[10px] text-slate-400 font-medium">
+                            <span className="rounded bg-[#1e2c2a] border border-white/10 px-1.5 py-0.5 text-[10px] text-slate-300 font-semibold">
                               {item.competition}
                             </span>
                           )}
                         </div>
 
-                        <span className="text-[10px] text-slate-500 shrink-0">
+                        <span className="text-[10px] text-slate-400 font-mono shrink-0">
                           {new Date(item.timestamp).toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit',
@@ -496,35 +500,35 @@ export default function NotificationCenter() {
                           markNotificationAsRead(item.id);
                           setIsOpen(false);
                         }}
-                        className="block mt-1.5 focus:outline-none"
+                        className="block mt-2 focus:outline-none"
                       >
-                        <h4 className="text-xs font-bold text-white group-hover:text-[#c9f36b] transition-colors">
+                        <h4 className="text-[13px] font-bold text-white group-hover:text-[#c9f36b] transition-colors leading-snug">
                           {item.title}
                         </h4>
-                        <p className="mt-1 text-xs text-slate-300 leading-relaxed font-normal">
+                        <p className="mt-1 text-xs text-slate-200 leading-relaxed font-normal">
                           {item.message}
                         </p>
 
                         {(item.venue || item.kickoffFormatted) && (
-                          <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-slate-400 border-t border-white/5 pt-1.5">
+                          <div className="mt-2.5 rounded-lg border border-white/10 bg-[#0d1514] px-2.5 py-1.5 flex flex-wrap items-center gap-3 text-[11px] text-slate-300">
                             {item.kickoffFormatted && (
-                              <span className="text-white font-medium">⏰ {item.kickoffFormatted}</span>
+                              <span className="text-[#e5b94f] font-bold">⏰ {item.kickoffFormatted}</span>
                             )}
-                            {item.venue && <span>📍 {item.venue}</span>}
+                            {item.venue && <span className="text-slate-300">📍 {item.venue}</span>}
                           </div>
                         )}
                       </a>
 
-                      <div className="mt-2.5 flex items-center justify-between text-[11px] pt-1">
+                      <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-2 text-xs">
                         <a
                           href={item.matchUrl}
                           onClick={() => {
                             markNotificationAsRead(item.id);
                             setIsOpen(false);
                           }}
-                          className="font-bold text-[#c9f36b] hover:underline inline-flex items-center gap-1"
+                          className="font-black text-[#c9f36b] hover:text-[#dcf88a] inline-flex items-center gap-1.5 text-xs"
                         >
-                          <span>View Match &amp; Stream</span>
+                          <span>View Match &amp; Live Stream</span>
                           <span aria-hidden="true">&rarr;</span>
                         </a>
 
@@ -532,7 +536,7 @@ export default function NotificationCenter() {
                           <button
                             type="button"
                             onClick={() => markNotificationAsRead(item.id)}
-                            className="text-[10px] text-slate-400 hover:text-white"
+                            className="rounded bg-white/5 border border-white/10 px-2 py-0.5 text-[10px] text-slate-300 hover:text-white hover:bg-white/10 transition"
                           >
                             Mark read
                           </button>
@@ -543,16 +547,16 @@ export default function NotificationCenter() {
                 )}
               </div>
 
-              {/* Footer */}
+              {/* Footer (100% Solid) */}
               {history.length > 0 && (
-                <div className="flex items-center justify-between border-t border-white/10 px-4 py-2.5 bg-white/[0.02] text-xs">
-                  <span className="text-slate-400 text-[11px]">
-                    {unreadCount === 0 ? 'All caught up' : `${unreadCount} unread`}
+                <div className="flex items-center justify-between border-t border-white/15 px-4 py-3 bg-[#131d1b] text-xs">
+                  <span className="text-slate-300 text-xs font-medium">
+                    {unreadCount === 0 ? '✓ All caught up' : `${unreadCount} unread alert${unreadCount > 1 ? 's' : ''}`}
                   </span>
                   <button
                     type="button"
                     onClick={clearNotificationHistory}
-                    className="text-[11px] text-slate-400 hover:text-red-400 transition"
+                    className="rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-xs font-bold text-red-300 hover:bg-red-500/20 hover:text-white transition"
                   >
                     Clear history
                   </button>
