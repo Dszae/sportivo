@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
 
 export default function DownloadApkButton() {
-  const [showModal, setShowModal] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleClick = () => {
+    setDownloading(true);
+    setTimeout(() => setDownloading(false), 4000);
+  };
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setShowModal(true)}
-        title="Download Sportivo Native Android APK"
+    <div className="relative inline-flex items-center">
+      <a
+        href="/download/sportivo.apk"
+        download="sportivo.apk"
+        onClick={handleClick}
+        title="Download Sportivo Native Android APK (60 MB)"
         className="inline-flex items-center gap-1.5 rounded-full border border-[#c9f36b]/60 bg-[#c9f36b]/20 px-3 py-1.5 text-xs font-black text-[#c9f36b] hover:bg-[#c9f36b] hover:text-[#080a0b] transition-all shadow-md active:scale-95 shrink-0"
       >
         <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -16,100 +22,14 @@ export default function DownloadApkButton() {
           <polyline points="7 10 12 15 17 10"></polyline>
           <line x1="12" y1="15" x2="12" y2="3"></line>
         </svg>
-        <span>APK</span>
-      </button>
+        <span>{downloading ? 'Downloading...' : 'APK'}</span>
+      </a>
 
-      {showModal && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-[99998] bg-black/85 backdrop-blur-md transition-opacity"
-            onClick={() => setShowModal(false)}
-            aria-hidden="true"
-          />
-
-          {/* Modal Dialog */}
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Download Sportivo Android APK"
-            className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[99999] max-w-md mx-auto rounded-3xl border-2 border-white/20 bg-[#0c1413] p-6 shadow-2xl text-slate-100 ring-1 ring-[#c9f36b]/30"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#c9f36b]/15 border border-[#c9f36b]/40 text-[#c9f36b]">
-                  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-                    <line x1="12" y1="18" x2="12.01" y2="18"></line>
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-white">Sportivo Android App</h3>
-                  <p className="text-[11px] font-bold text-[#c9f36b]">Real Native APK · v1.0.0</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-slate-300 hover:text-white hover:bg-white/20 transition"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Features List */}
-            <div className="my-5 space-y-2.5 text-xs">
-              <div className="flex items-start gap-2.5 text-slate-300">
-                <span className="text-[#c9f36b] font-bold">✓</span>
-                <span><strong>Real Native Android App:</strong> Built with React Native &amp; ExoPlayer (not a web wrapper).</span>
-              </div>
-              <div className="flex items-start gap-2.5 text-slate-300">
-                <span className="text-[#c9f36b] font-bold">✓</span>
-                <span><strong>5-Minute Kickoff Alerts:</strong> Native Android push notifications &amp; tactile haptic feedback.</span>
-              </div>
-              <div className="flex items-start gap-2.5 text-slate-300">
-                <span className="text-[#c9f36b] font-bold">✓</span>
-                <span><strong>Official NPL 2026 &amp; Football:</strong> Ball-by-ball score tracking in Nepal Standard Time (NST).</span>
-              </div>
-              <div className="flex items-start gap-2.5 text-slate-300">
-                <span className="text-[#c9f36b] font-bold">✓</span>
-                <span><strong>Package ID:</strong> <code className="text-[#c9f36b] bg-black/40 px-1 py-0.5 rounded">np.com.dipeshsapkota7.sportivo</code></span>
-              </div>
-            </div>
-
-            {/* Download Actions */}
-            <div className="space-y-3 pt-2">
-              <a
-                href="/download/sportivo.apk"
-                download="sportivo.apk"
-                className="flex items-center justify-center gap-2 w-full rounded-2xl bg-[#c9f36b] px-4 py-3 text-sm font-black text-[#080a0b] hover:bg-[#b5e05c] transition-all shadow-lg shadow-[#c9f36b]/20 active:scale-98"
-              >
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                <span>Download APK (Release v1.0.0 · 60 MB)</span>
-              </a>
-
-              <div className="rounded-xl border border-white/10 bg-[#121c1a] p-3 text-center space-y-1.5">
-                <p className="text-[11px] text-slate-300">
-                  <strong>Installation Guide:</strong> Once downloaded, tap <em>Open</em> and select <em>Install</em> (or <em>Allow from this source</em> if prompted).
-                </p>
-                <div className="flex items-center justify-center gap-4 pt-1">
-                  <a
-                    href="/privacy/"
-                    className="text-[11px] text-[#c9f36b] hover:underline"
-                  >
-                    Privacy Policy & Terms &rarr;
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
+      {downloading && (
+        <div className="absolute right-0 top-full mt-2 z-50 whitespace-nowrap rounded-xl bg-[#0e1715] border border-[#c9f36b]/40 px-3 py-1.5 text-[11px] font-bold text-[#c9f36b] shadow-xl">
+          Downloading Sportivo APK (60 MB)...
+        </div>
       )}
-    </>
+    </div>
   );
 }
