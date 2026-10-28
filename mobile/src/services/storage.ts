@@ -72,3 +72,4 @@ export async function toggleFavoriteTeam(teamName: string): Promise<string[]> {
     return [];
   }
 }
+

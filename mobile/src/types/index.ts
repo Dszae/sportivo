@@ -85,3 +85,4 @@ export type RootStackParamList = {
   };
   NotificationSettings: undefined;
 };
+

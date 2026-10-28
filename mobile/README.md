@@ -44,3 +44,4 @@ eas login
 eas build --platform android --profile preview
 ```
 EAS will output a direct download link for the signed `.apk` file that installs on any Android phone.
+

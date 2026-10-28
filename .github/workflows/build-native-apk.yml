@@ -54,3 +54,4 @@ jobs:
           name: Sportivo-Native-Android-APK
           path: mobile/android/app/build/outputs/apk/**/*.apk
           retention-days: 30
+
