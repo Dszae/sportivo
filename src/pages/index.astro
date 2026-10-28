@@ -1,7 +1,21 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
-import FotmobHub from '../components/FotmobHub';
+import MatchExplorer from '../components/MatchExplorer';
+import HeroShowcase from '../components/HeroShowcase';
+import { categories, fetchMatches, type Match } from '../lib/sportivo';
+
+const data = await Promise.all(
+  categories.map(async (category) => {
+    try {
+      return [category, await fetchMatches(category)] as const;
+    } catch {
+      return [category, [] as Match[]] as const;
+    }
+  })
+);
+const byCategory = Object.fromEntries(data) as Record<string, Match[]>;
 
 const title = 'Sportivo — NPL Live Match, Cricket Scores & Sports Streaming Nepal (NST)';
 const description = 'Watch NPL live match streaming online, follow real-time Nepal Premier League 2026 cricket scores, football fixtures, and basketball schedules in Nepal Standard Time (NST) on Sportivo by Dipesh Sapkota.';
@@ -338,9 +352,44 @@ const homepageJsonLd = {
     <script type="application/ld+json" set:html={JSON.stringify(homepageJsonLd)} />
   </Fragment>
 
-  <main class="site-shell min-h-screen text-slate-100 bg-[#080d0c]">
-    <!-- FotMob Inspired Sports Hub (Matching Exact Reference Screens) -->
-    <FotmobHub client:load />
+  <SiteHeader />
+
+  <main class="site-shell min-h-screen text-slate-100">
+    <!-- Full-Width Immersive Hero Showcase -->
+    <HeroShowcase client:load />
+
+    <!-- Fixture Explorers: Distinct Sport Arenas with Generous Clear Gaps -->
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8 pb-24 space-y-16 sm:space-y-24" aria-label="Sports fixtures categories">
+      {/* Football Arena */}
+      <section id="football" class="scroll-mt-24 rounded-3xl border border-white/[0.08] bg-[#0a0f0e]/60 p-6 sm:p-8 lg:p-10 backdrop-blur-sm shadow-2xl shadow-black/40">
+        <MatchExplorer
+          client:load
+          category="football"
+          matches={byCategory['football'] || []}
+          exploreUrl="/football/"
+        />
+      </section>
+
+      {/* Cricket Arena */}
+      <section id="cricket" class="scroll-mt-24 rounded-3xl border border-white/[0.08] bg-[#0a0f0e]/60 p-6 sm:p-8 lg:p-10 backdrop-blur-sm shadow-2xl shadow-black/40">
+        <MatchExplorer
+          client:load
+          category="cricket"
+          matches={byCategory['cricket'] || []}
+          exploreUrl="/cricket/"
+        />
+      </section>
+
+      {/* Basketball Arena */}
+      <section id="basketball" class="scroll-mt-24 rounded-3xl border border-white/[0.08] bg-[#0a0f0e]/60 p-6 sm:p-8 lg:p-10 backdrop-blur-sm shadow-2xl shadow-black/40">
+        <MatchExplorer
+          client:load
+          category="basketball"
+          matches={byCategory['basketball'] || []}
+          exploreUrl="/basketball/"
+        />
+      </section>
+    </div>
 
     <!-- Why Sportivo: SEO Authority & Feature Highlights -->
     <section class="border-t border-white/5 bg-[#0a0f0e]/60 py-20">

@@ -1,0 +1,25 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import FotmobHub from '../../components/FotmobHub';
+
+const title = 'FotMob Sports Hub — Live Scores, Standings & Streams (NST) | Sportivo';
+const description = 'Interactive FotMob-style live sports hub for football, NPL cricket, and basketball with live scores, standings, and multi-server streams in Nepal Standard Time.';
+const canonical = 'https://sportivo.dipeshsapkota7.com.np/hub/';
+---
+<BaseLayout
+  title={title}
+  description={description}
+  canonical={canonical}
+  keywords="FotMob Nepal, Sportivo hub, live scores Nepal, football matchday, NPL 2026 live scores, Premier League standings"
+>
+  <SiteHeader />
+
+  <main class="site-shell min-h-screen text-slate-100 bg-[#080d0c]">
+    <!-- FotMob Full Hub Component -->
+    <FotmobHub client:load />
+  </main>
+
+  <SiteFooter />
+</BaseLayout>

@@ -65,6 +65,13 @@ export default function HamburgerMenu({ activeCategory }: Props) {
 
   const tools = [
     {
+      name: 'FotMob Matchday Hub',
+      category: 'hub',
+      href: '/hub/',
+      icon: '📱',
+      tag: 'FotMob live matches, standings & TV',
+    },
+    {
       name: 'My Personal Watchlist',
       category: 'dashboard',
       href: '/dashboard/',

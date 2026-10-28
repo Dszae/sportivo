@@ -840,3 +840,4 @@ export default function FotmobHub({ initialCategory = 'all' }: Props) {
     </div>
   );
 }
+
