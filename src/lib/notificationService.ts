@@ -484,7 +484,7 @@ export function evaluateMatchesForNotifications(
     if (!isPref) continue;
 
     // Rescheduling & Timezone Calculation
-    const kickoffMs = Date.parse(`${match.date}T${match.timeUtc.replace(' UTC', ':00Z')}`);
+    const kickoffMs = match.timestamp || (match.startTime ? new Date(match.startTime).getTime() : Date.now());
     const lastKickoff = statesCache[matchId]?.kickoffTimestamp;
 
     if (!isNaN(kickoffMs)) {
@@ -553,8 +553,8 @@ export function evaluateMatchesForNotifications(
           type: '5min_warning',
           filterCategory: 'matches',
           title: '🔔 Kickoff in 5 Minutes!',
-          message: `${match.team1.name} 🆚 ${match.team2.name} is starting now!`,
-          matchTitle: `${match.team1.name} 🆚 ${match.team2.name}`,
+          message: `${home} 🆚 ${away} is starting now!`,
+          matchTitle: `${home} vs ${away}`,
           matchUrl,
           category: 'cricket',
           competition,

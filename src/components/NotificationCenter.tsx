@@ -80,10 +80,10 @@ export default function NotificationCenter() {
     const pollMatches = async () => {
       try {
         const [nplRes, footballRes, cricketRes, basketballRes] = await Promise.allSettled([
-          fetch('/api/npl/fixtures', { signal: AbortSignal.timeout(6000) }),
-          fetch('/api/matches/football', { signal: AbortSignal.timeout(6000) }),
-          fetch('/api/matches/cricket', { signal: AbortSignal.timeout(6000) }),
-          fetch('/api/matches/basketball', { signal: AbortSignal.timeout(6000) }),
+          fetch('/api/npl/fixtures/', { signal: AbortSignal.timeout(6000) }),
+          fetch('/api/matches/football/', { signal: AbortSignal.timeout(6000) }),
+          fetch('/api/matches/cricket/', { signal: AbortSignal.timeout(6000) }),
+          fetch('/api/matches/basketball/', { signal: AbortSignal.timeout(6000) }),
         ]);
 
         let nplData: NplMatch[] = [];
