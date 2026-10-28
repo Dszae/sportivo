@@ -1,9 +1,13 @@
 export interface NotificationSettings {
   enabled: boolean;
-  notifyKickoff5Min: boolean;
-  notifyMatchStart: boolean;
-  notifyKeyMoments: boolean;
   soundEnabled: boolean;
+  remind30Min: boolean; // 30 minutes before kickoff
+  remind5Min: boolean;  // 5 minutes before kickoff
+  notifyKickoff: boolean; // match started
+  notifyGoalsWickets: boolean; // goals, equalizers, wickets
+  notifyCards: boolean; // red cards
+  notifyHalfTime: boolean; // half time & innings breaks
+  notifyFullTime: boolean; // full time & match conclusions
 }
 
 export interface UserPreferences {
@@ -88,16 +92,20 @@ const LEGACY_FAVS_KEY = 'sportivo_favs';
 export function getDefaultPreferences(): UserPreferences {
   return {
     favoriteSports: ['football', 'cricket', 'basketball'],
-    favoriteLeagues: ['Premier League', 'Champions League', 'NPL'],
+    favoriteLeagues: ['Premier League', 'Champions League', 'NPL', 'La Liga'],
     favoriteTeams: [],
     starredMatches: [],
     timeZone: 'Asia/Kathmandu',
     notifications: {
       enabled: true,
-      notifyKickoff5Min: true,
-      notifyMatchStart: true,
-      notifyKeyMoments: true,
       soundEnabled: true,
+      remind30Min: false,
+      remind5Min: true,
+      notifyKickoff: true,
+      notifyGoalsWickets: true,
+      notifyCards: true,
+      notifyHalfTime: true,
+      notifyFullTime: true,
     },
   };
 }
@@ -122,6 +130,7 @@ export function loadUserPreferences(): UserPreferences {
       } catch {}
     }
 
+    const n = prefs.notifications;
     return {
       favoriteSports: Array.isArray(prefs.favoriteSports) ? prefs.favoriteSports : defaults.favoriteSports,
       favoriteLeagues: Array.isArray(prefs.favoriteLeagues) ? prefs.favoriteLeagues : defaults.favoriteLeagues,
@@ -129,11 +138,15 @@ export function loadUserPreferences(): UserPreferences {
       starredMatches: Array.isArray(prefs.starredMatches) ? prefs.starredMatches : defaults.starredMatches,
       timeZone: prefs.timeZone || defaults.timeZone,
       notifications: {
-        enabled: prefs.notifications?.enabled ?? defaults.notifications.enabled,
-        notifyKickoff5Min: prefs.notifications?.notifyKickoff5Min ?? defaults.notifications.notifyKickoff5Min,
-        notifyMatchStart: prefs.notifications?.notifyMatchStart ?? defaults.notifications.notifyMatchStart,
-        notifyKeyMoments: prefs.notifications?.notifyKeyMoments ?? defaults.notifications.notifyKeyMoments,
-        soundEnabled: prefs.notifications?.soundEnabled ?? defaults.notifications.soundEnabled,
+        enabled: n?.enabled ?? defaults.notifications.enabled,
+        soundEnabled: n?.soundEnabled ?? defaults.notifications.soundEnabled,
+        remind30Min: n?.remind30Min ?? defaults.notifications.remind30Min,
+        remind5Min: n?.remind5Min ?? defaults.notifications.remind5Min,
+        notifyKickoff: n?.notifyKickoff ?? defaults.notifications.notifyKickoff,
+        notifyGoalsWickets: n?.notifyGoalsWickets ?? defaults.notifications.notifyGoalsWickets,
+        notifyCards: n?.notifyCards ?? defaults.notifications.notifyCards,
+        notifyHalfTime: n?.notifyHalfTime ?? defaults.notifications.notifyHalfTime,
+        notifyFullTime: n?.notifyFullTime ?? defaults.notifications.notifyFullTime,
       },
     };
   } catch {

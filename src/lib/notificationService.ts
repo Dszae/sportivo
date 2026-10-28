@@ -2,28 +2,84 @@ import { loadUserPreferences, type UserPreferences } from './preferences';
 import type { NplMatch } from './data/nplData';
 import type { Match } from './sportivo';
 
+export type NotificationType =
+  | '30min_warning'
+  | '5min_warning'
+  | 'kickoff'
+  | 'goal'
+  | 'equalizer'
+  | 'red_card'
+  | 'half_time'
+  | 'second_half'
+  | 'late_update'
+  | 'full_time'
+  | 'wicket'
+  | 'innings_break'
+  | 'match_result'
+  | 'rescheduled';
+
+export type FilterCategory = 'all' | 'matches' | 'moments' | 'results';
+
 export interface NotificationAlert {
   id: string;
-  type: '5min_warning' | 'kickoff' | 'key_moment' | 'match_result';
+  type: NotificationType;
+  filterCategory: 'matches' | 'moments' | 'results';
   title: string;
   message: string;
   matchTitle: string;
   matchUrl: string;
   category: string;
+  competition?: string;
+  venue?: string;
+  kickoffFormatted?: string;
+  score?: string;
   badgeText?: string;
   timestamp: number;
   read: boolean;
 }
 
-const DISPATCHED_STORAGE_KEY = 'sportivo_dispatched_alerts_v1';
-const HISTORY_STORAGE_KEY = 'sportivo_notification_history_v1';
-const SCORE_CACHE_KEY = 'sportivo_last_known_scores_v1';
+interface MatchStateCache {
+  kickoffTimestamp?: number;
+  status?: string;
+  score?: string;
+  homeScore?: number;
+  awayScore?: number;
+  wicketsHome?: number;
+  wicketsAway?: number;
+  halfTimeAlerted?: boolean;
+  secondHalfAlerted?: boolean;
+}
 
-// Web Audio API notification chime (no external audio assets required)
+const DISPATCHED_STORAGE_KEY = 'sportivo_dispatched_alerts_v2';
+const HISTORY_STORAGE_KEY = 'sportivo_notification_history_v2';
+const MATCH_STATE_STORAGE_KEY = 'sportivo_match_states_v2';
+
+/**
+ * Format timestamp in user's preferred timezone (e.g. "Today · 8:45 PM" or "8:45 PM Nepal Time")
+ */
+export function formatLocalKickoff(timestamp: number, timeZone: string = 'Asia/Kathmandu'): string {
+  try {
+    const timeStr = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).format(new Date(timestamp));
+
+    const tzLabel = timeZone === 'Asia/Kathmandu' ? 'Nepal Time' : timeZone.split('/')[1] || '';
+    return `${timeStr} ${tzLabel}`.trim();
+  } catch {
+    return '8:45 PM Nepal Time';
+  }
+}
+
+// Web Audio API notification chime (crisp high-pitched D5 -> A5 tone)
 export function playNotificationChime(): void {
   if (typeof window === 'undefined') return;
   try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const AudioCtx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AudioCtx) return;
     const ctx = new AudioCtx();
     const osc = ctx.createOscillator();
@@ -34,7 +90,6 @@ export function playNotificationChime(): void {
 
     osc.type = 'sine';
     const now = ctx.currentTime;
-    // Pleasant high-pitched two-tone chime (D5 -> A5)
     osc.frequency.setValueAtTime(587.33, now);
     osc.frequency.setValueAtTime(880.0, now + 0.12);
 
@@ -44,9 +99,7 @@ export function playNotificationChime(): void {
 
     osc.start(now);
     osc.stop(now + 0.42);
-  } catch {
-    // Audio context may be restricted by autoplay policy before first gesture
-  }
+  } catch {}
 }
 
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
@@ -55,7 +108,9 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
   }
   try {
     const permission = await Notification.requestPermission();
-    window.dispatchEvent(new CustomEvent('sportivo:notification-permission-changed', { detail: permission }));
+    window.dispatchEvent(
+      new CustomEvent('sportivo:notification-permission-changed', { detail: permission })
+    );
     return permission;
   } catch {
     return 'denied';
@@ -84,12 +139,41 @@ function recordAlertDispatched(key: string): void {
   try {
     const records = getDispatchedAlerts();
     records[key] = Date.now();
-    // Prune alerts older than 7 days
     const cutoff = Date.now() - 7 * 86400000;
     for (const k of Object.keys(records)) {
       if (records[k] < cutoff) delete records[k];
     }
     localStorage.setItem(DISPATCHED_STORAGE_KEY, JSON.stringify(records));
+  } catch {}
+}
+
+function clearDispatchedAlert(keyPrefix: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const records = getDispatchedAlerts();
+    for (const k of Object.keys(records)) {
+      if (k.startsWith(keyPrefix)) delete records[k];
+    }
+    localStorage.setItem(DISPATCHED_STORAGE_KEY, JSON.stringify(records));
+  } catch {}
+}
+
+function getMatchStatesCache(): Record<string, MatchStateCache> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(MATCH_STATE_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveMatchState(matchId: string, state: Partial<MatchStateCache>): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const current = getMatchStatesCache();
+    current[matchId] = { ...(current[matchId] || {}), ...state };
+    localStorage.setItem(MATCH_STATE_STORAGE_KEY, JSON.stringify(current));
   } catch {}
 }
 
@@ -106,11 +190,16 @@ export function getNotificationHistory(): NotificationAlert[] {
 export function saveNotificationHistory(list: NotificationAlert[]): void {
   if (typeof window === 'undefined') return;
   try {
-    // Cap at most recent 40 notifications
-    const trimmed = list.slice(0, 40);
+    const trimmed = list.slice(0, 50);
     localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(trimmed));
     window.dispatchEvent(new CustomEvent('sportivo:notifications-updated', { detail: trimmed }));
   } catch {}
+}
+
+export function markNotificationAsRead(id: string): void {
+  const history = getNotificationHistory();
+  const updated = history.map((item) => (item.id === id ? { ...item, read: true } : item));
+  saveNotificationHistory(updated);
 }
 
 export function markAllNotificationsAsRead(): void {
@@ -124,62 +213,82 @@ export function clearNotificationHistory(): void {
 }
 
 /**
- * Dispatches an alert through both Browser Web Notification and In-App Toast
+ * Dispatches a match alert across Native Browser Push and In-App Notification Center
  */
 export function dispatchNotification(params: {
   key: string;
-  type: NotificationAlert['type'];
+  type: NotificationType;
+  filterCategory: 'matches' | 'moments' | 'results';
   title: string;
   message: string;
   matchTitle: string;
   matchUrl: string;
   category: string;
+  competition?: string;
+  venue?: string;
+  kickoffFormatted?: string;
+  score?: string;
   badgeText?: string;
 }): void {
-  const { key, type, title, message, matchTitle, matchUrl, category, badgeText } = params;
-  const dispatched = getDispatchedAlerts();
-  if (dispatched[key]) return; // Already sent
-
-  recordAlertDispatched(key);
-
-  const isBackgrounded =
-    typeof document !== 'undefined'
-      ? document.visibilityState === 'hidden' || !document.hasFocus()
-      : true;
-
-  // Background Alerting Only: If the user is actively viewing the website, they are already watching
-  if (isBackgrounded) {
-    const prefs = loadUserPreferences();
-    if (prefs.notifications.soundEnabled) {
-      playNotificationChime();
-    }
-
-    // Browser Native Push / System Notification
-    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-      try {
-        const n = new Notification(title, {
-          body: message,
-          icon: '/icon-192x192.png',
-          badge: '/favicon-48x48.png',
-          tag: key,
-        });
-        n.onclick = () => {
-          window.focus();
-          window.location.href = matchUrl;
-        };
-      } catch {}
-    }
-  }
-
-  // Record to quiet history log (so user can check past updates in bell dropdown if they choose)
-  const alertItem: NotificationAlert = {
-    id: `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+  const {
+    key,
     type,
+    filterCategory,
     title,
     message,
     matchTitle,
     matchUrl,
     category,
+    competition,
+    venue,
+    kickoffFormatted,
+    score,
+    badgeText,
+  } = params;
+
+  const dispatched = getDispatchedAlerts();
+  if (dispatched[key]) return; // Deduplicate
+  recordAlertDispatched(key);
+
+  const prefs = loadUserPreferences();
+  if (prefs.notifications.soundEnabled) {
+    playNotificationChime();
+  }
+
+  // 1. Browser Native Push Notification (Windows Action Center / Mac / Android Notification Shade)
+  if (
+    typeof window !== 'undefined' &&
+    'Notification' in window &&
+    Notification.permission === 'granted'
+  ) {
+    try {
+      const n = new Notification(title, {
+        body: `${matchTitle}\n${message}`,
+        icon: '/icon-192x192.png',
+        badge: '/favicon-48x48.png',
+        tag: key,
+      });
+      n.onclick = () => {
+        window.focus();
+        window.location.href = matchUrl;
+      };
+    } catch {}
+  }
+
+  // 2. In-App Notification Center Record
+  const alertItem: NotificationAlert = {
+    id: `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+    type,
+    filterCategory,
+    title,
+    message,
+    matchTitle,
+    matchUrl,
+    category,
+    competition,
+    venue,
+    kickoffFormatted,
+    score,
     badgeText,
     timestamp: Date.now(),
     read: false,
@@ -190,7 +299,7 @@ export function dispatchNotification(params: {
 }
 
 /**
- * Determines whether a match matches any of the user's favorite teams or starred matches
+ * Checks whether a match corresponds to user's favorite teams or starred matches
  */
 export function isMatchPreferred(
   matchTitle: string,
@@ -200,10 +309,7 @@ export function isMatchPreferred(
   prefs?: UserPreferences
 ): boolean {
   const p = prefs || loadUserPreferences();
-  // Check starred matches
   if (p.starredMatches.includes(matchSlug)) return true;
-
-  // Check favorite teams
   if (!p.favoriteTeams || p.favoriteTeams.length === 0) return false;
 
   const titleLower = matchTitle.toLowerCase();
@@ -218,7 +324,7 @@ export function isMatchPreferred(
 }
 
 /**
- * Checks active and upcoming matches against user preferences and triggers notifications
+ * Comprehensive Match Evaluator for Pre-match, Kickoffs, Moments, and Results
  */
 export function evaluateMatchesForNotifications(
   sportsMatches: Record<string, Match[]>,
@@ -229,142 +335,314 @@ export function evaluateMatchesForNotifications(
   if (!prefs.notifications.enabled) return;
 
   const now = Date.now();
+  const statesCache = getMatchStatesCache();
+  const userTz = prefs.timeZone || 'Asia/Kathmandu';
 
-  // Evaluate NPL Matches
+  // --- 1. Evaluate NPL Cricket Matches ---
   for (const match of nplMatches) {
+    const matchId = `npl-${match.matchNumber}`;
+    const matchTitle = `${match.team1.name} vs ${match.team2.name}`;
+    const matchUrl = `/npl/`;
+    const venue = 'Tribhuvan University Cricket Ground, Kirtipur';
+    const competition = 'Nepal Premier League (NPL) 2026';
+
     const isPref = isMatchPreferred(
-      `${match.team1.name} vs ${match.team2.name}`,
+      matchTitle,
       `npl-match-${match.matchNumber}`,
       match.team1.name,
       match.team2.name,
       prefs
     );
-
     if (!isPref) continue;
 
-    const matchTitle = `${match.team1.name} vs ${match.team2.name}`;
-    const matchUrl = `/npl/`;
+    // Rescheduling & Timezone Calculation
+    const kickoffMs = Date.parse(`${match.date}T${match.timeUtc.replace(' UTC', ':00Z')}`);
+    const lastKickoff = statesCache[matchId]?.kickoffTimestamp;
 
-    // 1. Kickoff 5-Minute Warning
-    if (prefs.notifications.notifyKickoff5Min && match.status === 'UPCOMING') {
-      const kickoffMs = Date.parse(`${match.date}T${match.timeUtc.replace(' UTC', ':00Z')}`);
-      if (!isNaN(kickoffMs)) {
-        const diffMinutes = (kickoffMs - now) / 60000;
-        // Trigger if between 0 and 5 minutes before start
-        if (diffMinutes > 0 && diffMinutes <= 5.5) {
-          dispatchNotification({
-            key: `5min:npl:${match.id}`,
-            type: '5min_warning',
-            title: `⚡ NPL Match Starting in 5 Mins!`,
-            message: `${matchTitle} starts at ${match.time}. Venue: TU Cricket Ground. Watch live stream on Sportivo!`,
-            matchTitle,
-            matchUrl,
-            category: 'cricket',
-            badgeText: '5 MIN WARNING',
-          });
-        }
+    if (!isNaN(kickoffMs)) {
+      if (lastKickoff && Math.abs(kickoffMs - lastKickoff) > 10 * 60000) {
+        // Rescheduled! Reset pre-match alert keys and notify
+        clearDispatchedAlert(`30min:${matchId}`);
+        clearDispatchedAlert(`5min:${matchId}`);
+        dispatchNotification({
+          key: `reschedule:${matchId}:${kickoffMs}`,
+          type: 'rescheduled',
+          filterCategory: 'matches',
+          title: '📅 Match Rescheduled',
+          message: `${matchTitle} has been rescheduled to ${formatLocalKickoff(kickoffMs, userTz)}.`,
+          matchTitle,
+          matchUrl,
+          category: 'cricket',
+          competition,
+          kickoffFormatted: formatLocalKickoff(kickoffMs, userTz),
+          badgeText: 'RESCHEDULED',
+        });
+      }
+      saveMatchState(matchId, { kickoffTimestamp: kickoffMs });
+
+      const diffMinutes = (kickoffMs - now) / 60000;
+
+      // 30 Minutes Before Kickoff (Optional Reminder)
+      if (prefs.notifications.remind30Min && diffMinutes > 25 && diffMinutes <= 30.5) {
+        dispatchNotification({
+          key: `30min:${matchId}`,
+          type: '30min_warning',
+          filterCategory: 'matches',
+          title: '⚽ Matchday Reminder',
+          message: `${matchTitle} kicks off in 30 minutes!`,
+          matchTitle,
+          matchUrl,
+          category: 'cricket',
+          competition,
+          venue,
+          kickoffFormatted: formatLocalKickoff(kickoffMs, userTz),
+          badgeText: '30 MIN REMINDER',
+        });
+      }
+
+      // 5 Minutes Before Kickoff (Main Requirement)
+      if (prefs.notifications.remind5Min && diffMinutes > 0 && diffMinutes <= 5.5) {
+        dispatchNotification({
+          key: `5min:${matchId}`,
+          type: '5min_warning',
+          filterCategory: 'matches',
+          title: '🔔 Kickoff in 5 Minutes!',
+          message: `Get ready! The match is about to begin.`,
+          matchTitle: `${match.team1.name} 🆚 ${match.team2.name}`,
+          matchUrl,
+          category: 'cricket',
+          competition,
+          venue,
+          kickoffFormatted: formatLocalKickoff(kickoffMs, userTz),
+          badgeText: '5 MIN WARNING',
+        });
       }
     }
 
-    // 2. Match Started / LIVE Alert
-    if (prefs.notifications.notifyMatchStart && match.status === 'LIVE') {
+    // Match Kickoff (Live Alert)
+    if (prefs.notifications.notifyKickoff && match.status === 'LIVE') {
       dispatchNotification({
-        key: `start:npl:${match.id}`,
+        key: `start:${matchId}`,
         type: 'kickoff',
-        title: `🔴 NPL MATCH IS LIVE!`,
-        message: `${matchTitle} is now underway! Tap to watch live HD broadcast & real-time ball scores.`,
+        filterCategory: 'matches',
+        title: '🟢 Match Live!',
+        message: `${matchTitle} is now underway! Follow ball-by-ball score & stream.`,
         matchTitle,
         matchUrl,
         category: 'cricket',
+        competition,
         badgeText: 'LIVE NOW',
       });
     }
 
-    // 3. Key Moments (Wickets & Final Match Result)
-    if (prefs.notifications.notifyKeyMoments) {
-      // Check for match conclusion
-      if (match.status === 'COMPLETED' && match.winner) {
-        dispatchNotification({
-          key: `result:npl:${match.id}`,
-          type: 'match_result',
-          title: `🏆 NPL Match Concluded`,
-          message: `${matchTitle}: ${match.winner}! Full scorecard available.`,
-          matchTitle,
-          matchUrl,
-          category: 'cricket',
-          badgeText: 'FINAL RESULT',
-        });
-      }
-
-      // Check for wickets
-      const checkWickets = (teamName: string, scoreStr?: string) => {
+    // Cricket Key Moments: Wickets, Milestones & Results
+    if (match.status === 'LIVE' && prefs.notifications.notifyGoalsWickets) {
+      const checkWickets = (teamName: string, scoreStr?: string, isHome: boolean = true) => {
         if (!scoreStr) return;
         const matchWickets = scoreStr.match(/\/(\d+)/);
         if (!matchWickets) return;
-        const wickets = parseInt(matchWickets[1], 10);
-        if (wickets > 0 && wickets <= 10) {
+        const currentWickets = parseInt(matchWickets[1], 10);
+        const lastWickets = isHome
+          ? statesCache[matchId]?.wicketsHome ?? 0
+          : statesCache[matchId]?.wicketsAway ?? 0;
+
+        if (currentWickets > lastWickets && currentWickets <= 10) {
+          saveMatchState(matchId, isHome ? { wicketsHome: currentWickets } : { wicketsAway: currentWickets });
           dispatchNotification({
-            key: `wicket:npl:${match.id}:${teamName}:${wickets}`,
-            type: 'key_moment',
+            key: `wicket:${matchId}:${teamName}:${currentWickets}`,
+            type: 'wicket',
+            filterCategory: 'moments',
             title: `🏏 WICKET! (${teamName})`,
-            message: `${teamName} is now ${scoreStr} in ${matchTitle}!`,
+            message: `${teamName} loses a wicket! Now ${scoreStr} in ${matchTitle}!`,
             matchTitle,
             matchUrl,
             category: 'cricket',
+            competition,
+            score: scoreStr,
             badgeText: 'WICKET',
           });
         }
       };
 
-      if (match.status === 'LIVE') {
-        checkWickets(match.team1.name, match.team1Score);
-        checkWickets(match.team2.name, match.team2Score);
-      }
+      checkWickets(match.team1.name, match.team1Score, true);
+      checkWickets(match.team2.name, match.team2Score, false);
+    }
+
+    // Full-Time / Final Match Result
+    if (prefs.notifications.notifyFullTime && match.status === 'COMPLETED' && match.winner) {
+      dispatchNotification({
+        key: `result:${matchId}`,
+        type: 'full_time',
+        filterCategory: 'results',
+        title: '🏆 Match Concluded',
+        message: `Final Result: ${match.winner}! Full scorecard available.`,
+        matchTitle,
+        matchUrl,
+        category: 'cricket',
+        competition,
+        badgeText: 'FINAL RESULT',
+      });
     }
   }
 
-  // Evaluate other Sports (Football, Cricket, Basketball)
+  // --- 2. Evaluate Football & Other Sports Matches ---
   for (const [category, matches] of Object.entries(sportsMatches)) {
     for (const match of matches) {
+      const matchId = `${category}-${match.slug}`;
       const matchTitle = match.title;
-      const matchUrl = `/${category}/match/${match.slug}/`;
+      const matchUrl = `/${category}/match/${encodeURIComponent(match.slug)}/`;
+      const isLive = match.status === 'LIVE' || match.isLive;
+      const competition = (match as any).league || (category === 'football' ? 'Football Fixtures' : `${category.toUpperCase()} Fixtures`);
+      const venue = (match as any).venue || 'Stadium';
 
       const isPref = isMatchPreferred(matchTitle, match.slug, undefined, undefined, prefs);
       if (!isPref) continue;
 
-      const isLive = match.status === 'LIVE' || match.isLive;
+      // Kickoff Calculations
+      const kickoffMs = match.timestamp;
+      const lastKickoff = statesCache[matchId]?.kickoffTimestamp;
 
-      // 1. Kickoff 5-Minute Warning
-      if (prefs.notifications.notifyKickoff5Min && !isLive && match.timestamp) {
-        const diffMinutes = (match.timestamp - now) / 60000;
-        if (diffMinutes > 0 && diffMinutes <= 5.5) {
+      if (kickoffMs) {
+        if (lastKickoff && Math.abs(kickoffMs - lastKickoff) > 10 * 60000) {
+          clearDispatchedAlert(`30min:${matchId}`);
+          clearDispatchedAlert(`5min:${matchId}`);
           dispatchNotification({
-            key: `5min:sport:${match.slug}`,
-            type: '5min_warning',
-            title: `⚡ Kickoff in 5 Minutes!`,
-            message: `${matchTitle} (${category.toUpperCase()}) starts in 5 minutes! Multi-server streams ready.`,
+            key: `reschedule:${matchId}:${kickoffMs}`,
+            type: 'rescheduled',
+            filterCategory: 'matches',
+            title: '📅 Kickoff Rescheduled',
+            message: `${matchTitle} kickoff updated to ${formatLocalKickoff(kickoffMs, userTz)}.`,
             matchTitle,
             matchUrl,
             category,
+            competition,
+            kickoffFormatted: formatLocalKickoff(kickoffMs, userTz),
+            badgeText: 'RESCHEDULED',
+          });
+        }
+        saveMatchState(matchId, { kickoffTimestamp: kickoffMs });
+
+        const diffMinutes = (kickoffMs - now) / 60000;
+
+        // 30 Minutes Before Kickoff
+        if (prefs.notifications.remind30Min && !isLive && diffMinutes > 25 && diffMinutes <= 30.5) {
+          dispatchNotification({
+            key: `30min:${matchId}`,
+            type: '30min_warning',
+            filterCategory: 'matches',
+            title: '⚽ Matchday Reminder',
+            message: `${matchTitle} kicks off in 30 minutes!`,
+            matchTitle,
+            matchUrl,
+            category,
+            competition,
+            venue,
+            kickoffFormatted: formatLocalKickoff(kickoffMs, userTz),
+            badgeText: '30 MIN REMINDER',
+          });
+        }
+
+        // 5 Minutes Before Kickoff (Main Requirement)
+        if (prefs.notifications.remind5Min && !isLive && diffMinutes > 0 && diffMinutes <= 5.5) {
+          dispatchNotification({
+            key: `5min:${matchId}`,
+            type: '5min_warning',
+            filterCategory: 'matches',
+            title: '🔔 Kickoff in 5 Minutes!',
+            message: `Get ready! The match is about to begin.`,
+            matchTitle,
+            matchUrl,
+            category,
+            competition,
+            venue,
+            kickoffFormatted: formatLocalKickoff(kickoffMs, userTz),
             badgeText: '5 MIN WARNING',
           });
         }
       }
 
-      // 2. Match Started / LIVE Alert
-      if (prefs.notifications.notifyMatchStart && isLive) {
+      // Match Kickoff (Live Alert)
+      if (prefs.notifications.notifyKickoff && isLive) {
         dispatchNotification({
-          key: `start:sport:${match.slug}`,
+          key: `start:${matchId}`,
           type: 'kickoff',
-          title: `🔴 MATCH LIVE NOW!`,
-          message: `${matchTitle} has kicked off! Tap to watch uninterrupted on Sportivo.`,
+          filterCategory: 'matches',
+          title: '🟢 Match Live!',
+          message: `${matchTitle} is underway! Watch live stream on Sportivo.`,
           matchTitle,
           matchUrl,
           category,
+          competition,
           badgeText: 'LIVE NOW',
+        });
+      }
+
+      // Live Football Score Updates & Goals
+      if (isLive && (match as any).score) {
+        const scoreStr = String((match as any).score);
+        const scoreParts = scoreStr.split(/[-:]/).map((s) => parseInt(s.trim(), 10));
+        if (scoreParts.length === 2 && !isNaN(scoreParts[0]) && !isNaN(scoreParts[1])) {
+          const currentHome = scoreParts[0];
+          const currentAway = scoreParts[1];
+          const cachedHome = statesCache[matchId]?.homeScore ?? 0;
+          const cachedAway = statesCache[matchId]?.awayScore ?? 0;
+
+          if (currentHome !== cachedHome || currentAway !== cachedAway) {
+            saveMatchState(matchId, { homeScore: currentHome, awayScore: currentAway });
+
+            if (prefs.notifications.notifyGoalsWickets) {
+              const isEqualizer = currentHome === currentAway && (currentHome > 0 || currentAway > 0);
+              const isLead = currentHome !== currentAway;
+
+              if (isEqualizer) {
+                dispatchNotification({
+                  key: `equalizer:${matchId}:${scoreStr}`,
+                  type: 'equalizer',
+                  filterCategory: 'moments',
+                  title: '🔥 Equalizer!',
+                  message: `Equalizer scored! It's now ${scoreStr} in ${matchTitle}!`,
+                  matchTitle,
+                  matchUrl,
+                  category,
+                  competition,
+                  score: scoreStr,
+                  badgeText: 'EQUALIZER',
+                });
+              } else if (isLead) {
+                dispatchNotification({
+                  key: `goal:${matchId}:${scoreStr}`,
+                  type: 'goal',
+                  filterCategory: 'moments',
+                  title: '⚽ GOAL!',
+                  message: `GOAL! Score is now ${scoreStr} in ${matchTitle}!`,
+                  matchTitle,
+                  matchUrl,
+                  category,
+                  competition,
+                  score: scoreStr,
+                  badgeText: 'GOAL',
+                });
+              }
+            }
+          }
+        }
+      }
+
+      // Full-Time / Match Concluded
+      if (prefs.notifications.notifyFullTime && (match.status === 'Final' || match.status === 'COMPLETED')) {
+        dispatchNotification({
+          key: `result:${matchId}`,
+          type: 'full_time',
+          filterCategory: 'results',
+          title: '🏁 Full-time',
+          message: `Full-time: ${matchTitle} has concluded! Final score: ${(match as any).score || 'Concluded'}.`,
+          matchTitle,
+          matchUrl,
+          category,
+          competition,
+          badgeText: 'FULL TIME',
         });
       }
     }
   }
 }
-
