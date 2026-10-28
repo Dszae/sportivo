@@ -10,6 +10,8 @@ import {
   markAllNotificationsAsRead,
   markNotificationAsRead,
   requestNotificationPermission,
+  subscribeToPushService,
+  syncPushPreferences,
 } from '../lib/notificationService';
 import {
   type UserPreferences,
@@ -43,6 +45,7 @@ export default function NotificationCenter() {
     const handlePrefsChange = (e: Event) => {
       const ce = e as CustomEvent<UserPreferences>;
       if (ce.detail) setPrefs(ce.detail);
+      syncPushPreferences().catch(() => {});
     };
 
     const handlePermChange = (e: Event) => {
@@ -154,6 +157,9 @@ export default function NotificationCenter() {
       kickoffFormatted: 'Today · 8:45 PM Nepal Time',
       badgeText: '5 MIN WARNING',
     });
+
+    // Also trigger native closed-tab Web Push delivery via push service
+    subscribeToPushService(true).catch(() => {});
   };
 
   // Filter history by selected category tab
@@ -259,20 +265,29 @@ export default function NotificationCenter() {
               {/* Browser Push Banner */}
               <div className="rounded-xl border border-white/15 bg-[#14201e] p-3 flex items-center justify-between gap-3 shadow-sm">
                 <div>
-                  <span className="block font-bold text-white text-xs">Browser Push Notifications</span>
+                  <span className="block font-bold text-white text-xs">Background Push (Closed Tab Alerts)</span>
                   <span className="text-[11px] text-slate-300 leading-tight">
                     {permission === 'granted'
-                      ? '✓ Active! You will get alerts even when Sportivo is closed.'
-                      : 'Get live kickoff & score alerts on your desktop / phone.'}
+                      ? '✓ Active! You will receive match alerts even when Sportivo is closed.'
+                      : 'Get live kickoff & score alerts on your device even when website is closed.'}
                   </span>
                 </div>
-                {permission !== 'granted' && (
+                {permission !== 'granted' ? (
                   <button
                     type="button"
                     onClick={handleRequestPush}
                     className="rounded-lg bg-[#c9f36b] px-3 py-1.5 text-xs font-black text-[#080a0b] hover:bg-[#b0d859] transition shadow-md shrink-0"
                   >
                     Enable Push
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => subscribeToPushService(true)}
+                    className="rounded-lg border border-[#c9f36b]/40 bg-[#c9f36b]/10 px-2.5 py-1 text-[11px] font-bold text-[#c9f36b] hover:bg-[#c9f36b] hover:text-black transition shrink-0"
+                    title="Sends an instant push message through the push service"
+                  >
+                    Test Push
                   </button>
                 )}
               </div>

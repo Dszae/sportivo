@@ -172,22 +172,15 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     </script>
 
     <script is:inline>
-      if (typeof window !== 'undefined') {
-        // Unregister service workers and purge stale cache storage so normal tabs never experience image breakage or caching traps
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then((registrations) => {
-            for (const registration of registrations) {
-              registration.unregister();
-            }
-          }).catch(() => {});
-        }
-        if ('caches' in window) {
-          caches.keys().then((keys) => {
-            for (const key of keys) {
-              caches.delete(key);
-            }
-          }).catch(() => {});
-        }
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js', { scope: '/' }).then((reg) => {
+            // Keep service worker updated for background push & match alert notifications
+            reg.update().catch(() => {});
+          }).catch((err) => {
+            console.warn('[Sportivo SW] Registration failed:', err);
+          });
+        });
       }
     </script>
   </body>

@@ -102,6 +102,100 @@ export function playNotificationChime(): void {
   } catch {}
 }
 
+export function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+/**
+ * Subscribes user's device to background Web Push (VAPID) so alerts arrive even when website is closed
+ */
+export async function subscribeToPushService(sendTest: boolean = false): Promise<boolean> {
+  if (
+    typeof window === 'undefined' ||
+    !('serviceWorker' in navigator) ||
+    !('PushManager' in window)
+  ) {
+    return false;
+  }
+
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+
+    if (!sub) {
+      const res = await fetch('/api/push/subscribe');
+      const { publicKey } = await res.json();
+      const applicationServerKey = urlBase64ToUint8Array(publicKey);
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey,
+      });
+    }
+
+    // Register Chromium Periodic Background Sync if available
+    if ('periodicSync' in reg) {
+      try {
+        const periodicSync = (reg as any).periodicSync;
+        await periodicSync.register('sportivo-match-check', {
+          minInterval: 60 * 1000,
+        });
+      } catch {}
+    }
+
+    // Register subscription on backend with user's current watchlist
+    const prefs = loadUserPreferences();
+    await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subscription: sub,
+        preferences: prefs,
+        test: sendTest,
+      }),
+    });
+
+    return true;
+  } catch (err) {
+    console.warn('[Sportivo Push] Background subscription failed:', err);
+    return false;
+  }
+}
+
+/**
+ * Synchronizes user watchlist updates to the push server so background alerts match latest favorites
+ */
+export async function syncPushPreferences(): Promise<void> {
+  if (
+    typeof window === 'undefined' ||
+    !('serviceWorker' in navigator) ||
+    !('PushManager' in window)
+  ) {
+    return;
+  }
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      const prefs = loadUserPreferences();
+      await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subscription: sub,
+          preferences: prefs,
+        }),
+      });
+    }
+  } catch {}
+}
+
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
   if (typeof window === 'undefined' || !('Notification' in window)) {
     return 'denied';
@@ -111,6 +205,12 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
     window.dispatchEvent(
       new CustomEvent('sportivo:notification-permission-changed', { detail: permission })
     );
+
+    if (permission === 'granted') {
+      // Automatically register Web Push subscription for closed-browser delivery
+      await subscribeToPushService(false);
+    }
+
     return permission;
   } catch {
     return 'denied';
@@ -255,24 +355,41 @@ export function dispatchNotification(params: {
     playNotificationChime();
   }
 
-  // 1. Browser Native Push Notification (Windows Action Center / Mac / Android Notification Shade)
+  // 1. Native Push Notification (Dispatched via Service Worker with vibration & action buttons)
   if (
     typeof window !== 'undefined' &&
     'Notification' in window &&
     Notification.permission === 'granted'
   ) {
-    try {
-      const n = new Notification(title, {
-        body: `${matchTitle}\n${message}`,
-        icon: '/icon-192x192.png',
-        badge: '/favicon-48x48.png',
-        tag: key,
-      });
-      n.onclick = () => {
-        window.focus();
-        window.location.href = matchUrl;
-      };
-    } catch {}
+    const notifOptions: NotificationOptions = {
+      body: `${matchTitle}\n${message}`,
+      icon: '/icon-192x192.png',
+      badge: '/favicon-48x48.png',
+      tag: key,
+      data: { url: matchUrl },
+      renotify: true,
+      requireInteraction: true,
+    };
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready
+        .then((reg) => {
+          reg.showNotification(title, notifOptions).catch(() => {
+            try {
+              new Notification(title, notifOptions);
+            } catch {}
+          });
+        })
+        .catch(() => {
+          try {
+            new Notification(title, notifOptions);
+          } catch {}
+        });
+    } else {
+      try {
+        new Notification(title, notifOptions);
+      } catch {}
+    }
   }
 
   // 2. In-App Notification Center Record

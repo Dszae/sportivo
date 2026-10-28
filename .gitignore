@@ -12,6 +12,7 @@ dist
 dist-ssr
 .astro
 .vercel
+.push-subscriptions.json
 *.local
 
 # Editor directories and files
@@ -26,3 +27,4 @@ dist-ssr
 *.sw?
 
 .vercel
+.push-subscriptions.json
