@@ -11,8 +11,12 @@
 		text-rendering: optimizeLegibility;
 	}
 
+	html,
 	body {
 		min-width: 320px;
+		width: 100%;
+		max-width: 100vw;
+		overflow-x: hidden;
 		margin: 0;
 		background: #080a0b;
 		background-image: linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);

@@ -413,21 +413,21 @@ export default function NplSchedule() {
         </div>
       </div>
 
-      {/* Tabs (Smooth thumb-scrolling on mobile) */}
-      <div className="mb-6 flex items-center justify-between gap-3 overflow-x-auto no-scrollbar scroll-smooth py-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
-        <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-2xl border border-white/10 shrink-0">
+      {/* Tabs (Responsive Grid on Mobile, Flex on Desktop - Never Clips) */}
+      <div className="mb-6 w-full">
+        <div className="grid grid-cols-3 sm:inline-flex sm:items-center gap-1 bg-white/5 p-1 rounded-2xl border border-white/10 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setActiveTab('today')}
-            className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 sm:px-4 py-1.5 text-xs font-bold transition-all shrink-0 ${
+            className={`flex items-center justify-center gap-1 rounded-xl px-2 sm:px-4 py-2 sm:py-1.5 text-[11px] sm:text-xs font-bold transition-all ${
               activeTab === 'today'
                 ? 'bg-[#c9f36b] text-[#080c0b] shadow-sm font-black'
                 : 'text-slate-300 hover:text-white'
             }`}
           >
-            <span>Today's Matches</span>
+            <span className="truncate"><span className="sm:hidden">Today</span><span className="hidden sm:inline">Today's Matches</span></span>
             <span
-              className={`rounded-full px-1.5 py-0.2 text-[10px] font-black ${
+              className={`rounded-full px-1.5 py-0.2 text-[10px] font-black shrink-0 ${
                 activeTab === 'today' ? 'bg-black/20 text-[#080c0b]' : 'bg-white/10 text-slate-300'
               }`}
             >
@@ -438,15 +438,15 @@ export default function NplSchedule() {
           <button
             type="button"
             onClick={() => setActiveTab('upcoming')}
-            className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 sm:px-4 py-1.5 text-xs font-bold transition-all shrink-0 ${
+            className={`flex items-center justify-center gap-1 rounded-xl px-2 sm:px-4 py-2 sm:py-1.5 text-[11px] sm:text-xs font-bold transition-all ${
               activeTab === 'upcoming'
                 ? 'bg-[#c9f36b] text-[#080c0b] shadow-sm font-black'
                 : 'text-slate-300 hover:text-white'
             }`}
           >
-            <span>Upcoming Fixtures</span>
+            <span className="truncate"><span className="sm:hidden">Upcoming</span><span className="hidden sm:inline">Upcoming Fixtures</span></span>
             <span
-              className={`rounded-full px-1.5 py-0.2 text-[10px] font-black ${
+              className={`rounded-full px-1.5 py-0.2 text-[10px] font-black shrink-0 ${
                 activeTab === 'upcoming' ? 'bg-black/20 text-[#080c0b]' : 'bg-white/10 text-slate-300'
               }`}
             >
@@ -457,15 +457,15 @@ export default function NplSchedule() {
           <button
             type="button"
             onClick={() => setActiveTab('all')}
-            className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 sm:px-4 py-1.5 text-xs font-bold transition-all shrink-0 ${
+            className={`flex items-center justify-center gap-1 rounded-xl px-2 sm:px-4 py-2 sm:py-1.5 text-[11px] sm:text-xs font-bold transition-all ${
               activeTab === 'all'
                 ? 'bg-[#c9f36b] text-[#080c0b] shadow-sm font-black'
                 : 'text-slate-300 hover:text-white'
             }`}
           >
-            <span>All Season Matches</span>
+            <span className="truncate"><span className="sm:hidden">All (32)</span><span className="hidden sm:inline">All Season Matches</span></span>
             <span
-              className={`rounded-full px-1.5 py-0.2 text-[10px] font-black ${
+              className={`rounded-full px-1.5 py-0.2 text-[10px] font-black shrink-0 ${
                 activeTab === 'all' ? 'bg-black/20 text-[#080c0b]' : 'bg-white/10 text-slate-300'
               }`}
             >
@@ -474,7 +474,7 @@ export default function NplSchedule() {
           </button>
         </div>
 
-        <div className="flex items-center gap-2 text-[11px] text-slate-400">
+        <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-3">
           <span className="h-2 w-2 rounded-full bg-emerald-500" />
           <span>TU International Cricket Ground, Kirtipur</span>
         </div>

@@ -1,201 +1,189 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  FlatList,
+  ScrollView,
   TouchableOpacity,
-  Image,
   RefreshControl,
   StyleSheet,
-  ActivityIndicator,
   StatusBar,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Match, RootStackParamList } from '../types';
-import { fetchMatches, formatKathmanduTime } from '../services/api';
-import { loadPreferences, toggleStarredMatch } from '../services/storage';
+import { RootStackParamList } from '../types';
+import { loadPreferences } from '../services/storage';
 import { triggerButtonHaptic } from '../services/notifications';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function HomeScreen() {
-  const navigation = useNavigation<NavigationProp>();
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [loading, setLoading] = useState(true);
+  const navigation = useNavigation<any>();
   const [refreshing, setRefreshing] = useState(false);
-  const [starredSlugs, setStarredSlugs] = useState<string[]>([]);
+  const [watchlistCount, setWatchlistCount] = useState(0);
 
-  const loadData = useCallback(async () => {
+  const loadData = async () => {
     try {
-      const [football, cricket, basketball, prefs] = await Promise.all([
-        fetchMatches('football'),
-        fetchMatches('cricket'),
-        fetchMatches('basketball'),
-        loadPreferences(),
-      ]);
-
-      setStarredSlugs(prefs.starredMatches);
-      const combined = [...football, ...cricket, ...basketball].sort((a, b) => {
-        // Live matches first
-        if (a.status === 'Live' && b.status !== 'Live') return -1;
-        if (b.status === 'Live' && a.status !== 'Live') return 1;
-        return (a.timestamp || 0) - (b.timestamp || 0);
-      });
-
-      setMatches(combined);
+      const prefs = await loadPreferences();
+      setWatchlistCount(prefs.starredMatches.length + prefs.favoriteTeams.length);
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadData();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const onRefresh = () => {
     setRefreshing(true);
     loadData();
   };
 
-  const handleToggleStar = async (slug: string) => {
-    await triggerButtonHaptic();
-    const updated = await toggleStarredMatch(slug);
-    setStarredSlugs(updated);
-  };
-
-  const liveMatches = matches.filter((m) => m.status === 'Live');
-  const upcomingMatches = matches.filter((m) => m.status !== 'Live' && m.status !== 'Final');
-
-  const renderMatchCard = ({ item }: { item: Match }) => {
-    const slug = item.slug || item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const isStarred = starredSlugs.includes(slug);
-    const isLive = item.status === 'Live';
-    const kickoffFormatted = formatKathmanduTime(item.timestamp || item.startTime || Date.now());
-
-    return (
-      <TouchableOpacity
-        activeOpacity={0.88}
-        onPress={() => navigation.navigate('MatchPlayer', { match: item })}
-        style={[styles.card, isLive && styles.liveCard]}
-      >
-        {/* Card Header */}
-        <View style={styles.cardHeader}>
-          <View style={styles.headerLeft}>
-            {isLive ? (
-              <View style={styles.liveBadge}>
-                <View style={styles.liveDot} />
-                <Text style={styles.liveText}>LIVE</Text>
-              </View>
-            ) : (
-              <View style={styles.scheduledBadge}>
-                <Text style={styles.scheduledText}>⏰ {kickoffFormatted} NST</Text>
-              </View>
-            )}
-            <Text style={styles.sportBadge}>
-              {item.category === 'football' ? '⚽ Football' : item.category === 'cricket' ? '🏏 Cricket' : '🏀 Basketball'}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            onPress={() => handleToggleStar(slug)}
-            style={styles.starBtn}
-          >
-            <Text style={[styles.starIcon, isStarred && styles.starActive]}>
-              {isStarred ? '★' : '☆'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Card Body: Teams & Match Title */}
-        <View style={styles.cardBody}>
-          <Text style={styles.matchTitle} numberOfLines={2}>
-            {item.title}
-          </Text>
-          {item.venue && (
-            <Text style={styles.venueText} numberOfLines={1}>
-              📍 {item.venue}
-            </Text>
-          )}
-        </View>
-
-        {/* Card Footer: Watch Action */}
-        <View style={styles.cardFooter}>
-          <Text style={styles.footerAction}>
-            {isLive ? '📺 Watch Live Stream & Score' : '⚡ View Fixture & Commentary'} &rarr;
-          </Text>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+  const arenas = [
+    {
+      title: 'Football Desk',
+      category: 'FootballTab',
+      icon: '⚽',
+      subtitle: 'Premier League, UCL, La Liga, Serie A',
+      badge: 'Live Feeds',
+      badgeColor: '#c9f36b',
+      badgeBg: 'rgba(201, 243, 107, 0.15)',
+      description: 'Real-time scores, lineups, and verified multi-server streaming links.',
+    },
+    {
+      title: 'Nepal Premier League',
+      category: 'NplTab',
+      icon: '🇳🇵',
+      subtitle: 'Official Season 2026 Schedule',
+      badge: '32 Matches',
+      badgeColor: '#ef4444',
+      badgeBg: 'rgba(239, 68, 68, 0.2)',
+      description: 'All 8 franchises, TU Cricket Ground Kirtipur fixtures, and ball-by-ball updates.',
+    },
+    {
+      title: 'Cricket Desk',
+      category: 'CricketTab',
+      icon: '🏏',
+      subtitle: 'ICC World Cups, IPL, Bilateral Series',
+      badge: 'NST Scores',
+      badgeColor: '#c9f36b',
+      badgeBg: 'rgba(201, 243, 107, 0.15)',
+      description: 'Comprehensive cricket schedules and live ball-by-ball match tracking in NST.',
+    },
+    {
+      title: 'My Watchlist',
+      category: 'WatchlistTab',
+      icon: '⭐',
+      subtitle: 'Followed Teams & Kickoff Alerts',
+      badge: `${watchlistCount} Saved`,
+      badgeColor: '#fbbf24',
+      badgeBg: 'rgba(251, 191, 36, 0.18)',
+      description: 'Your personalized matchday schedule with 5-minute pre-match vibration alerts.',
+    },
+  ];
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#080a0b" />
 
       {/* Top Header */}
-      <View style={styles.topBar}>
-        <View>
-          <View style={styles.brandRow}>
-            <View style={styles.brandDot} />
-            <Text style={styles.brandText}>Sportivo<Text style={styles.brandAccent}>.</Text></Text>
-            <View style={styles.nepalPill}>
-              <Text style={styles.nepalText}>NEPAL</Text>
-            </View>
+      <View style={styles.header}>
+        <View style={styles.brandRow}>
+          <View style={styles.logoDotContainer}>
+            <View style={styles.logoDotPing} />
+            <View style={styles.logoDot} />
           </View>
-          <Text style={styles.tagline}>Live Sports Desk · Nepal Standard Time</Text>
+          <View>
+            <Text style={styles.logoText}>
+              Sportivo<Text style={styles.logoAccent}>.</Text>
+            </Text>
+            <Text style={styles.logoSubtext}>LIVE SPORTS DESK · NEPAL</Text>
+          </View>
         </View>
 
         <TouchableOpacity
-          onPress={() => navigation.navigate('NotificationSettings')}
-          style={styles.settingsBtn}
+          style={styles.settingsButton}
+          onPress={() => {
+            triggerButtonHaptic();
+            navigation.navigate('NotificationSettings');
+          }}
+          activeOpacity={0.8}
         >
           <Text style={styles.settingsIcon}>🔔</Text>
         </TouchableOpacity>
       </View>
 
-      {loading ? (
-        <View style={styles.centerLoading}>
-          <ActivityIndicator size="large" color="#c9f36b" />
-          <Text style={styles.loadingText}>Loading Live Fixtures...</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={matches}
-          keyExtractor={(item, index) => `${item.title}-${index}`}
-          renderItem={renderMatchCard}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor="#c9f36b"
-              colors={['#c9f36b']}
-            />
-          }
-          ListHeaderComponent={
-            liveMatches.length > 0 ? (
-              <View style={styles.liveHeaderSection}>
-                <View style={styles.livePulseRow}>
-                  <View style={styles.pulsingRedDot} />
-                  <Text style={styles.liveSectionTitle}>LIVE BROADCASTS NOW ({liveMatches.length})</Text>
-                </View>
-              </View>
-            ) : null
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyIcon}>🏟️</Text>
-              <Text style={styles.emptyTitle}>No Live Broadcasts Right Now</Text>
-              <Text style={styles.emptySubtitle}>
-                Pull down to refresh or check upcoming match schedules below.
-              </Text>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#c9f36b" />
+        }
+      >
+        {/* Hero Spotlight Banner */}
+        <View style={styles.heroCard}>
+          <View style={styles.heroBadgeRow}>
+            <View style={styles.liveBadge}>
+              <View style={styles.liveBadgeDot} />
+              <Text style={styles.liveBadgeText}>NST SYNCHRONIZED</Text>
             </View>
-          }
-        />
-      )}
+            <Text style={styles.timezoneText}>Asia/Kathmandu (UTC+5:45)</Text>
+          </View>
+
+          <Text style={styles.heroTitle}>Sports Hub &amp; Live Fixture Desks</Text>
+          <Text style={styles.heroDescription}>
+            Select your sport arena below to explore today's live kickoff times, score tracking, and streaming links without clutter.
+          </Text>
+        </View>
+
+        {/* Section Heading */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionBadge}>CHOOSE YOUR ARENA</Text>
+          <Text style={styles.sectionTitle}>Live Sports Portals</Text>
+        </View>
+
+        {/* Sports Arena Grid Cards */}
+        {arenas.map((item) => (
+          <TouchableOpacity
+            key={item.category}
+            style={styles.arenaCard}
+            onPress={() => {
+              triggerButtonHaptic();
+              navigation.navigate(item.category);
+            }}
+            activeOpacity={0.85}
+          >
+            <View style={styles.arenaTopRow}>
+              <Text style={styles.arenaIcon}>{item.icon}</Text>
+              <View style={[styles.arenaBadge, { backgroundColor: item.badgeBg }]}>
+                <Text style={[styles.arenaBadgeText, { color: item.badgeColor }]}>
+                  {item.badge}
+                </Text>
+              </View>
+            </View>
+
+            <Text style={styles.arenaTitle}>{item.title}</Text>
+            <Text style={styles.arenaSubtitle}>{item.subtitle}</Text>
+            <Text style={styles.arenaDescription}>{item.description}</Text>
+
+            <View style={styles.arenaFooter}>
+              <Text style={styles.arenaCta}>Enter Desk</Text>
+              <Text style={styles.arenaArrow}>→</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+
+        {/* Info Card */}
+        <View style={styles.infoCard}>
+          <Text style={styles.infoTitle}>About Sportivo</Text>
+          <Text style={styles.infoText}>
+            Engineered by Dipesh Sapkota. Real-time scores, 5-minute pre-match notifications, and native ExoPlayer live streams.
+          </Text>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -205,218 +193,223 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#080a0b',
   },
-  topBar: {
+  header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 14,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.08)',
-    backgroundColor: '#0c1211',
+    backgroundColor: '#0c1413',
   },
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 10,
   },
-  brandDot: {
+  logoDotContainer: {
+    width: 12,
+    height: 12,
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoDotPing: {
+    position: 'absolute',
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#c9f36b',
+    opacity: 0.5,
+  },
+  logoDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: '#c9f36b',
   },
-  brandText: {
-    fontSize: 22,
+  logoText: {
+    fontSize: 20,
     fontWeight: '900',
     color: '#ffffff',
     letterSpacing: -0.5,
   },
-  brandAccent: {
+  logoAccent: {
     color: '#c9f36b',
   },
-  nepalPill: {
-    backgroundColor: 'rgba(229,185,79,0.15)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(229,185,79,0.3)',
-  },
-  nepalText: {
+  logoSubtext: {
     fontSize: 9,
-    fontWeight: '900',
-    color: '#e5b94f',
-  },
-  tagline: {
-    fontSize: 11,
+    fontWeight: '800',
     color: '#94a3b8',
-    marginTop: 2,
-    fontWeight: '600',
+    letterSpacing: 0.8,
   },
-  settingsBtn: {
-    padding: 8,
-    borderRadius: 20,
+  settingsButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(255,255,255,0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   settingsIcon: {
     fontSize: 16,
   },
-  listContent: {
+  scrollContent: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 40,
   },
-  liveHeaderSection: {
-    marginBottom: 12,
-  },
-  livePulseRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  pulsingRedDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#ef4444',
-  },
-  liveSectionTitle: {
-    fontSize: 12,
-    fontWeight: '900',
-    color: '#f87171',
-    letterSpacing: 0.8,
-  },
-  card: {
-    backgroundColor: '#121c1a',
-    borderRadius: 16,
+  heroCard: {
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    marginBottom: 14,
-    overflow: 'hidden',
+    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: '#0e1716',
+    padding: 18,
+    marginBottom: 20,
   },
-  liveCard: {
-    borderColor: 'rgba(239,68,68,0.5)',
-    backgroundColor: '#162220',
-  },
-  cardHeader: {
+  heroBadgeRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingTop: 12,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    marginBottom: 10,
   },
   liveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#dc2626',
+    backgroundColor: 'rgba(201, 243, 107, 0.15)',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
-    gap: 4,
+    borderRadius: 8,
+    gap: 5,
   },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#ffffff',
+  liveBadgeDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#c9f36b',
   },
-  liveText: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: '#ffffff',
-  },
-  scheduledBadge: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  scheduledText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#cbd5e1',
-  },
-  sportBadge: {
-    fontSize: 11,
-    color: '#94a3b8',
-    fontWeight: '600',
-  },
-  starBtn: {
-    padding: 4,
-  },
-  starIcon: {
-    fontSize: 18,
-    color: '#64748b',
-  },
-  starActive: {
-    color: '#fbbf24',
-  },
-  cardBody: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  matchTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#ffffff',
-    lineHeight: 20,
-  },
-  venueText: {
-    fontSize: 11,
-    color: '#94a3b8',
-    marginTop: 6,
-  },
-  cardFooter: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-  },
-  footerAction: {
-    fontSize: 11,
-    fontWeight: '800',
+  liveBadgeText: {
     color: '#c9f36b',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
-  centerLoading: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 12,
-  },
-  loadingText: {
-    fontSize: 13,
+  timezoneText: {
     color: '#94a3b8',
+    fontSize: 10,
     fontWeight: '600',
   },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: 48,
-    paddingHorizontal: 24,
-  },
-  emptyIcon: {
-    fontSize: 40,
-    marginBottom: 12,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '800',
+  heroTitle: {
     color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '900',
+    marginBottom: 6,
   },
-  emptySubtitle: {
+  heroDescription: {
+    color: '#cbd5e1',
     fontSize: 12,
-    color: '#94a3b8',
-    textAlign: 'center',
-    marginTop: 6,
     lineHeight: 18,
   },
+  sectionHeader: {
+    marginBottom: 12,
+  },
+  sectionBadge: {
+    color: '#c9f36b',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+    marginBottom: 2,
+  },
+  sectionTitle: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  arenaCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#111b19',
+    padding: 16,
+    marginBottom: 12,
+  },
+  arenaTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  arenaIcon: {
+    fontSize: 28,
+  },
+  arenaBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  arenaBadgeText: {
+    fontSize: 10,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+  },
+  arenaTitle: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '900',
+    marginBottom: 2,
+  },
+  arenaSubtitle: {
+    color: '#94a3b8',
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  arenaDescription: {
+    color: '#cbd5e1',
+    fontSize: 12,
+    lineHeight: 16,
+    marginBottom: 12,
+  },
+  arenaFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    paddingTop: 10,
+  },
+  arenaCta: {
+    color: '#c9f36b',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  arenaArrow: {
+    color: '#c9f36b',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  infoCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    padding: 14,
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  infoTitle: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  infoText: {
+    color: '#64748b',
+    fontSize: 10,
+    textAlign: 'center',
+    lineHeight: 14,
+  },
 });
-

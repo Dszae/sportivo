@@ -1,6 +1,7 @@
 ---
-import { categories, type Category } from '../lib/sportivo';
+import type { Category } from '../lib/sportivo';
 import NotificationCenter from './NotificationCenter';
+import HamburgerMenu from './HamburgerMenu';
 import MobileNav from './MobileNav.astro';
 import InstallPrompt from './InstallPrompt';
 
@@ -10,56 +11,39 @@ interface Props {
 
 const { activeCategory } = Astro.props;
 ---
-<header class="site-header sticky top-0 z-50 border-b bg-[#101716]/98 backdrop-blur-md" itemscope itemtype="https://schema.org/WPHeader">
-  {/* DESKTOP HEADER (sm and larger) */}
-  <div class="hidden sm:flex mx-auto max-w-7xl items-center justify-between gap-4 px-6 py-3.5">
-    <a href="/" class="group flex flex-col" aria-label="Sportivo Home - Live Sports Fixtures Desk">
-      <span class="flex items-center gap-3">
-        <span class="relative flex h-3 w-3">
-          <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#e5b94f] opacity-50"></span>
-          <span class="site-logo-dot relative inline-flex h-3 w-3 rounded-full"></span>
-        </span>
-        <span class="text-2xl font-black leading-none tracking-tight text-white">Sportivo<span class="site-accent">.</span></span>
+<header class="site-header sticky top-0 z-50 border-b border-white/10 bg-[#0c1413]/98 backdrop-blur-md" itemscope itemtype="https://schema.org/WPHeader">
+  <div class="mx-auto max-w-7xl flex items-center justify-between gap-3 px-4 sm:px-6 py-3">
+    <!-- Brand / Logo -->
+    <a href="/" class="group flex items-center gap-2.5 focus:outline-none shrink-0" aria-label="Sportivo Home - Live Sports Fixtures Desk">
+      <span class="relative flex h-3 w-3">
+        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#c9f36b] opacity-75"></span>
+        <span class="site-logo-dot relative inline-flex h-3 w-3 rounded-full bg-[#c9f36b]"></span>
       </span>
-      <span class="ml-6 mt-0.5 text-xs font-bold uppercase tracking-wider text-slate-300 group-hover:text-[#c9f36b] transition-colors">Live Sports Desk · Nepal</span>
+      <div class="flex flex-col">
+        <span class="text-xl sm:text-2xl font-black leading-none tracking-tight text-white">
+          Sportivo<span class="text-[#c9f36b]">.</span>
+        </span>
+        <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-[#c9f36b] transition-colors">
+          Live Sports Desk · Nepal
+        </span>
+      </div>
     </a>
 
-    <nav aria-label="Main Navigation" class="flex flex-wrap items-center justify-center gap-2" itemscope itemtype="https://schema.org/SiteNavigationElement">
-      {categories.map((category) => (
-        <a
-          href={`/${category}/`}
-          itemprop="url"
-          aria-current={activeCategory === category ? 'page' : undefined}
-          class:list={[
-            "rounded-full px-4 py-1.5 text-xs font-bold capitalize transition-all",
-            activeCategory === category
-              ? 'site-button-active'
-              : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
-          ]}
-        >
-          <span itemprop="name">{category[0].toUpperCase() + category.slice(1)}</span>
-        </a>
-      ))}
-
+    <!-- Desktop Navigation Quick Links (Visible on Tablet/Desktop md+) -->
+    <nav aria-label="Quick Category Navigation" class="hidden md:flex items-center gap-1.5" itemscope itemtype="https://schema.org/SiteNavigationElement">
       <a
-        href="/dashboard/"
+        href="/football/"
         itemprop="url"
-        aria-current={activeCategory === 'dashboard' ? 'page' : undefined}
+        aria-current={activeCategory === 'football' ? 'page' : undefined}
         class:list={[
-          "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold transition-all border",
-          activeCategory === 'dashboard'
-            ? 'site-button-active border-[#c9f36b]'
-            : 'border-white/10 bg-white/5 text-slate-300 hover:border-[#c9f36b]/40 hover:text-[#c9f36b]'
+          "rounded-full px-3.5 py-1.5 text-xs font-bold transition-all border",
+          activeCategory === 'football'
+            ? 'border-[#c9f36b] bg-[#c9f36b] text-[#070b0a] font-black shadow-sm'
+            : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white'
         ]}
-        title="My Saved Watchlist"
       >
-        <svg class="h-3.5 w-3.5 text-[#e5b94f]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-        </svg>
-        <span itemprop="name">My Watchlist</span>
+        <span itemprop="name">⚽ Football</span>
       </a>
-
-      <NotificationCenter client:load />
 
       <a
         href="/npl/"
@@ -68,155 +52,71 @@ const { activeCategory } = Astro.props;
         class:list={[
           "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-black transition-all border",
           activeCategory === 'npl'
-            ? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-950/50'
+            ? 'bg-red-600 text-white border-red-500 shadow-sm'
             : 'border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-white'
         ]}
-        title="Nepal Premier League 2026 Schedule & Live Stream"
       >
         <span class="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" aria-hidden="true"></span>
-        <span itemprop="name">NPL 2026</span>
-      </a>
-
-      <a
-        href="/about-dipesh-sapkota/"
-        itemprop="url"
-        aria-current={activeCategory === 'creator' ? 'page' : undefined}
-        class:list={[
-          "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold transition-all border",
-          activeCategory === 'creator'
-            ? 'site-button-active border-[#c9f36b]'
-            : 'border-white/15 bg-white/5 text-slate-300 hover:border-[#c9f36b]/40 hover:bg-[#c9f36b]/10 hover:text-[#c9f36b]'
-        ]}
-        title="About the Creator"
-      >
-        <svg class="h-3.5 w-3.5 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="16" x2="12" y2="12"></line>
-          <line x1="12" y1="8" x2="12.01" y2="8"></line>
-        </svg>
-        <span itemprop="name">About</span>
-      </a>
-
-      <InstallPrompt client:load />
-    </nav>
-  </div>
-
-  {/* MOBILE HEADER (< sm) */}
-  <div class="sm:hidden flex flex-col">
-    {/* Mobile Brand & Actions Bar */}
-    <div class="flex items-center justify-between px-4 py-2.5">
-      <a href="/" class="flex items-center gap-2 focus:outline-none" aria-label="Sportivo Home">
-        <span class="relative flex h-2.5 w-2.5">
-          <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#c9f36b] opacity-75"></span>
-          <span class="site-logo-dot relative inline-flex h-2.5 w-2.5 rounded-full"></span>
-        </span>
-        <span class="text-xl font-black leading-none tracking-tight text-white">Sportivo<span class="site-accent">.</span></span>
-        <span class="rounded bg-black/60 border border-white/10 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#e5b94f]">
-          Nepal
-        </span>
-      </a>
-
-      {/* Top Mobile Quick Actions (Alerts Bell + Star Watchlist) */}
-      <div class="flex items-center gap-2">
-        <a
-          href="/dashboard/"
-          aria-label="My Watchlist"
-          class={`relative inline-flex items-center justify-center rounded-full p-2 text-xs font-bold transition-all border ${
-            activeCategory === 'dashboard'
-              ? 'border-amber-400 bg-amber-400/20 text-amber-300 shadow-sm'
-              : 'border-white/15 bg-[#141f1d] text-amber-400 hover:border-amber-400/50'
-          }`}
-          title="My Saved Watchlist"
-        >
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-          </svg>
-        </a>
-
-        <NotificationCenter client:load />
-      </div>
-    </div>
-
-    {/* Mobile Horizontal Swipeable Category Bar */}
-    <nav
-      aria-label="Mobile Categories"
-      class="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth px-3 py-1.5 border-t border-white/5 bg-[#0a100f]/80"
-    >
-      <a
-        href="/"
-        class:list={[
-          "rounded-full px-3.5 py-1 text-xs font-bold shrink-0 transition-all border",
-          !activeCategory || activeCategory === 'home'
-            ? "border-[#c9f36b] bg-[#c9f36b] text-[#070b0a] font-black shadow-sm"
-            : "border-white/10 bg-[#141e1d] text-slate-300"
-        ]}
-      >
-        All Desk
-      </a>
-
-      <InstallPrompt client:load />
-
-      <a
-        href="/football/"
-        class:list={[
-          "rounded-full px-3.5 py-1 text-xs font-bold shrink-0 transition-all border",
-          activeCategory === 'football'
-            ? "border-[#c9f36b] bg-[#c9f36b] text-[#070b0a] font-black shadow-sm"
-            : "border-white/10 bg-[#141e1d] text-slate-300"
-        ]}
-      >
-        ⚽ Football
-      </a>
-
-      <a
-        href="/npl/"
-        class:list={[
-          "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-black shrink-0 transition-all border",
-          activeCategory === 'npl'
-            ? "bg-red-600 text-white border-red-500 shadow-sm"
-            : "border-red-500/30 bg-red-500/10 text-red-400"
-        ]}
-      >
-        <span class="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
-        <span>🇳🇵 NPL 2026</span>
+        <span itemprop="name">🇳🇵 NPL 2026</span>
       </a>
 
       <a
         href="/cricket/"
+        itemprop="url"
+        aria-current={activeCategory === 'cricket' ? 'page' : undefined}
         class:list={[
-          "rounded-full px-3.5 py-1 text-xs font-bold shrink-0 transition-all border",
+          "rounded-full px-3.5 py-1.5 text-xs font-bold transition-all border",
           activeCategory === 'cricket'
-            ? "border-[#c9f36b] bg-[#c9f36b] text-[#070b0a] font-black shadow-sm"
-            : "border-white/10 bg-[#141e1d] text-slate-300"
+            ? 'border-[#c9f36b] bg-[#c9f36b] text-[#070b0a] font-black shadow-sm'
+            : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white'
         ]}
       >
-        🏏 Cricket
+        <span itemprop="name">🏏 Cricket</span>
       </a>
 
       <a
         href="/basketball/"
+        itemprop="url"
+        aria-current={activeCategory === 'basketball' ? 'page' : undefined}
         class:list={[
-          "rounded-full px-3.5 py-1 text-xs font-bold shrink-0 transition-all border",
+          "rounded-full px-3.5 py-1.5 text-xs font-bold transition-all border",
           activeCategory === 'basketball'
-            ? "border-[#c9f36b] bg-[#c9f36b] text-[#070b0a] font-black shadow-sm"
-            : "border-white/10 bg-[#141e1d] text-slate-300"
+            ? 'border-[#c9f36b] bg-[#c9f36b] text-[#070b0a] font-black shadow-sm'
+            : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white'
         ]}
       >
-        🏀 Basketball
-      </a>
-
-      <a
-        href="/about-dipesh-sapkota/"
-        class:list={[
-          "rounded-full px-3.5 py-1 text-xs font-bold shrink-0 transition-all border",
-          activeCategory === 'creator'
-            ? "border-[#c9f36b] bg-[#c9f36b] text-[#070b0a] font-black shadow-sm"
-            : "border-white/10 bg-[#141e1d] text-slate-300"
-        ]}
-      >
-        ℹ️ About
+        <span itemprop="name">🏀 Basketball</span>
       </a>
     </nav>
+
+    <!-- Right Controls: Watchlist + Notification Bell + Hamburger Menu -->
+    <div class="flex items-center gap-2 shrink-0">
+      <a
+        href="/dashboard/"
+        aria-label="My Watchlist"
+        class:list={[
+          "inline-flex items-center gap-1.5 rounded-xl border p-2 text-xs font-bold transition-all shadow-sm",
+          activeCategory === 'dashboard'
+            ? 'border-amber-400 bg-amber-400/20 text-amber-300'
+            : 'border-white/15 bg-[#141f1d] text-amber-400 hover:border-amber-400/50 hover:bg-[#1a2927]'
+        ]}
+        title="My Saved Watchlist"
+      >
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+        <span class="hidden sm:inline text-xs font-bold text-slate-200">Watchlist</span>
+      </a>
+
+      <!-- Notification Center Bell -->
+      <NotificationCenter client:load />
+
+      <!-- PWA Install Prompt -->
+      <InstallPrompt client:load />
+
+      <!-- Universal Hamburger Menu (All Devices) -->
+      <HamburgerMenu client:load activeCategory={activeCategory} />
+    </div>
   </div>
 </header>
 
