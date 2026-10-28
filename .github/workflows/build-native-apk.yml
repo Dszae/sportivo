@@ -34,6 +34,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Install Mobile Dependencies
         run: |
           cd mobile
@@ -41,16 +44,16 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
-        with:
-          cache-read-only: false
 
       - name: Compile Native Android APK with Gradle
+        id: gradle_build
         run: |
           cd mobile/android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload Native Sportivo APK Artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Sportivo-Native-Android-APK
@@ -62,12 +65,12 @@ jobs:
         if: success()
         with:
           tag_name: v1.0.0-apk
-          name: Sportivo Native Android App v1.0.0 (FotMob Edition)
+          name: Sportivo Native Android App v1.0.0
           body: |
-            ### 📱 Sportivo Official Android App (Native APK)
+            ### Sportivo Official Android App (Native APK)
             - **App ID**: `np.com.dipeshsapkota7.sportivo`
             - **Developer**: Dipesh Sapkota
-            - **Features**: Live FotMob matchday layout, ExoPlayer streaming, NPL 2026 cricket scores, Nepal Standard Time (NST) kickoff alerts.
+            - **Features**: Native ExoPlayer streaming, NPL 2026 live scores, Nepal Standard Time (NST) kickoff alerts.
             
             Tap `app-debug.apk` below to download directly onto your Android device.
           files: mobile/android/app/build/outputs/apk/debug/app-debug.apk

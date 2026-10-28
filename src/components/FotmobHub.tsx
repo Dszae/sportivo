@@ -341,13 +341,13 @@ export default function FotmobHub({ initialCategory = 'all' }: Props) {
         </div>
 
         {/* Sports Category Circular Chips (FotMob Horizontal Scroll) */}
-        <div className="max-w-7xl mx-auto mt-3 flex items-center gap-3 overflow-x-auto no-scrollbar py-1">
+        <div className="max-w-7xl mx-auto mt-3 flex items-center gap-2.5 overflow-x-auto no-scrollbar py-1">
           {[
-            { id: 'all', name: 'All Sports', icon: '🏆' },
-            { id: 'football', name: 'Football', icon: '⚽' },
-            { id: 'npl', name: 'NPL 2026', icon: '🇳🇵' },
-            { id: 'cricket', name: 'Cricket', icon: '🏏' },
-            { id: 'basketball', name: 'Basketball', icon: '🏀' },
+            { id: 'all', name: 'All Fixtures' },
+            { id: 'football', name: 'Football' },
+            { id: 'npl', name: 'NPL 2026' },
+            { id: 'cricket', name: 'Cricket' },
+            { id: 'basketball', name: 'Basketball' },
           ].map((sport) => {
             const isActive = selectedSport === sport.id;
             return (
@@ -355,13 +355,12 @@ export default function FotmobHub({ initialCategory = 'all' }: Props) {
                 key={sport.id}
                 type="button"
                 onClick={() => setSelectedSport(sport.id as SportFilter)}
-                className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold shrink-0 transition-all border ${
+                className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold shrink-0 transition-all border ${
                   isActive
                     ? 'border-[#00e676] bg-[#00e676] text-[#080a0b] font-black shadow-sm'
                     : 'border-white/10 bg-[#121c19] text-slate-300 hover:border-white/20 hover:text-white'
                 }`}
               >
-                <span>{sport.icon}</span>
                 <span>{sport.name}</span>
               </button>
             );
@@ -814,11 +813,62 @@ export default function FotmobHub({ initialCategory = 'all' }: Props) {
       >
         <div className="flex items-center justify-around max-w-lg mx-auto">
           {[
-            { id: 'home', label: 'Home', icon: '🏠' },
-            { id: 'matches', label: 'Matches', icon: '📅' },
-            { id: 'livetv', label: 'Live TV', icon: '📺' },
-            { id: 'leagues', label: 'Leagues', icon: '🏆' },
-            { id: 'profile', label: 'Profile', icon: '👤' },
+            {
+              id: 'home',
+              label: 'Home',
+              icon: (
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+              ),
+            },
+            {
+              id: 'matches',
+              label: 'Matches',
+              icon: (
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+              ),
+            },
+            {
+              id: 'livetv',
+              label: 'Live TV',
+              icon: (
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="2" y="7" width="20" height="15" rx="2" ry="2" />
+                  <polyline points="17 2 12 7 7 2" />
+                </svg>
+              ),
+            },
+            {
+              id: 'leagues',
+              label: 'Leagues',
+              icon: (
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                  <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                  <path d="M4 22h16" />
+                  <path d="M10 14.66V17c0 .55-.45 1-1 1H7" />
+                  <path d="M14 14.66V17c0 .55.45 1 1 1h2" />
+                  <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+                </svg>
+              ),
+            },
+            {
+              id: 'profile',
+              label: 'Profile',
+              icon: (
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              ),
+            },
           ].map((item) => {
             const isActive = activeTab === item.id;
             return (
@@ -830,7 +880,7 @@ export default function FotmobHub({ initialCategory = 'all' }: Props) {
                   isActive ? 'text-[#00e676] font-black scale-105' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                <span className="text-lg leading-none">{item.icon}</span>
+                <span className="shrink-0 leading-none">{item.icon}</span>
                 <span className="text-[10px] font-bold leading-none tracking-tight">{item.label}</span>
               </button>
             );

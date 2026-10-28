@@ -36,13 +36,13 @@ const { activeCategory } = Astro.props;
         itemprop="url"
         aria-current={activeCategory === 'football' ? 'page' : undefined}
         class:list={[
-          "rounded-full px-3.5 py-1.5 text-xs font-bold transition-all border",
+          "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all border",
           activeCategory === 'football'
             ? 'border-[#c9f36b] bg-[#c9f36b] text-[#070b0a] font-black shadow-sm'
             : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white'
         ]}
       >
-        <span itemprop="name">⚽ Football</span>
+        <span itemprop="name">Football</span>
       </a>
 
       <a
@@ -57,7 +57,7 @@ const { activeCategory } = Astro.props;
         ]}
       >
         <span class="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" aria-hidden="true"></span>
-        <span itemprop="name">🇳🇵 NPL 2026</span>
+        <span itemprop="name">NPL 2026</span>
       </a>
 
       <a
@@ -65,13 +65,13 @@ const { activeCategory } = Astro.props;
         itemprop="url"
         aria-current={activeCategory === 'cricket' ? 'page' : undefined}
         class:list={[
-          "rounded-full px-3.5 py-1.5 text-xs font-bold transition-all border",
+          "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all border",
           activeCategory === 'cricket'
             ? 'border-[#c9f36b] bg-[#c9f36b] text-[#070b0a] font-black shadow-sm'
             : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white'
         ]}
       >
-        <span itemprop="name">🏏 Cricket</span>
+        <span itemprop="name">Cricket</span>
       </a>
 
       <a
@@ -79,17 +79,17 @@ const { activeCategory } = Astro.props;
         itemprop="url"
         aria-current={activeCategory === 'basketball' ? 'page' : undefined}
         class:list={[
-          "rounded-full px-3.5 py-1.5 text-xs font-bold transition-all border",
+          "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all border",
           activeCategory === 'basketball'
             ? 'border-[#c9f36b] bg-[#c9f36b] text-[#070b0a] font-black shadow-sm'
             : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white'
         ]}
       >
-        <span itemprop="name">🏀 Basketball</span>
+        <span itemprop="name">Basketball</span>
       </a>
     </nav>
 
-    <!-- Right Controls: Watchlist + Notification Bell + Hamburger Menu -->
+    <!-- Right Controls: Watchlist + Notification Bell (Desktop) & Mobile Drawer + APK (Mobile Only) -->
     <div class="flex items-center gap-2 shrink-0">
       <a
         href="/dashboard/"
@@ -111,11 +111,11 @@ const { activeCategory } = Astro.props;
       <!-- Notification Center Bell -->
       <NotificationCenter client:load />
 
-      <!-- Native APK Download Modal & Trigger -->
-      <DownloadApkButton client:load />
-
-      <!-- Universal Hamburger Menu (All Devices) -->
-      <HamburgerMenu client:load activeCategory={activeCategory} />
+      <!-- Mobile-Only Controls (APK Download & Hamburger Menu) -->
+      <div class="md:hidden flex items-center gap-1.5">
+        <DownloadApkButton client:load />
+        <HamburgerMenu client:load activeCategory={activeCategory} />
+      </div>
     </div>
   </div>
 </header>

@@ -11,8 +11,12 @@ export default function DownloadApkButton() {
         title="Download Sportivo Native Android APK"
         className="inline-flex items-center gap-1.5 rounded-full border border-[#c9f36b]/60 bg-[#c9f36b]/20 px-3 py-1.5 text-xs font-black text-[#c9f36b] hover:bg-[#c9f36b] hover:text-[#080a0b] transition-all shadow-md active:scale-95 shrink-0"
       >
-        <span>📲</span>
-        <span>Download APK</span>
+        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span>APK</span>
       </button>
 
       {showModal && (
@@ -34,8 +38,11 @@ export default function DownloadApkButton() {
             {/* Header */}
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#c9f36b]/15 border border-[#c9f36b]/40 text-2xl">
-                  📱
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#c9f36b]/15 border border-[#c9f36b]/40 text-[#c9f36b]">
+                  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                    <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                  </svg>
                 </div>
                 <div>
                   <h3 className="text-base font-black text-white">Sportivo Android App</h3>
@@ -74,30 +81,31 @@ export default function DownloadApkButton() {
             {/* Download Actions */}
             <div className="space-y-3 pt-2">
               <a
-                href="https://github.com/Dszae/sportivo/releases/download/v1.0.0-apk/app-debug.apk"
+                href="https://github.com/Dszae/sportivo/actions/workflows/build-native-apk.yml"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 w-full rounded-2xl bg-[#c9f36b] px-4 py-3 text-sm font-black text-[#080a0b] hover:bg-[#b5e05c] transition-all shadow-lg shadow-[#c9f36b]/20 active:scale-98"
-                download="Sportivo-v1.0.0.apk"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="7 10 12 15 17 10"></polyline>
                   <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
-                <span>Direct Download Native APK (v1.0.0)</span>
+                <span>Download Compiled APK (GitHub Runner)</span>
               </a>
 
               <div className="rounded-xl border border-white/10 bg-[#121c1a] p-3 text-center space-y-1.5">
                 <p className="text-[11px] text-slate-300">
-                  <strong>Installation Guide:</strong> Once downloaded, tap the file in your notification bar and choose <em>Allow installation from this source</em> to launch Sportivo.
+                  <strong>Installation Guide:</strong> Download the APK from the latest successful build artifact, open it on Android, and select <em>Allow from this source</em>.
                 </p>
                 <div className="flex items-center justify-center gap-4 pt-1">
                   <a
-                    href="https://github.com/Dszae/sportivo/releases"
+                    href="https://github.com/Dszae/sportivo/actions"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[11px] text-slate-400 hover:text-white underline"
                   >
-                    All Releases
+                    Build Pipelines
                   </a>
                   <span className="text-slate-600">·</span>
                   <a

@@ -29,7 +29,13 @@ export default function HamburgerMenu({ activeCategory }: Props) {
       name: 'Football Desk',
       category: 'football',
       href: '/football/',
-      icon: '⚽',
+      icon: (
+        <svg className="w-5 h-5 text-[#c9f36b]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+          <path d="M2 12h20" />
+        </svg>
+      ),
       tag: 'Premier League, UCL, La Liga',
       badge: 'Live Feeds',
       badgeColor: 'border-[#c9f36b]/40 text-[#c9f36b] bg-[#c9f36b]/10',
@@ -38,7 +44,16 @@ export default function HamburgerMenu({ activeCategory }: Props) {
       name: 'NPL 2026',
       category: 'npl',
       href: '/npl/',
-      icon: '🇳🇵',
+      icon: (
+        <svg className="w-5 h-5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+          <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+          <path d="M4 22h16" />
+          <path d="M10 14.66V17c0 .55-.45 1-1 1H7" />
+          <path d="M14 14.66V17c0 .55.45 1 1 1h2" />
+          <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+        </svg>
+      ),
       tag: 'Official Nepal Premier League',
       badge: '32 Fixtures',
       badgeColor: 'border-red-500/40 text-red-400 bg-red-500/15 animate-pulse',
@@ -47,7 +62,15 @@ export default function HamburgerMenu({ activeCategory }: Props) {
       name: 'Cricket Desk',
       category: 'cricket',
       href: '/cricket/',
-      icon: '🏏',
+      icon: (
+        <svg className="w-5 h-5 text-[#c9f36b]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="10" />
+          <path d="m4.93 4.93 4.24 4.24" />
+          <path d="m14.83 9.17 4.24-4.24" />
+          <path d="m14.83 14.83 4.24 4.24" />
+          <path d="m9.17 14.83-4.24 4.24" />
+        </svg>
+      ),
       tag: 'ICC, IPL, Bilateral Series',
       badge: 'NST Scores',
       badgeColor: 'border-[#c9f36b]/40 text-[#c9f36b] bg-[#c9f36b]/10',
@@ -56,7 +79,15 @@ export default function HamburgerMenu({ activeCategory }: Props) {
       name: 'Basketball Desk',
       category: 'basketball',
       href: '/basketball/',
-      icon: '🏀',
+      icon: (
+        <svg className="w-5 h-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M2.1 10.5A10 10 0 0 1 10.5 2.1" />
+          <path d="M21.9 13.5a10 10 0 0 1-8.4 8.4" />
+          <path d="M2 12h20" />
+          <path d="M12 2v20" />
+        </svg>
+      ),
       tag: 'NBA & EuroLeague Fixtures',
       badge: 'Live Quarters',
       badgeColor: 'border-amber-400/40 text-amber-300 bg-amber-400/10',
@@ -68,54 +99,79 @@ export default function HamburgerMenu({ activeCategory }: Props) {
       name: 'FotMob Matchday Hub',
       category: 'hub',
       href: '/hub/',
-      icon: '📱',
+      icon: (
+        <svg className="w-5 h-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="3" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="14" width="7" height="7" rx="1" />
+          <rect x="3" y="14" width="7" height="7" rx="1" />
+        </svg>
+      ),
       tag: 'FotMob live matches, standings & TV',
     },
     {
       name: 'My Personal Watchlist',
       category: 'dashboard',
       href: '/dashboard/',
-      icon: '⭐',
+      icon: (
+        <svg className="w-5 h-5 text-amber-400" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+        </svg>
+      ),
       tag: 'Follow clubs & track personal schedule',
     },
     {
       name: 'About Dipesh Sapkota',
       category: 'creator',
       href: '/about-dipesh-sapkota/',
-      icon: 'ℹ️',
+      icon: (
+        <svg className="w-5 h-5 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      ),
       tag: 'Software Developer & Creator of Sportivo',
     },
     {
       name: 'Official Privacy Policy',
       category: 'privacy',
       href: '/privacy/',
-      icon: '🔒',
+      icon: (
+        <svg className="w-5 h-5 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+      ),
       tag: 'Device permissions & store compliance',
     },
     {
       name: 'Developer Fixture API',
       category: 'api-docs',
       href: '/api-docs/',
-      icon: '⚡',
+      icon: (
+        <svg className="w-5 h-5 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <polyline points="16 18 22 12 16 6" />
+          <polyline points="8 6 2 12 8 18" />
+        </svg>
+      ),
       tag: 'Open REST endpoints for developers',
     },
   ];
 
   return (
     <>
-      {/* Sleek Hamburger Toggle Button */}
+      {/* Sleek Mobile Hamburger Toggle Button */}
       <button
         type="button"
         onClick={() => setIsOpen(true)}
         aria-label="Open Navigation Menu"
-        className="flex items-center gap-2 rounded-xl border border-white/15 bg-[#141f1d] px-3 py-2 text-xs font-bold text-slate-200 hover:border-[#c9f36b]/60 hover:bg-[#1a2927] hover:text-white transition-all shadow-sm active:scale-95"
+        className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-[#141f1d] px-2.5 py-1.5 text-xs font-bold text-slate-200 hover:border-[#c9f36b]/60 hover:bg-[#1a2927] hover:text-white transition-all shadow-sm active:scale-95"
       >
         <span className="flex flex-col gap-1 w-4">
           <span className="h-0.5 w-4 bg-[#c9f36b] rounded-full"></span>
           <span className="h-0.5 w-3 bg-white rounded-full"></span>
           <span className="h-0.5 w-4 bg-[#c9f36b] rounded-full"></span>
         </span>
-        <span className="hidden sm:inline text-xs font-bold">Menu</span>
       </button>
 
       {/* Slide-over Overlay Backdrop */}
@@ -129,7 +185,7 @@ export default function HamburgerMenu({ activeCategory }: Props) {
 
       {/* Slide-out Drawer Panel */}
       <div
-        className={`fixed inset-y-0 right-0 z-[99999] w-full max-w-[340px] sm:max-w-[400px] bg-[#0c1413] border-l border-white/15 shadow-2xl flex flex-col justify-between transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 right-0 z-[99999] w-full max-w-[320px] sm:max-w-[360px] bg-[#0c1413] border-l border-white/15 shadow-2xl flex flex-col justify-between transform transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
         role="dialog"
@@ -186,7 +242,7 @@ export default function HamburgerMenu({ activeCategory }: Props) {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <span className="text-xl shrink-0">{item.icon}</span>
+                      <span className="shrink-0">{item.icon}</span>
                       <div>
                         <div className="text-xs font-bold text-white flex items-center gap-1.5">
                           {item.name}
@@ -208,7 +264,7 @@ export default function HamburgerMenu({ activeCategory }: Props) {
           {/* Quick Tools & Information */}
           <div>
             <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#e5b94f] mb-3">
-              Tools & Information
+              Tools &amp; Information
             </span>
             <div className="space-y-2">
               {tools.map((item) => {
@@ -224,7 +280,7 @@ export default function HamburgerMenu({ activeCategory }: Props) {
                         : 'border-white/10 bg-[#121d1b] text-slate-200 hover:border-[#c9f36b]/40 hover:bg-[#162421]'
                     }`}
                   >
-                    <span className="text-lg shrink-0">{item.icon}</span>
+                    <span className="shrink-0">{item.icon}</span>
                     <div>
                       <div className="text-xs font-bold text-white">{item.name}</div>
                       <div className="text-[10px] text-slate-400 mt-0.5">{item.tag}</div>
@@ -250,4 +306,3 @@ export default function HamburgerMenu({ activeCategory }: Props) {
     </>
   );
 }
-

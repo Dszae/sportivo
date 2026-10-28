@@ -206,11 +206,11 @@ export default function NotificationCenter() {
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 z-[9990] bg-black/60 backdrop-blur-sm sm:hidden"
+            className="fixed inset-0 z-[9990] bg-black/75 backdrop-blur-sm sm:hidden"
             onClick={() => setIsOpen(false)}
             aria-hidden="true"
           />
-          <div className="fixed inset-x-2.5 top-16 sm:inset-x-auto sm:right-0 sm:top-full mt-2 max-h-[82vh] sm:max-h-[580px] w-auto sm:w-[420px] max-w-[420px] mx-auto sm:mx-0 rounded-2xl border-2 border-white/20 bg-[#0c1413] shadow-[0_20px_60px_rgba(0,0,0,0.95)] z-[9995] overflow-hidden text-slate-100 flex flex-col ring-1 ring-[#c9f36b]/30">
+          <div className="fixed inset-x-4 top-20 bottom-auto max-h-[80vh] sm:fixed sm:inset-auto sm:right-6 sm:top-16 sm:w-[400px] max-w-[420px] mx-auto sm:mx-0 rounded-2xl border border-white/20 bg-[#0c1413] shadow-[0_24px_60px_rgba(0,0,0,0.95)] z-[9995] overflow-hidden text-slate-100 flex flex-col ring-1 ring-[#c9f36b]/25">
           {/* Header (100% Solid) */}
           <div className="flex items-center justify-between border-b border-white/15 px-4 py-3 bg-[#131d1b]">
             <div className="flex items-center gap-2.5">
@@ -231,13 +231,17 @@ export default function NotificationCenter() {
                 type="button"
                 onClick={() => setShowPreferences(!showPreferences)}
                 title="Notification Settings"
-                className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition border ${
+                className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition border ${
                   showPreferences
                     ? 'border-[#c9f36b] bg-[#c9f36b] text-[#070b0a] shadow-sm'
                     : 'border-white/15 bg-[#1b2725] text-slate-200 hover:border-[#c9f36b]/50 hover:text-white'
                 }`}
               >
-                ⚙ Preferences
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <span>Preferences</span>
               </button>
               {history.length > 0 && (
                 <button
@@ -466,7 +470,10 @@ export default function NotificationCenter() {
               <div className="max-h-[420px] overflow-y-auto p-3 space-y-2.5 bg-[#0b1110] custom-scrollbar">
                 {filteredHistory.length === 0 ? (
                   <div className="rounded-xl border border-white/10 bg-[#121c1a] p-6 text-center text-xs text-slate-300 my-1">
-                    <span className="inline-block text-3xl mb-2">🔔</span>
+                    <svg className="w-8 h-8 mx-auto text-slate-500 mb-2 stroke-[1.5]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
                     <p className="font-black text-white text-sm">No match alerts in this tab</p>
                     <p className="mt-1.5 text-xs text-slate-300 max-w-xs mx-auto leading-relaxed">
                       Follow your favorite teams in{' '}
