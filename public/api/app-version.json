@@ -1,7 +1,7 @@
 {
-  "version": "1.0.2",
-  "versionCode": 3,
+  "version": "1.0.3",
+  "versionCode": 4,
   "downloadUrl": "https://sportivo.dipeshsapkota7.com.np/download/sportivo.apk",
-  "releaseNotes": "Fixed duplicate top header bar in match player, enabled instant live video playback in WebView with Android hardware acceleration.",
+  "releaseNotes": "Native in-app background download & direct installer without browser, hardware accelerated live streams.",
   "publishedAt": "2026-10-28"
 }

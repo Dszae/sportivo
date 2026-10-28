@@ -9,6 +9,7 @@ import {
   StatusBar,
   Platform,
   Image,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -17,7 +18,7 @@ import { FootballIcon, TrophyIcon, CricketIcon, BookmarkIcon, BellIcon, ArrowFor
 import { RootStackParamList } from '../types';
 import { loadPreferences } from '../services/storage';
 import { triggerButtonHaptic } from '../services/notifications';
-import { checkForAppUpdate, openAppUpdate, AppVersionInfo } from '../services/updateService';
+import { checkForAppUpdate, downloadAndInstallUpdate, AppVersionInfo } from '../services/updateService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -27,8 +28,23 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [watchlistCount, setWatchlistCount] = useState(0);
   const [updateInfo, setUpdateInfo] = useState<AppVersionInfo | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
 
   const topPadding = Platform.OS === 'android' ? 24 : insets.top + 8;
+
+  const handleStartUpdate = async () => {
+    if (!updateInfo) return;
+    setIsDownloading(true);
+    setDownloadProgress(0);
+    const res = await downloadAndInstallUpdate(updateInfo.downloadUrl, (pct) => {
+      setDownloadProgress(pct);
+    });
+    setIsDownloading(false);
+    if (!res.success) {
+      Alert.alert('Update Failed', res.error || 'Could not complete update.');
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -153,12 +169,23 @@ export default function HomeScreen() {
             </View>
             <Text style={styles.updateTitle}>New Sportivo Version Ready</Text>
             <Text style={styles.updateNotes}>{updateInfo.releaseNotes}</Text>
-            <TouchableOpacity
-              style={styles.updateActionBtn}
-              onPress={() => openAppUpdate(updateInfo.downloadUrl)}
-            >
-              <Text style={styles.updateActionText}>Update Directly (v{updateInfo.version}) &rarr;</Text>
-            </TouchableOpacity>
+            {isDownloading ? (
+              <View style={styles.progressContainer}>
+                <View style={styles.progressBarBg}>
+                  <View style={[styles.progressBarFill, { width: `${downloadProgress}%` }]} />
+                </View>
+                <Text style={styles.progressText}>
+                  Downloading update directly in background... {downloadProgress}%
+                </Text>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.updateActionBtn}
+                onPress={handleStartUpdate}
+              >
+                <Text style={styles.updateActionText}>Download &amp; Install v{updateInfo.version} &rarr;</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -374,6 +401,27 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: 'center',
+  },
+  progressContainer: {
+    marginVertical: 4,
+  },
+  progressBarBg: {
+    height: 8,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#c9f36b',
+    borderRadius: 4,
+  },
+  progressText: {
+    color: '#c9f36b',
+    fontSize: 11,
+    fontWeight: '800',
+    textAlign: 'center',
   },
   updateActionText: {
     color: '#080a0b',

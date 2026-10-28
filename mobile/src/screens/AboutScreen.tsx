@@ -14,7 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { ArrowBackIcon, LocationIcon, ClockIcon, GlobeIcon, ChevronForwardIcon, GithubIcon, LinkedinIcon, MailIcon } from '../components/Icons';
-import { checkForAppUpdate, openAppUpdate, CURRENT_VERSION } from '../services/updateService';
+import { checkForAppUpdate, downloadAndInstallUpdate, CURRENT_VERSION } from '../services/updateService';
 
 export default function AboutScreen() {
   const navigation = useNavigation();
@@ -27,13 +27,22 @@ export default function AboutScreen() {
     setCheckingUpdate(true);
     setUpdateStatus('Checking for latest updates...');
     const info = await checkForAppUpdate();
-    setCheckingUpdate(false);
     if (!info) {
+      setCheckingUpdate(false);
       setUpdateStatus('Could not reach update server. Check your connection.');
     } else if (info.hasUpdate) {
-      setUpdateStatus(`Version v${info.version} ready! Launching update...`);
-      openAppUpdate(info.downloadUrl);
+      setUpdateStatus(`Downloading v${info.version} directly inside app (0%)...`);
+      const res = await downloadAndInstallUpdate(info.downloadUrl, (pct) => {
+        setUpdateStatus(`Downloading update directly inside app (${pct}%)...`);
+      });
+      setCheckingUpdate(false);
+      if (!res.success) {
+        setUpdateStatus(res.error || 'Installation failed.');
+      } else {
+        setUpdateStatus('Opening Android installer...');
+      }
     } else {
+      setCheckingUpdate(false);
       setUpdateStatus(`You are using the latest version (v${CURRENT_VERSION})!`);
     }
   };
