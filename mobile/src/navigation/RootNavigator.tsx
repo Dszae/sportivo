@@ -125,10 +125,9 @@ export default function RootNavigator() {
       <Stack.Screen
         name="MatchPlayer"
         component={MatchPlayerScreen}
-        options={({ route }) => ({
-          title: route.params.match.title || 'Live Broadcast',
-          headerBackTitle: 'Back',
-        })}
+        options={{
+          headerShown: false,
+        }}
       />
 
       <Stack.Screen

@@ -78,11 +78,16 @@ export default function MatchPlayerScreen() {
   useEffect(() => {
     setHasTimedOut(false);
     setIsBuffering(true);
-    const timer = setTimeout(() => {
-      setHasTimedOut(true);
+    const dismissTimer = setTimeout(() => {
       setIsBuffering(false);
-    }, 9000);
-    return () => clearTimeout(timer);
+    }, 2500);
+    const timeoutTimer = setTimeout(() => {
+      setHasTimedOut(true);
+    }, 6000);
+    return () => {
+      clearTimeout(dismissTimer);
+      clearTimeout(timeoutTimer);
+    };
   }, [selectedServer]);
 
   // Current active stream source
@@ -167,48 +172,59 @@ export default function MatchPlayerScreen() {
             style={styles.video}
             allowsFullscreenVideo={true}
             mediaPlaybackRequiresUserAction={false}
+            allowsInlineMediaPlayback={true}
             javaScriptEnabled={true}
             domStorageEnabled={true}
+            mixedContentMode="always"
+            originWhitelist={['*']}
+            androidLayerType="hardware"
+            userAgent="Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+            onLoadStart={() => {
+              setTimeout(() => setIsBuffering(false), 2000);
+            }}
             onLoadEnd={() => setIsBuffering(false)}
+            onLoadProgress={({ nativeEvent }) => {
+              if (nativeEvent.progress > 0.35) setIsBuffering(false);
+            }}
           />
         )}
 
-        {isBuffering && !hasTimedOut && (
-          <View style={styles.bufferingOverlay}>
+        {isBuffering && (
+          <View style={styles.bufferingOverlay} pointerEvents="none">
             <ActivityIndicator size="large" color="#c9f36b" />
             <Text style={styles.bufferingText}>Connecting to Live Broadcast...</Text>
           </View>
         )}
+      </View>
 
-        {hasTimedOut && (
-          <View style={styles.timeoutOverlay}>
-            <AlertCircleIcon size={32} color="#fbbf24" />
-            <Text style={styles.timeoutTitle}>Broadcast Feed Connecting</Text>
-            <Text style={styles.timeoutSub}>
-              If the stream does not start automatically, switch servers or launch directly in HD browser view.
-            </Text>
-            <View style={styles.timeoutActions}>
+      {/* Non-blocking Stream Helper Bar (appears if user needs alternative) */}
+      {hasTimedOut && (
+        <View style={styles.streamHelperBanner}>
+          <View style={styles.streamHelperTextRow}>
+            <AlertCircleIcon size={16} color="#fbbf24" />
+            <Text style={styles.streamHelperTitle}>Tap play on video if paused</Text>
+          </View>
+          <View style={styles.streamHelperActions}>
+            {streams.length > 1 && (
               <TouchableOpacity
                 style={styles.retryBtn}
                 onPress={() => {
                   setHasTimedOut(false);
                   setIsBuffering(true);
-                  if (streams.length > 1) {
-                    setSelectedServer((selectedServer + 1) % streams.length);
-                  }
+                  setSelectedServer((selectedServer + 1) % streams.length);
                 }}
               >
-                <RefreshIcon size={14} color="#080a0b" />
+                <RefreshIcon size={12} color="#080a0b" />
                 <Text style={styles.retryBtnText}>Next Server</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.browserBtn} onPress={openInBrowser}>
-                <ExternalLinkIcon size={14} color="#c9f36b" />
-                <Text style={styles.browserBtnText}>Open in Browser</Text>
-              </TouchableOpacity>
-            </View>
+            )}
+            <TouchableOpacity style={styles.browserBtn} onPress={openInBrowser}>
+              <ExternalLinkIcon size={12} color="#c9f36b" />
+              <Text style={styles.browserBtnText}>Open HD Browser</Text>
+            </TouchableOpacity>
           </View>
-        )}
-      </View>
+        </View>
+      )}
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Match Header Information */}
@@ -372,43 +388,44 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
   },
-  timeoutOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(8, 10, 11, 0.95)',
-    justifyContent: 'center',
+  streamHelperBanner: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    justifyContent: 'space-between',
+    backgroundColor: '#0c1514',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(201, 243, 107, 0.2)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
-  timeoutTitle: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '900',
-    marginTop: 8,
+  streamHelperTextRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
   },
-  timeoutSub: {
+  streamHelperTitle: {
     color: '#cbd5e1',
     fontSize: 11,
-    textAlign: 'center',
-    marginTop: 4,
-    lineHeight: 16,
+    fontWeight: '700',
   },
-  timeoutActions: {
+  streamHelperActions: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 12,
+    alignItems: 'center',
+    gap: 8,
   },
   retryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     backgroundColor: '#c9f36b',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
   },
   retryBtnText: {
     color: '#080a0b',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '900',
   },
   browserBtn: {
@@ -418,13 +435,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(201, 243, 107, 0.15)',
     borderWidth: 1,
     borderColor: '#c9f36b',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
   },
   browserBtnText: {
     color: '#c9f36b',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '800',
   },
   scrollContent: {
