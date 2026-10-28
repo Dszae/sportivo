@@ -3,7 +3,7 @@
   "crons": [
     {
       "path": "/api/cron/match-alerts/",
-      "schedule": "* * * * *"
+      "schedule": "0 6 * * *"
     }
   ],
   "headers": [
