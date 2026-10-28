@@ -109,7 +109,11 @@ export default function MatchPlayer({ match }: Props) {
 
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
               setPlayerState('playing');
-              video.play().catch(() => {});
+              video.play().catch(() => {
+                // If browser blocks unmuted autoplay (e.g. Brave / Chrome Shields), play muted
+                video.muted = true;
+                video.play().catch(() => {});
+              });
             });
 
             hls.on(Hls.Events.ERROR, (_event, data) => {
@@ -139,7 +143,10 @@ export default function MatchPlayer({ match }: Props) {
             });
           } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = url;
-            video.play().catch(() => {});
+            video.play().catch(() => {
+              video.muted = true;
+              video.play().catch(() => {});
+            });
           } else {
             setPlayerState('unsupported');
             setErrorMessage('Your browser does not support HLS video streaming.');
