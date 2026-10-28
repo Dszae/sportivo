@@ -103,20 +103,21 @@ export default function MatchPlayer({ match }: Props) {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  // Jump to Live Edge (0.0s latency)
+  // Jump to Live Edge (Synced to live broadcast)
   const jumpToLiveEdge = () => {
     const video = videoRef.current;
     const hls = hlsInstanceRef.current;
     if (video) {
       if (hls && typeof hls.liveSyncPosition === 'number' && hls.liveSyncPosition > 0) {
-        video.currentTime = hls.liveSyncPosition;
+        // Jump to safe live edge (holding ~6s buffer so video never pauses or stalls)
+        video.currentTime = Math.max(0, hls.liveSyncPosition - 6);
       } else if (video.seekable && video.seekable.length > 0) {
-        video.currentTime = video.seekable.end(video.seekable.length - 1);
+        video.currentTime = Math.max(0, video.seekable.end(video.seekable.length - 1) - 4);
       }
       video.playbackRate = 1.0;
       setStreamDrift(0);
       video.play().catch(() => {});
-      setShortcutToast('⚡ Synced to Live Edge (0.0s)');
+      setShortcutToast('⚡ Synced to Live Edge');
       setTimeout(() => setShortcutToast(null), 2000);
     }
   };
@@ -218,99 +219,91 @@ export default function MatchPlayer({ match }: Props) {
       if (url.includes('.m3u8')) {
         import('hls.js').then(({ default: Hls }) => {
           if (Hls.isSupported()) {
-            // Override 3-segment rule with ultra-low latency tuning
+            // Resilient live HLS configuration preventing buffering pauses on 10s segments
             hls = new Hls({
               enableWorker: true,
-              lowLatencyMode: true,
-              liveSyncDurationCount: 1,        // Only stay 1 segment behind instead of 3
-              liveMaxLatencyDurationCount: 1.8, // Hard-cap max lag to 1.8 segments
-              maxBufferLength: 4,              // Do not buffer unnecessary future chunks
-              backBufferLength: 0,             // Discard played chunks immediately
+              lowLatencyMode: false,
+              liveSyncDurationCount: 2,         // Safe 2-segment broadcast buffer (~20s)
+              liveMaxLatencyDurationCount: 4,   // Soft upper bound before micro-acceleration
+              maxLiveSyncPlaybackRate: 1.15,    // Smooth native catch-up without abrupt seeking
+              maxBufferLength: 30,              // Hold up to 30 seconds of buffer
+              maxMaxBufferLength: 60,
+              backBufferLength: 15,             // Retain 15s of played content
+              liveDurationInfinity: true,
+              highBufferWatchdogPeriod: 2,
             });
             hlsInstanceRef.current = hls;
 
             hls.loadSource(url);
             hls.attachMedia(video);
 
-            // Immediate Live-Edge Seeking on Start
+            // Start playback smoothly at the live edge without starving the buffer
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
               setPlayerState('playing');
               const playPromise = video.play();
               if (playPromise !== undefined) {
-                playPromise
-                  .then(() => {
-                    if (typeof hls.liveSyncPosition === 'number' && hls.liveSyncPosition > 0) {
-                      video.currentTime = hls.liveSyncPosition;
-                    }
-                  })
-                  .catch(() => {
-                    // Browser blocked unmuted autoplay -> play muted
-                    video.muted = true;
-                    video.play().then(() => {
-                      if (typeof hls.liveSyncPosition === 'number' && hls.liveSyncPosition > 0) {
-                        video.currentTime = hls.liveSyncPosition;
-                      }
-                    }).catch(() => {});
-                  });
+                playPromise.catch(() => {
+                  // Browser blocked unmuted autoplay -> play muted
+                  video.muted = true;
+                  video.play().catch(() => {});
+                });
               }
             });
 
-            // Zero-Downtime Auto-Failover
+            // Zero-Downtime Auto-Failover on persistent network failure
             let consecutiveFailures = 0;
             hls.on(Hls.Events.ERROR, (_event: any, data: any) => {
-              if (
-                data.details === Hls.ErrorDetails.FRAG_LOAD_ERROR ||
-                data.details === Hls.ErrorDetails.FRAG_LOAD_TIMEOUT ||
-                data.response?.code === 404 ||
-                data.response?.code === 502
-              ) {
-                consecutiveFailures++;
-              }
-
-              if (data.fatal || consecutiveFailures >= 2) {
-                consecutiveFailures = 0;
-                const currentIdx = streams.findIndex((s) => s.embedUrl === activeStream.embedUrl);
-                if (currentIdx >= 0 && currentIdx < streams.length - 1) {
-                  const nextStream = streams[currentIdx + 1];
-                  hls.destroy();
-                  hlsInstanceRef.current = null;
-                  setActiveStream(nextStream);
-                  setFailoverToast(`⚡ Auto-failover: Switched seamlessly to ${nextStream.language || `Server ${currentIdx + 2}`}`);
-                  setTimeout(() => setFailoverToast(null), 4000);
-                  return;
-                }
-
-                if (data.fatal) {
-                  if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+              if (data.fatal) {
+                switch (data.type) {
+                  case Hls.ErrorTypes.NETWORK_ERROR:
+                    consecutiveFailures++;
+                    if (consecutiveFailures >= 2) {
+                      consecutiveFailures = 0;
+                      const currentIdx = streams.findIndex((s) => s.embedUrl === activeStream.embedUrl);
+                      if (currentIdx >= 0 && currentIdx < streams.length - 1) {
+                        const nextStream = streams[currentIdx + 1];
+                        hls.destroy();
+                        hlsInstanceRef.current = null;
+                        setActiveStream(nextStream);
+                        setFailoverToast(`⚡ Auto-failover: Switched to ${nextStream.language || `Server ${currentIdx + 2}`}`);
+                        setTimeout(() => setFailoverToast(null), 4000);
+                        return;
+                      }
+                    }
+                    hls.startLoad();
+                    break;
+                  case Hls.ErrorTypes.MEDIA_ERROR:
                     hls.recoverMediaError();
-                  } else {
+                    break;
+                  default:
                     hls.destroy();
                     hlsInstanceRef.current = null;
                     setPlayerState('failed');
-                    setErrorMessage('Broadcast feed is currently reconnecting to upstream servers.');
-                  }
+                    setErrorMessage('Broadcast feed is reconnecting...');
+                    break;
                 }
               }
             });
 
-            // Active Drift Watchdog & Micro-Acceleration (every 1.5 seconds)
+            // Smooth Drift Telemetry & Gentle Micro-Acceleration (Never abruptly seek!)
             watchdogTimer = setInterval(() => {
               if (hls && typeof hls.liveSyncPosition === 'number' && hls.liveSyncPosition > 0 && !video.paused) {
                 const drift = hls.liveSyncPosition - video.currentTime;
                 setStreamDrift(Math.max(0, Math.round(drift * 10) / 10));
 
-                if (drift > 12) {
-                  // Lag is too high -> snap directly to live edge
-                  video.currentTime = hls.liveSyncPosition;
-                } else if (drift > 4) {
-                  // Minor lag -> quietly accelerate playback to 1.15x to catch up seamlessly
-                  video.playbackRate = 1.15;
+                if (drift > 45) {
+                  // Huge desync (e.g. tab inactive for minutes) -> jump to safe live buffer point
+                  video.currentTime = Math.max(0, hls.liveSyncPosition - 10);
+                  video.playbackRate = 1.0;
+                } else if (drift > 20) {
+                  // Gentle micro-acceleration (1.1x) to seamlessly catch up without audio pitch distortion
+                  video.playbackRate = 1.1;
                 } else {
-                  // Caught up -> normal 1.0x speed
+                  // In sync -> normal 1.0x speed
                   video.playbackRate = 1.0;
                 }
               }
-            }, 1500);
+            }, 2500);
 
           } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = url;
@@ -736,6 +729,16 @@ export default function MatchPlayer({ match }: Props) {
                   src={activeStream.embedUrl.includes('.m3u8') ? undefined : activeStream.embedUrl}
                   onLoadedMetadata={() => setPlayerState('playing')}
                   onPlaying={() => setPlayerState('playing')}
+                  onCanPlay={() => {
+                    if (videoRef.current && videoRef.current.paused && playerState === 'playing') {
+                      videoRef.current.play().catch(() => {});
+                    }
+                  }}
+                  onWaiting={() => {
+                    if (videoRef.current) {
+                      videoRef.current.playbackRate = 1.0;
+                    }
+                  }}
                 ></video>
               ) : (
                 <iframe
