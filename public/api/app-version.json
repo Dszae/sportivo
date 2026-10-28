@@ -1,7 +1,7 @@
 {
-  "version": "1.0.3",
-  "versionCode": 4,
+  "version": "1.0.4",
+  "versionCode": 5,
   "downloadUrl": "https://sportivo.dipeshsapkota7.com.np/download/sportivo.apk",
-  "releaseNotes": "Native in-app background download & direct installer without browser, hardware accelerated live streams.",
+  "releaseNotes": "Resolved manifestLoadError for live video streams: enabled SSL bypass for stream CDNs, cleartext network traffic, and Referer headers.",
   "publishedAt": "2026-10-28"
 }

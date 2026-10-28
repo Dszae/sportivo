@@ -168,7 +168,10 @@ export default function MatchPlayerScreen() {
           />
         ) : (
           <WebView
-            source={{ uri: activeStream.embedUrl || 'https://sportivo.dipeshsapkota7.com.np/' }}
+            source={{
+              uri: activeStream.embedUrl || 'https://sportivo.dipeshsapkota7.com.np/',
+              headers: { Referer: 'https://sportivo.dipeshsapkota7.com.np/' },
+            }}
             style={styles.video}
             allowsFullscreenVideo={true}
             mediaPlaybackRequiresUserAction={false}
