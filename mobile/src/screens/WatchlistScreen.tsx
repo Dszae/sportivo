@@ -7,7 +7,11 @@ import {
   StyleSheet,
   ActivityIndicator,
   TextInput,
+  Platform,
+  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Match, RootStackParamList } from '../types';
@@ -40,6 +44,8 @@ const POPULAR_FOOTBALL_TEAMS = [
 
 export default function WatchlistScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
+  const topPadding = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0) + 8;
   const [favoriteTeams, setFavoriteTeams] = useState<string[]>([]);
   const [starredMatches, setStarredMatches] = useState<string[]>([]);
   const [matchedFixtures, setMatchedFixtures] = useState<Match[]>([]);
@@ -92,10 +98,13 @@ export default function WatchlistScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+    <ScrollView
+      style={[styles.container, { paddingTop: topPadding }]}
+      contentContainerStyle={styles.scrollContent}
+    >
       {/* Top Banner */}
       <View style={styles.banner}>
-        <Text style={styles.bannerIcon}>⭐</Text>
+        <Ionicons name="bookmark" size={32} color="#fbbf24" style={{ marginBottom: 8 }} />
         <Text style={styles.bannerTitle}>My Personal Watchlist</Text>
         <Text style={styles.bannerSubtitle}>
           Follow your favorite clubs and NPL franchises. Match alerts will automatically fire 5 minutes before kickoff!
@@ -133,7 +142,17 @@ export default function WatchlistScreen() {
               >
                 <View style={styles.matchCardTop}>
                   <View style={styles.statusPill}>
-                    <Text style={styles.statusText}>{isLive ? '🔴 LIVE' : `⏰ ${kickoff} NST`}</Text>
+                    {isLive ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#ef4444' }} />
+                        <Text style={[styles.statusText, { color: '#ef4444' }]}>LIVE</Text>
+                      </View>
+                    ) : (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Ionicons name="time-outline" size={11} color="#94a3b8" />
+                        <Text style={styles.statusText}>{kickoff} NST</Text>
+                      </View>
+                    )}
                   </View>
                   <Text style={styles.categoryTag}>{item.category?.toUpperCase()}</Text>
                 </View>

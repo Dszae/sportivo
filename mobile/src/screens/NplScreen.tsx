@@ -7,7 +7,11 @@ import {
   RefreshControl,
   StyleSheet,
   ActivityIndicator,
+  Platform,
+  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NplMatch, RootStackParamList } from '../types';
@@ -19,6 +23,8 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function NplScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
+  const topPadding = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0) + 8;
   const [fixtures, setFixtures] = useState<NplMatch[]>([]);
   const [activeTab, setActiveTab] = useState<'all' | 'today' | 'upcoming'>('all');
   const [loading, setLoading] = useState(true);
@@ -97,9 +103,11 @@ export default function NplScreen() {
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               style={styles.starBtn}
             >
-              <Text style={[styles.starIcon, isStarred && styles.starActive]}>
-                {isStarred ? '★' : '☆'}
-              </Text>
+              <Ionicons
+                name={isStarred ? 'bookmark' : 'bookmark-outline'}
+                size={18}
+                color={isStarred ? '#fbbf24' : '#64748b'}
+              />
             </TouchableOpacity>
           </View>
         </View>
@@ -155,9 +163,12 @@ export default function NplScreen() {
 
         {/* Card Footer */}
         <View style={styles.cardFooter}>
-          <Text style={styles.scheduleText}>
-            📅 {formatKathmanduDate(item.timestamp)} · {formatKathmanduTime(item.timestamp)} NST
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Ionicons name="calendar-outline" size={13} color="#94a3b8" />
+            <Text style={styles.scheduleText}>
+              {formatKathmanduDate(item.timestamp)} · {formatKathmanduTime(item.timestamp)} NST
+            </Text>
+          </View>
 
           {isLive ? (
             <TouchableOpacity
@@ -185,11 +196,11 @@ export default function NplScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: topPadding }]}>
       {/* Top Banner */}
       <View style={styles.topBanner}>
         <View style={styles.nplTitleRow}>
-          <Text style={styles.flagIcon}>🇳🇵</Text>
+          <Ionicons name="flame" size={24} color="#ef4444" style={{ marginRight: 8 }} />
           <View>
             <Text style={styles.nplTitle}>Nepal Premier League 2026</Text>
             <Text style={styles.nplSubtitle}>Official 32-Match Schedule · TU Cricket Ground</Text>
@@ -248,7 +259,7 @@ export default function NplScreen() {
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyIcon}>🏏</Text>
+              <MaterialCommunityIcons name="cricket" size={40} color="#64748b" style={{ marginBottom: 12 }} />
               <Text style={styles.emptyTitle}>No NPL Fixtures In This Tab</Text>
               <Text style={styles.emptySubtitle}>Switch to "All Matches" to see the full tournament schedule.</Text>
             </View>

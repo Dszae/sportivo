@@ -7,9 +7,13 @@ import {
   RefreshControl,
   StyleSheet,
   ActivityIndicator,
+  Platform,
+  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Match, RootStackParamList } from '../types';
 import { fetchMatches, formatKathmanduTime } from '../services/api';
 import { loadPreferences, toggleStarredMatch } from '../services/storage';
@@ -19,6 +23,9 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function CricketScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
+  const topPadding = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0) + 8;
+
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -56,17 +63,17 @@ export default function CricketScreen() {
   const renderMatchCard = ({ item }: { item: Match }) => {
     const slug = item.slug || item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     const isStarred = starredSlugs.includes(slug);
-    const isLive = item.status === 'Live';
-    const kickoff = formatKathmanduTime(item.timestamp || item.startTime || Date.now());
+    const isLive = item.status === 'LIVE' || item.status === 'Live';
+    const kickoff = item.timestamp ? formatKathmanduTime(item.timestamp) : 'Live';
 
     return (
       <TouchableOpacity
-        activeOpacity={0.88}
+        style={styles.card}
+        activeOpacity={0.8}
         onPress={() => navigation.navigate('MatchPlayer', { match: item })}
-        style={[styles.card, isLive && styles.liveCard]}
       >
         <View style={styles.cardHeader}>
-          <View style={styles.headerLeft}>
+          <View style={styles.cardHeaderLeft}>
             {isLive ? (
               <View style={styles.liveBadge}>
                 <View style={styles.liveDot} />
@@ -74,7 +81,8 @@ export default function CricketScreen() {
               </View>
             ) : (
               <View style={styles.scheduledBadge}>
-                <Text style={styles.scheduledText}>⏰ {kickoff} NST</Text>
+                <Ionicons name="time-outline" size={11} color="#94a3b8" />
+                <Text style={styles.scheduledText}>{kickoff} NST</Text>
               </View>
             )}
             <Text style={styles.leagueText}>Cricket</Text>
@@ -85,9 +93,11 @@ export default function CricketScreen() {
             onPress={() => handleToggleStar(slug)}
             style={styles.starBtn}
           >
-            <Text style={[styles.starIcon, isStarred && styles.starActive]}>
-              {isStarred ? '★' : '☆'}
-            </Text>
+            <Ionicons
+              name={isStarred ? 'bookmark' : 'bookmark-outline'}
+              size={18}
+              color={isStarred ? '#fbbf24' : '#64748b'}
+            />
           </TouchableOpacity>
         </View>
 
@@ -96,23 +106,34 @@ export default function CricketScreen() {
             {item.title}
           </Text>
           {item.venue && (
-            <Text style={styles.venueText} numberOfLines={1}>
-              📍 {item.venue}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+              <Ionicons name="location-outline" size={12} color="#94a3b8" />
+              <Text style={styles.venueText} numberOfLines={1}>
+                {item.venue}
+              </Text>
+            </View>
           )}
         </View>
 
         <View style={styles.cardFooter}>
-          <Text style={styles.footerAction}>
-            {isLive ? '🏏 Watch Live Ball-by-Ball' : '⚡ View Fixture Details'} &rarr;
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <MaterialCommunityIcons
+              name="cricket"
+              size={14}
+              color={isLive ? '#ef4444' : '#c9f36b'}
+            />
+            <Text style={styles.footerAction}>
+              {isLive ? 'Watch Live Feed' : 'View Fixture Details'}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={14} color="#64748b" />
         </View>
       </TouchableOpacity>
     );
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: topPadding }]}>
       {loading ? (
         <View style={styles.centerLoading}>
           <ActivityIndicator size="large" color="#c9f36b" />
@@ -134,7 +155,7 @@ export default function CricketScreen() {
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyIcon}>🏏</Text>
+              <MaterialCommunityIcons name="cricket" size={40} color="#64748b" style={{ marginBottom: 12 }} />
               <Text style={styles.emptyTitle}>No Cricket Matches Active</Text>
               <Text style={styles.emptySubtitle}>Check the NPL tab for Nepal Premier League fixtures!</Text>
             </View>
@@ -152,28 +173,25 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 40,
   },
   card: {
-    backgroundColor: '#121c1a',
-    borderRadius: 16,
+    backgroundColor: '#0c1211',
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
-    marginBottom: 14,
+    marginBottom: 12,
     overflow: 'hidden',
-  },
-  liveCard: {
-    borderColor: 'rgba(239,68,68,0.5)',
-    backgroundColor: '#162220',
   },
   cardHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingTop: 12,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 8,
   },
-  headerLeft: {
+  cardHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -181,9 +199,9 @@ const styles = StyleSheet.create({
   liveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#dc2626',
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 2,
     borderRadius: 6,
     gap: 4,
   },
@@ -191,65 +209,65 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#ef4444',
   },
   liveText: {
-    fontSize: 10,
+    color: '#ef4444',
+    fontSize: 9,
     fontWeight: '900',
-    color: '#ffffff',
   },
   scheduledBadge: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 2,
     borderRadius: 6,
   },
   scheduledText: {
+    color: '#94a3b8',
     fontSize: 10,
     fontWeight: '700',
-    color: '#cbd5e1',
   },
   leagueText: {
-    fontSize: 11,
-    color: '#94a3b8',
-    fontWeight: '600',
+    color: '#64748b',
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
   },
   starBtn: {
     padding: 4,
   },
-  starIcon: {
-    fontSize: 18,
-    color: '#64748b',
-  },
-  starActive: {
-    color: '#fbbf24',
-  },
   cardBody: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   matchTitle: {
+    color: '#ffffff',
     fontSize: 15,
     fontWeight: '800',
-    color: '#ffffff',
-    lineHeight: 20,
+    lineHeight: 21,
   },
   venueText: {
-    fontSize: 11,
     color: '#94a3b8',
-    marginTop: 6,
+    fontSize: 11,
+    fontWeight: '600',
   },
   cardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.05)',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.02)',
   },
   footerAction: {
+    color: '#c9f36b',
     fontSize: 11,
     fontWeight: '800',
-    color: '#c9f36b',
   },
   centerLoading: {
     flex: 1,
@@ -258,29 +276,24 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loadingText: {
-    fontSize: 13,
-    color: '#94a3b8',
-    fontWeight: '600',
+    color: '#c9f36b',
+    fontSize: 12,
+    fontWeight: '700',
   },
   emptyContainer: {
+    padding: 40,
     alignItems: 'center',
-    paddingVertical: 48,
-    paddingHorizontal: 24,
-  },
-  emptyIcon: {
-    fontSize: 40,
-    marginBottom: 12,
   },
   emptyTitle: {
-    fontSize: 16,
-    fontWeight: '800',
     color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '900',
+    marginBottom: 4,
   },
   emptySubtitle: {
-    fontSize: 12,
     color: '#94a3b8',
+    fontSize: 12,
     textAlign: 'center',
-    marginTop: 6,
+    lineHeight: 18,
   },
 });
-

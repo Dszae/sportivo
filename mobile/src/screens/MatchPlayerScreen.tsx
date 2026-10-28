@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,13 +8,19 @@ import {
   Dimensions,
   ActivityIndicator,
   Share,
+  Linking,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import { RouteProp } from '@react-navigation/native';
-import { Match, RootStackParamList } from '../types';
+import { WebView } from 'react-native-webview';
+import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { Match, RootStackParamList, StreamSource } from '../types';
 import { toggleStarredMatch } from '../services/storage';
 import { triggerButtonHaptic } from '../services/notifications';
+import { resolveMatchStreams } from '../services/api';
 
 type RouteProps = RouteProp<RootStackParamList, 'MatchPlayer'>;
 
@@ -23,39 +29,65 @@ const { width } = Dimensions.get('window');
 export default function MatchPlayerScreen() {
   const route = useRoute<RouteProps>();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { match } = route.params;
 
+  const topPadding = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0) + 8;
+
+  const [streams, setStreams] = useState<StreamSource[]>(match.streams || []);
   const [selectedServer, setSelectedServer] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isBuffering, setIsBuffering] = useState(true);
   const [isStarred, setIsStarred] = useState(false);
+  const [isResolving, setIsResolving] = useState(false);
+  const [hasTimedOut, setHasTimedOut] = useState(false);
   const videoRef = useRef<Video>(null);
 
-  // Available streaming sources or fallback HLS stream
-  const streams = match.streams && match.streams.length > 0
-    ? match.streams
-    : [
-        {
-          id: 'server-1',
-          source: 'Primary CDN',
-          label: 'Server 1 · Ultra HD',
-          streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-        },
-        {
-          id: 'server-2',
-          source: 'Backup CDN',
-          label: 'Server 2 · Fast Mobile',
-          streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-        },
-        {
-          id: 'server-3',
-          source: 'Live Desk',
-          label: 'Server 3 · English Audio',
-          streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-        },
-      ];
+  // Auto-resolve live streaming sources on screen open
+  useEffect(() => {
+    let isMounted = true;
+    async function loadStreams() {
+      setIsResolving(true);
+      try {
+        const resolved = await resolveMatchStreams(match);
+        if (isMounted && resolved.length > 0) {
+          setStreams(resolved);
+        }
+      } catch (e) {
+        console.warn('Failed to resolve streams:', e);
+      } finally {
+        if (isMounted) setIsResolving(false);
+      }
+    }
+    loadStreams();
+    return () => {
+      isMounted = false;
+    };
+  }, [match]);
 
-  const activeStream = streams[selectedServer] || streams[0];
+  // Buffering timeout safeguard: never leave user stuck indefinitely
+  useEffect(() => {
+    setHasTimedOut(false);
+    setIsBuffering(true);
+    const timer = setTimeout(() => {
+      setHasTimedOut(true);
+      setIsBuffering(false);
+    }, 9000);
+    return () => clearTimeout(timer);
+  }, [selectedServer]);
+
+  // Current active stream source
+  const fallbackStream: StreamSource = {
+    id: 'server-1',
+    source: 'sportivo',
+    label: 'Server 1 · Ultra HD',
+    embedUrl: `https://strmfree.st/embed/soccer/${match.slug || 'live-match'}`,
+    streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+    isDirectStream: false,
+    hd: true,
+  };
+
+  const activeStream = streams.length > 0 ? streams[selectedServer] || streams[0] : fallbackStream;
 
   const handleShare = async () => {
     try {
@@ -73,122 +105,195 @@ export default function MatchPlayerScreen() {
     setIsStarred(!isStarred);
   };
 
-  return (
-    <View style={styles.container}>
-      {/* Video Player Stage (16:9 Aspect Ratio) */}
-      <View style={styles.playerStage}>
-        <Video
-          ref={videoRef}
-          source={{
-            uri: activeStream.streamUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-          }}
-          style={styles.video}
-          useNativeControls
-          resizeMode={ResizeMode.CONTAIN}
-          shouldPlay={isPlaying}
-          onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
-            if (status.isLoaded) {
-              setIsBuffering(status.isBuffering);
-              setIsPlaying(status.isPlaying);
-            }
-          }}
-        />
+  const openInBrowser = async () => {
+    const url = activeStream.embedUrl || activeStream.streamUrl || 'https://sportivo.dipeshsapkota7.com.np/';
+    try {
+      await Linking.openURL(url);
+    } catch {}
+  };
 
-        {isBuffering && (
+  return (
+    <View style={[styles.container, { paddingTop: topPadding }]}>
+      <StatusBar barStyle="light-content" backgroundColor="#080a0b" />
+
+      {/* Top Bar with Back Button */}
+      <View style={styles.topBar}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+          accessibilityLabel="Back"
+        >
+          <Ionicons name="arrow-back" size={20} color="#c9f36b" />
+          <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.topBarTitle} numberOfLines={1}>
+          {match.title}
+        </Text>
+        <TouchableOpacity onPress={handleShare} style={styles.shareButton} accessibilityLabel="Share">
+          <Ionicons name="share-social-outline" size={18} color="#cbd5e1" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Video Player Stage */}
+      <View style={styles.playerStage}>
+        {activeStream.isDirectStream && activeStream.streamUrl ? (
+          <Video
+            ref={videoRef}
+            source={{ uri: activeStream.streamUrl }}
+            style={styles.video}
+            useNativeControls
+            resizeMode={ResizeMode.CONTAIN}
+            shouldPlay={isPlaying}
+            onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
+              if (status.isLoaded) {
+                setIsBuffering(status.isBuffering);
+                setIsPlaying(status.isPlaying);
+                if (status.isPlaying) setHasTimedOut(false);
+              }
+            }}
+          />
+        ) : (
+          <WebView
+            source={{ uri: activeStream.embedUrl || 'https://sportivo.dipeshsapkota7.com.np/' }}
+            style={styles.video}
+            allowsFullscreenVideo={true}
+            mediaPlaybackRequiresUserAction={false}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            onLoadEnd={() => setIsBuffering(false)}
+          />
+        )}
+
+        {isBuffering && !hasTimedOut && (
           <View style={styles.bufferingOverlay}>
             <ActivityIndicator size="large" color="#c9f36b" />
             <Text style={styles.bufferingText}>Connecting to Live Broadcast...</Text>
           </View>
         )}
+
+        {hasTimedOut && (
+          <View style={styles.timeoutOverlay}>
+            <Ionicons name="alert-circle-outline" size={32} color="#fbbf24" />
+            <Text style={styles.timeoutTitle}>Broadcast Feed Connecting</Text>
+            <Text style={styles.timeoutSub}>
+              If the stream does not start automatically, switch servers or launch directly in HD browser view.
+            </Text>
+            <View style={styles.timeoutActions}>
+              <TouchableOpacity
+                style={styles.retryBtn}
+                onPress={() => {
+                  setHasTimedOut(false);
+                  setIsBuffering(true);
+                  if (streams.length > 1) {
+                    setSelectedServer((selectedServer + 1) % streams.length);
+                  }
+                }}
+              >
+                <Ionicons name="refresh" size={14} color="#080a0b" />
+                <Text style={styles.retryBtnText}>Next Server</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.browserBtn} onPress={openInBrowser}>
+                <Ionicons name="open-outline" size={14} color="#c9f36b" />
+                <Text style={styles.browserBtnText}>Open in Browser</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </View>
 
-      {/* Match Details & Server Selector */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Title Bar */}
-        <View style={styles.titleSection}>
-          <View style={styles.badgeRow}>
-            <View style={styles.liveBadge}>
+        {/* Match Header Information */}
+        <View style={styles.metaCard}>
+          <View style={styles.metaTopRow}>
+            <View style={styles.liveIndicator}>
               <View style={styles.liveDot} />
-              <Text style={styles.liveBadgeText}>LIVE DESK</Text>
+              <Text style={styles.liveText}>
+                {match.status === 'LIVE' || match.status === 'Live' ? 'LIVE NOW' : 'FIXTURE DESK'}
+              </Text>
             </View>
-            <Text style={styles.sportText}>
-              {match.category ? match.category.toUpperCase() : 'SPORTS'} · NEPAL STANDARD TIME (NST)
+            <Text style={styles.leagueText}>
+              {match.league || match.competition || 'SPORTS'} · NST
             </Text>
           </View>
 
           <Text style={styles.matchTitle}>{match.title}</Text>
-          {match.venue ? (
-            <Text style={styles.venueText}>📍 {match.venue}</Text>
-          ) : null}
+          {match.venue && (
+            <View style={styles.venueRow}>
+              <Ionicons name="location-outline" size={13} color="#94a3b8" />
+              <Text style={styles.venueText}>{match.venue}</Text>
+            </View>
+          )}
 
           {/* Action Row */}
-          <View style={styles.actionsRow}>
+          <View style={styles.actionRow}>
             <TouchableOpacity
-              style={[styles.actionBtn, isStarred && styles.actionBtnActive]}
+              style={[styles.actionButton, isStarred && styles.actionButtonActive]}
               onPress={handleToggleStar}
             >
-              <Text style={[styles.actionIcon, isStarred && styles.actionIconActive]}>
-                {isStarred ? '★' : '☆'}
-              </Text>
-              <Text style={[styles.actionText, isStarred && styles.actionTextActive]}>
+              <Ionicons
+                name={isStarred ? 'bookmark' : 'bookmark-outline'}
+                size={16}
+                color={isStarred ? '#fbbf24' : '#cbd5e1'}
+              />
+              <Text style={[styles.actionButtonText, isStarred && styles.actionButtonTextActive]}>
                 {isStarred ? 'Saved to Watchlist' : 'Add to Watchlist'}
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.actionBtn} onPress={handleShare}>
-              <Text style={styles.actionIcon}>🔗</Text>
-              <Text style={styles.actionText}>Share Stream</Text>
+            <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
+              <Ionicons name="share-social-outline" size={16} color="#cbd5e1" />
+              <Text style={styles.actionButtonText}>Share</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Multi-Server Selector (Market Standard Multi-CDN Fallback) */}
+        {/* Server Selection Desk */}
         <View style={styles.serverSection}>
-          <Text style={styles.sectionHeader}>STREAM SERVER &amp; QUALITY</Text>
-          <Text style={styles.serverHint}>
-            If playback buffers, switch servers below for instant multi-CDN fallback:
+          <Text style={styles.sectionHeader}>MULTI-SERVER LIVE DESK</Text>
+          <Text style={styles.serverSubtext}>
+            Switch servers below if any broadcast feed encounters buffering or lag.
           </Text>
 
           <View style={styles.serverList}>
-            {streams.map((s, index) => {
-              const isSelected = selectedServer === index;
+            {(streams.length > 0 ? streams : [fallbackStream]).map((stream, idx) => {
+              const isCurrent = idx === selectedServer;
               return (
                 <TouchableOpacity
-                  key={index}
-                  activeOpacity={0.8}
-                  style={[styles.serverCard, isSelected && styles.serverCardActive]}
-                  onPress={() => {
-                    triggerButtonHaptic();
-                    setSelectedServer(index);
+                  key={stream.id || idx}
+                  style={[styles.serverCard, isCurrent && styles.serverCardActive]}
+                  onPress={async () => {
+                    await triggerButtonHaptic();
+                    setSelectedServer(idx);
                   }}
                 >
-                  <View style={styles.serverCardLeft}>
-                    <View style={[styles.serverDot, isSelected && styles.serverDotActive]} />
-                    <View>
-                      <Text style={[styles.serverTitle, isSelected && styles.serverTitleActive]}>
-                        {s.label || `Server ${index + 1}`}
+                  <View style={styles.serverInfo}>
+                    <View style={styles.serverTitleRow}>
+                      <Ionicons
+                        name="radio-outline"
+                        size={15}
+                        color={isCurrent ? '#c9f36b' : '#94a3b8'}
+                      />
+                      <Text style={[styles.serverTitle, isCurrent && styles.serverTitleActive]}>
+                        {stream.label || `Server ${idx + 1}`}
                       </Text>
-                      <Text style={styles.serverSource}>{s.source || 'Fast CDN'}</Text>
+                      {stream.hd && (
+                        <View style={styles.hdBadge}>
+                          <Text style={styles.hdBadgeText}>HD</Text>
+                        </View>
+                      )}
                     </View>
+                    <Text style={styles.serverSourceText}>
+                      Provider: {stream.source || 'Verified CDN'} · NST Synced
+                    </Text>
                   </View>
 
-                  {isSelected && (
-                    <View style={styles.activePill}>
-                      <Text style={styles.activePillText}>CONNECTED</Text>
-                    </View>
-                  )}
+                  <View style={[styles.serverSelectCircle, isCurrent && styles.serverSelectCircleActive]}>
+                    {isCurrent && <View style={styles.serverSelectInner} />}
+                  </View>
                 </TouchableOpacity>
               );
             })}
           </View>
-        </View>
-
-        {/* Live Sports Notice */}
-        <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>⚡ Real-Time Streaming Desk</Text>
-          <Text style={styles.infoText}>
-            Sportivo automatically monitors stream stability. Notifications are enabled for this match.
-          </Text>
         </View>
       </ScrollView>
     </View>
@@ -200,13 +305,48 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#080a0b',
   },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    backgroundColor: '#0c1413',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(201, 243, 107, 0.1)',
+  },
+  backButtonText: {
+    color: '#c9f36b',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  topBarTitle: {
+    flex: 1,
+    textAlign: 'center',
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '900',
+    paddingHorizontal: 8,
+  },
+  shareButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
   playerStage: {
     width: width,
     height: (width * 9) / 16,
     backgroundColor: '#000000',
     position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   video: {
     width: '100%',
@@ -214,201 +354,243 @@ const styles = StyleSheet.create({
   },
   bufferingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(8,10,11,0.85)',
+    backgroundColor: 'rgba(8, 10, 11, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
   bufferingText: {
+    color: '#c9f36b',
     fontSize: 12,
+    fontWeight: '800',
+  },
+  timeoutOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(8, 10, 11, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  timeoutTitle: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '900',
+    marginTop: 8,
+  },
+  timeoutSub: {
     color: '#cbd5e1',
-    fontWeight: '700',
+    fontSize: 11,
+    textAlign: 'center',
+    marginTop: 4,
+    lineHeight: 16,
+  },
+  timeoutActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 12,
+  },
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#c9f36b',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  retryBtnText: {
+    color: '#080a0b',
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  browserBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(201, 243, 107, 0.15)',
+    borderWidth: 1,
+    borderColor: '#c9f36b',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  browserBtnText: {
+    color: '#c9f36b',
+    fontSize: 11,
+    fontWeight: '800',
   },
   scrollContent: {
     padding: 16,
     paddingBottom: 40,
   },
-  titleSection: {
-    backgroundColor: '#111a19',
-    borderRadius: 16,
+  metaCard: {
+    backgroundColor: '#0e1716',
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
     padding: 16,
     marginBottom: 16,
   },
-  badgeRow: {
+  metaTopRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 10,
+    marginBottom: 8,
   },
-  liveBadge: {
+  liveIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#dc2626',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
     gap: 5,
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
   },
   liveDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#ef4444',
   },
-  liveBadgeText: {
-    fontSize: 10,
+  liveText: {
+    color: '#ef4444',
+    fontSize: 9,
     fontWeight: '900',
-    color: '#ffffff',
   },
-  sportText: {
+  leagueText: {
+    color: '#94a3b8',
     fontSize: 10,
     fontWeight: '700',
-    color: '#e5b94f',
-    letterSpacing: 0.5,
   },
   matchTitle: {
+    color: '#ffffff',
     fontSize: 18,
     fontWeight: '900',
-    color: '#ffffff',
-    lineHeight: 24,
+    marginBottom: 6,
+  },
+  venueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 12,
   },
   venueText: {
-    fontSize: 12,
     color: '#94a3b8',
-    marginTop: 6,
+    fontSize: 11,
+    fontWeight: '600',
   },
-  actionsRow: {
+  actionRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 14,
+    gap: 8,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.06)',
     paddingTop: 12,
   },
-  actionBtn: {
+  actionButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  actionButtonActive: {
+    backgroundColor: 'rgba(251, 191, 36, 0.15)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 12,
-    paddingVertical: 10,
+    borderColor: 'rgba(251, 191, 36, 0.4)',
   },
-  actionBtnActive: {
-    backgroundColor: 'rgba(251,191,36,0.15)',
-    borderColor: '#fbbf24',
-  },
-  actionIcon: {
-    fontSize: 16,
+  actionButtonText: {
     color: '#cbd5e1',
-  },
-  actionIconActive: {
-    color: '#fbbf24',
-  },
-  actionText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#cbd5e1',
-  },
-  actionTextActive: {
-    color: '#fbbf24',
+    fontSize: 11,
     fontWeight: '800',
   },
+  actionButtonTextActive: {
+    color: '#fbbf24',
+  },
   serverSection: {
-    marginBottom: 16,
+    marginTop: 4,
   },
   sectionHeader: {
+    color: '#c9f36b',
     fontSize: 11,
     fontWeight: '900',
-    color: '#e5b94f',
     letterSpacing: 1,
     marginBottom: 4,
   },
-  serverHint: {
-    fontSize: 11,
+  serverSubtext: {
     color: '#94a3b8',
+    fontSize: 11,
+    lineHeight: 16,
     marginBottom: 12,
   },
   serverList: {
-    gap: 10,
+    gap: 8,
   },
   serverCard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#111a19',
-    borderRadius: 14,
+    justifyContent: 'space-between',
+    backgroundColor: '#0e1716',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 14,
     padding: 14,
   },
   serverCardActive: {
     borderColor: '#c9f36b',
-    backgroundColor: '#162522',
+    backgroundColor: 'rgba(201, 243, 107, 0.06)',
   },
-  serverCardLeft: {
+  serverInfo: {
+    flex: 1,
+  },
+  serverTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-  },
-  serverDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#64748b',
-  },
-  serverDotActive: {
-    backgroundColor: '#c9f36b',
+    gap: 6,
+    marginBottom: 3,
   },
   serverTitle: {
-    fontSize: 14,
-    fontWeight: '800',
     color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '800',
   },
   serverTitleActive: {
     color: '#c9f36b',
   },
-  serverSource: {
-    fontSize: 11,
-    color: '#94a3b8',
-    marginTop: 2,
+  hdBadge: {
+    backgroundColor: 'rgba(201, 243, 107, 0.2)',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
   },
-  activePill: {
-    backgroundColor: 'rgba(201,243,107,0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(201,243,107,0.4)',
-  },
-  activePillText: {
+  hdBadgeText: {
+    color: '#c9f36b',
     fontSize: 9,
     fontWeight: '900',
-    color: '#c9f36b',
-    letterSpacing: 0.5,
   },
-  infoBox: {
-    backgroundColor: '#0f1715',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    padding: 14,
-  },
-  infoTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#ffffff',
-    marginBottom: 4,
-  },
-  infoText: {
-    fontSize: 11,
+  serverSourceText: {
     color: '#94a3b8',
-    lineHeight: 16,
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  serverSelectCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  serverSelectCircleActive: {
+    borderColor: '#c9f36b',
+  },
+  serverSelectInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#c9f36b',
   },
 });
-

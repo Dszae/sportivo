@@ -7,7 +7,11 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
+  Platform,
+  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import { UserPreferences } from '../types';
 import { loadPreferences, savePreferences, DEFAULT_PREFERENCES } from '../services/storage';
@@ -18,6 +22,8 @@ import {
 } from '../services/notifications';
 
 export default function NotificationSettingsScreen() {
+  const insets = useSafeAreaInsets();
+  const topPadding = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0) + 8;
   const [prefs, setPrefs] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [hasPermission, setHasPermission] = useState(false);
 
@@ -62,10 +68,13 @@ export default function NotificationSettingsScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+    <ScrollView
+      style={[styles.container, { paddingTop: topPadding }]}
+      contentContainerStyle={styles.scrollContent}
+    >
       {/* Banner */}
       <View style={styles.banner}>
-        <Text style={styles.bannerIcon}>🔔</Text>
+        <Ionicons name="notifications-outline" size={32} color="#c9f36b" style={{ marginBottom: 8 }} />
         <Text style={styles.bannerTitle}>Match Alerts &amp; Notifications</Text>
         <Text style={styles.bannerSubtitle}>
           Receive instant alerts for teams in your Watchlist. Works even when the app is closed or phone is locked!
@@ -74,7 +83,8 @@ export default function NotificationSettingsScreen() {
 
       {/* Test Button */}
       <TouchableOpacity style={styles.testBtn} onPress={handleTestAlert}>
-        <Text style={styles.testBtnText}>🔔 Send Test Notification &amp; Vibration</Text>
+        <Ionicons name="notifications" size={16} color="#080a0b" style={{ marginRight: 6 }} />
+        <Text style={styles.testBtnText}>Send Test Notification &amp; Vibration</Text>
       </TouchableOpacity>
 
       {/* Toggles */}

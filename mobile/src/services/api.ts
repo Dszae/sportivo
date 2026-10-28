@@ -16,7 +16,7 @@ const CACHE_KEYS = {
 export async function fetchMatches(category: Category): Promise<Match[]> {
   const cacheKey = `cache_matches_${category}`;
   try {
-    const response = await fetch(`${API_BASE_URL}/matches/${category}`, {
+    const response = await fetch(`${API_BASE_URL}/matches/${category}/`, {
       headers: { Accept: 'application/json' },
     });
 
@@ -45,7 +45,7 @@ export async function fetchMatches(category: Category): Promise<Match[]> {
  */
 export async function fetchNplFixtures(): Promise<NplMatch[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/npl/fixtures`, {
+    const response = await fetch(`${API_BASE_URL}/npl/fixtures/`, {
       headers: { Accept: 'application/json' },
     });
 
@@ -67,6 +67,56 @@ export async function fetchNplFixtures(): Promise<NplMatch[]> {
   } catch {}
 
   return [];
+}
+
+/**
+ * Resolve live multi-server streams for a match from Sportivo API
+ */
+export async function resolveMatchStreams(match: Match): Promise<StreamSource[]> {
+  if (match.streams && match.streams.length > 0) {
+    return match.streams;
+  }
+
+  const sources = match.sources || [];
+  if (sources.length === 0) {
+    return [];
+  }
+
+  const allResolved: StreamSource[] = [];
+
+  for (const s of sources) {
+    try {
+      const src = encodeURIComponent(s.source);
+      const sid = encodeURIComponent(s.id);
+      const res = await fetch(`${API_BASE_URL}/stream/${src}/${sid}/`, {
+        headers: { Accept: 'application/json' },
+      });
+      if (res.ok) {
+        const list = await res.json();
+        if (Array.isArray(list)) {
+          list.forEach((item, idx) => {
+            const url = item.embedUrl || item.streamUrl || item.url;
+            if (url) {
+              const isDirect = url.includes('.m3u8') || url.includes('.mp4');
+              allResolved.push({
+                id: `${s.source}-${idx}`,
+                source: s.source,
+                label: item.language || `Server ${allResolved.length + 1} (${s.source})`,
+                embedUrl: url,
+                streamUrl: isDirect ? url : undefined,
+                isDirectStream: isDirect,
+                hd: item.hd !== false,
+              });
+            }
+          });
+        }
+      }
+    } catch (e) {
+      console.warn(`[API] Could not resolve stream for ${s.source}:`, e);
+    }
+  }
+
+  return allResolved;
 }
 
 /**

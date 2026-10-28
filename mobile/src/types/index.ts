@@ -34,6 +34,7 @@ export interface Match {
   poster?: string;
   thumbnail?: string;
   teams?: MatchTeams;
+  sources?: Array<{ source: string; id: string; label?: string }>;
   streams?: StreamSource[];
   league?: string;
   venue?: string;
@@ -84,5 +85,6 @@ export type RootStackParamList = {
     match: Match;
   };
   NotificationSettings: undefined;
+  AboutCreator: undefined;
 };
 

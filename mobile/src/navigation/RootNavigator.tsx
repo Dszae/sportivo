@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { RootStackParamList } from '../types';
 
 import HomeScreen from '../screens/HomeScreen';
@@ -11,6 +12,7 @@ import CricketScreen from '../screens/CricketScreen';
 import WatchlistScreen from '../screens/WatchlistScreen';
 import MatchPlayerScreen from '../screens/MatchPlayerScreen';
 import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
+import AboutScreen from '../screens/AboutScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -42,7 +44,7 @@ function BottomTabs() {
         options={{
           tabBarLabel: 'Desk',
           tabBarIcon: ({ color, focused }) => (
-            <Text style={{ fontSize: 18, color: focused ? '#c9f36b' : '#64748b' }}>🏠</Text>
+            <Ionicons name={focused ? 'grid' : 'grid-outline'} size={20} color={color} />
           ),
         }}
       />
@@ -52,7 +54,9 @@ function BottomTabs() {
         component={FootballScreen}
         options={{
           tabBarLabel: 'Football',
-          tabBarIcon: () => <Text style={{ fontSize: 18 }}>⚽</Text>,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'football' : 'football-outline'} size={20} color={color} />
+          ),
         }}
       />
 
@@ -62,9 +66,9 @@ function BottomTabs() {
         options={{
           tabBarLabel: 'NPL 2026',
           tabBarActiveTintColor: '#ef4444',
-          tabBarIcon: () => (
+          tabBarIcon: ({ color, focused }) => (
             <View style={{ position: 'relative' }}>
-              <Text style={{ fontSize: 18 }}>🇳🇵</Text>
+              <Ionicons name={focused ? 'flame' : 'flame-outline'} size={20} color={color} />
               <View style={styles.pulseDot} />
             </View>
           ),
@@ -76,7 +80,9 @@ function BottomTabs() {
         component={CricketScreen}
         options={{
           tabBarLabel: 'Cricket',
-          tabBarIcon: () => <Text style={{ fontSize: 18 }}>🏏</Text>,
+          tabBarIcon: ({ color }) => (
+            <MaterialCommunityIcons name="cricket" size={21} color={color} />
+          ),
         }}
       />
 
@@ -86,8 +92,8 @@ function BottomTabs() {
         options={{
           tabBarLabel: 'Watchlist',
           tabBarActiveTintColor: '#fbbf24',
-          tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 18, color: focused ? '#fbbf24' : '#64748b' }}>★</Text>
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'bookmark' : 'bookmark-outline'} size={20} color={color} />
           ),
         }}
       />
@@ -133,6 +139,14 @@ export default function RootNavigator() {
           headerBackTitle: 'Back',
         }}
       />
+
+      <Stack.Screen
+        name="AboutCreator"
+        component={AboutScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack.Navigator>
   );
 }
@@ -148,4 +162,3 @@ const styles = StyleSheet.create({
     backgroundColor: '#ef4444',
   },
 });
-

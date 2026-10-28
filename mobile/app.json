@@ -40,8 +40,8 @@
           "color": "#c9f36b",
           "sounds": []
         }
-      ]
+      ],
+      "expo-font"
     ]
   }
 }
-

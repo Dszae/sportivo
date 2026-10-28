@@ -8,7 +8,11 @@ import {
   RefreshControl,
   StyleSheet,
   ActivityIndicator,
+  Platform,
+  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Match, RootStackParamList } from '../types';
@@ -35,6 +39,8 @@ function teamParts(title: string) {
 
 export default function FootballScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
+  const topPadding = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0) + 8;
   const [matches, setMatches] = useState<Match[]>([]);
   const [selectedLeague, setSelectedLeague] = useState('All');
   const [loading, setLoading] = useState(true);
@@ -136,18 +142,20 @@ export default function FootballScreen() {
             onPress={() => handleToggleStar(slug)}
             style={styles.starTouch}
           >
-            <Text style={[styles.starSymbol, isStarred && styles.starActive]}>
-              {isStarred ? '★' : '☆'}
-            </Text>
+            <Ionicons
+              name={isStarred ? 'bookmark' : 'bookmark-outline'}
+              size={18}
+              color={isStarred ? '#fbbf24' : '#64748b'}
+            />
           </TouchableOpacity>
-          <Text style={styles.chevron}>›</Text>
+          <Ionicons name="chevron-forward" size={16} color="#64748b" />
         </View>
       </TouchableOpacity>
     );
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: topPadding }]}>
       {/* Horizontal League Filters */}
       <View style={styles.filtersBar}>
         <ScrollView
@@ -198,7 +206,7 @@ export default function FootballScreen() {
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyIcon}>⚽</Text>
+              <Ionicons name="football-outline" size={40} color="#64748b" style={{ marginBottom: 12 }} />
               <Text style={styles.emptyTitle}>No Fixtures In This League</Text>
               <Text style={styles.emptySubtitle}>Select "All" to view all worldwide fixtures.</Text>
             </View>
