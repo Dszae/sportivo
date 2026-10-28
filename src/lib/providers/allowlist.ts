@@ -22,6 +22,7 @@ export const APPROVED_PLAYBACK_DOMAINS = [
   'youtube.com',
   'youtube-nocookie.com',
   'nettvstreamz.com',
+  'pages.dev',
   'rumble.com',
   'rumble.cloud',
   'nepalpremierleague.org',

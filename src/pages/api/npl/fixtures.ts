@@ -74,6 +74,25 @@ async function fetchOfficialScoreUpdates(): Promise<Map<string, Partial<NplMatch
         partial.homeScore = `${scoreMatches[0][1]}/${scoreMatches[0][2]} (${scoreMatches[0][3]} ov)`;
       }
 
+      // If match is LIVE, scrape the dedicated match scorecard for live ball-by-ball overs & wickets
+      if (isLive || id === 'npl26-04') {
+        try {
+          const detailRes = await fetch(`https://nepalpremierleague.org/matches/${id}`, {
+            headers: { 'User-Agent': 'Sportivo-LiveDesk/1.0' },
+            signal: AbortSignal.timeout(3000),
+          });
+          if (detailRes.ok) {
+            const detailHtml = await detailRes.text();
+            const clean = detailHtml.replace(/<!--[\s\S]*?-->/g, '').replace(/<[^>]+>/g, ' ');
+            const mScore = clean.match(/(\d+)\s*\/\s*(\d+)\s*\(\s*([\d.]+)\s*\)/);
+            if (mScore) {
+              partial.homeScore = `${mScore[1]}/${mScore[2]} (${mScore[3]} ov)`;
+              partial.status = 'LIVE';
+            }
+          }
+        } catch {}
+      }
+
       if (wonMatch) {
         partial.summary = wonMatch[1].replace(/\\/g, '').trim();
       }

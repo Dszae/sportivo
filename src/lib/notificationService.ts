@@ -467,16 +467,18 @@ export function evaluateMatchesForNotifications(
   // --- 1. Evaluate NPL Cricket Matches ---
   for (const match of nplMatches) {
     const matchId = `npl-${match.matchNumber}`;
-    const matchTitle = `${match.team1.name} vs ${match.team2.name}`;
+    const home = match.homeTeam || (match as any).team1?.name || (match as any).team1 || 'Home Team';
+    const away = match.awayTeam || (match as any).team2?.name || (match as any).team2 || 'Away Team';
+    const matchTitle = `${home} vs ${away}`;
     const matchUrl = `/npl/`;
-    const venue = 'Tribhuvan University Cricket Ground, Kirtipur';
-    const competition = 'Nepal Premier League (NPL) 2026';
+    const venue = match.venue || 'Tribhuvan University Cricket Ground, Kirtipur';
+    const competition = match.competition || 'Nepal Premier League (NPL) 2026';
 
     const isPref = isMatchPreferred(
       matchTitle,
       `npl-match-${match.matchNumber}`,
-      match.team1.name,
-      match.team2.name,
+      home,
+      away,
       prefs
     );
     if (!isPref) continue;
@@ -579,8 +581,11 @@ export function evaluateMatchesForNotifications(
       });
     }
 
-    // Cricket Key Moments: Wickets, Milestones & Results
+    // Cricket Key Moments: Wickets, Boundaries & Score Milestones
     if (match.status === 'LIVE' && prefs.notifications.notifyGoalsWickets) {
+      const homeScore = match.homeScore || (match as any).team1Score;
+      const awayScore = match.awayScore || (match as any).team2Score;
+
       const checkWickets = (teamName: string, scoreStr?: string, isHome: boolean = true) => {
         if (!scoreStr) return;
         const matchWickets = scoreStr.match(/\/(\d+)/);
@@ -608,8 +613,42 @@ export function evaluateMatchesForNotifications(
         }
       };
 
-      checkWickets(match.team1.name, match.team1Score, true);
-      checkWickets(match.team2.name, match.team2Score, false);
+      const checkScores = (teamName: string, scoreStr?: string, isHome: boolean = true) => {
+        if (!scoreStr) return;
+        const runsMatch = scoreStr.match(/^(\d+)/);
+        if (!runsMatch) return;
+        const currentRuns = parseInt(runsMatch[1], 10);
+        const lastRuns = isHome
+          ? (statesCache[matchId] as any)?.runsHome ?? 0
+          : (statesCache[matchId] as any)?.runsAway ?? 0;
+
+        if (currentRuns > lastRuns && lastRuns > 0) {
+          const runDiff = currentRuns - lastRuns;
+          if (runDiff === 4 || runDiff === 6) {
+            dispatchNotification({
+              key: `boundary:${matchId}:${teamName}:${currentRuns}`,
+              type: 'goal',
+              filterCategory: 'moments',
+              title: runDiff === 6 ? `💥 MAXIMUM SIX! (${teamName})` : `🏏 FOUR BOUNDARY! (${teamName})`,
+              message: `${teamName} hits a ${runDiff === 6 ? 'huge SIX' : 'cracking FOUR'}! Now ${scoreStr}`,
+              matchTitle,
+              matchUrl,
+              category: 'cricket',
+              competition,
+              score: scoreStr,
+              badgeText: runDiff === 6 ? 'SIX' : 'FOUR',
+            });
+          }
+        }
+        if (currentRuns > 0) {
+          saveMatchState(matchId, isHome ? ({ runsHome: currentRuns } as any) : ({ runsAway: currentRuns } as any));
+        }
+      };
+
+      checkWickets(home, homeScore, true);
+      checkWickets(away, awayScore, false);
+      checkScores(home, homeScore, true);
+      checkScores(away, awayScore, false);
     }
 
     // Full-Time / Final Match Result
