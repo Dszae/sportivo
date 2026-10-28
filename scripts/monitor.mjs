@@ -12,6 +12,7 @@ const paths = [
   '/api/matches/football/',
   '/api/matches/cricket/',
   '/api/matches/basketball/',
+  '/api/cron/match-alerts/',
 ];
 
 let failures = 0;

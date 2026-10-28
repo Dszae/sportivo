@@ -427,7 +427,16 @@ export function isMatchPreferred(
 ): boolean {
   const p = prefs || loadUserPreferences();
   if (p.starredMatches.includes(matchSlug)) return true;
-  if (!p.favoriteTeams || p.favoriteTeams.length === 0) return false;
+
+  // NPL matches are premier regional events — notify by default if notifications are enabled
+  if (matchSlug.startsWith('npl-') || matchTitle.toLowerCase().includes('npl') || matchTitle.toLowerCase().includes('pokhara') || matchTitle.toLowerCase().includes('sudurpaschim')) {
+    return true;
+  }
+
+  // If user hasn't configured specific favorite teams, default to notifying all active matches
+  if (!p.favoriteTeams || p.favoriteTeams.length === 0) {
+    return true;
+  }
 
   const titleLower = matchTitle.toLowerCase();
   const t1Lower = (team1 || '').toLowerCase();
@@ -499,13 +508,31 @@ export function evaluateMatchesForNotifications(
 
       const diffMinutes = (kickoffMs - now) / 60000;
 
-      // 30 Minutes Before Kickoff (Optional Reminder)
-      if (prefs.notifications.remind30Min && diffMinutes > 25 && diffMinutes <= 30.5) {
+      // 1. Starting Soon Heads-Up Alert (if user opens site within 25 minutes of kickoff)
+      if (diffMinutes > 0 && diffMinutes <= 25) {
+        dispatchNotification({
+          key: `starting-soon:${matchId}`,
+          type: '5min_warning',
+          filterCategory: 'matches',
+          title: `🏏 Match Starting Soon (${Math.max(1, Math.round(diffMinutes))}m)!`,
+          message: `${matchTitle} starts at ${formatLocalKickoff(kickoffMs, userTz)}! Live stream desk is ready.`,
+          matchTitle,
+          matchUrl,
+          category: 'cricket',
+          competition,
+          venue,
+          kickoffFormatted: formatLocalKickoff(kickoffMs, userTz),
+          badgeText: `${Math.max(1, Math.round(diffMinutes))}M TO START`,
+        });
+      }
+
+      // 2. 30 Minutes Before Kickoff
+      if (prefs.notifications.remind30Min && diffMinutes > 20 && diffMinutes <= 35) {
         dispatchNotification({
           key: `30min:${matchId}`,
           type: '30min_warning',
           filterCategory: 'matches',
-          title: '⚽ Matchday Reminder',
+          title: '🏏 NPL Matchday Reminder (30m)',
           message: `${matchTitle} kicks off in 30 minutes!`,
           matchTitle,
           matchUrl,
@@ -517,14 +544,14 @@ export function evaluateMatchesForNotifications(
         });
       }
 
-      // 5 Minutes Before Kickoff (Main Requirement)
-      if (prefs.notifications.remind5Min && diffMinutes > 0 && diffMinutes <= 5.5) {
+      // 3. 5 Minutes Before Kickoff
+      if (prefs.notifications.remind5Min && diffMinutes > 0 && diffMinutes <= 8) {
         dispatchNotification({
           key: `5min:${matchId}`,
           type: '5min_warning',
           filterCategory: 'matches',
           title: '🔔 Kickoff in 5 Minutes!',
-          message: `Get ready! The match is about to begin.`,
+          message: `${match.team1.name} 🆚 ${match.team2.name} is starting now!`,
           matchTitle: `${match.team1.name} 🆚 ${match.team2.name}`,
           matchUrl,
           category: 'cricket',
