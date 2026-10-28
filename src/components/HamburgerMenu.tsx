@@ -243,3 +243,4 @@ export default function HamburgerMenu({ activeCategory }: Props) {
     </>
   );
 }
+
