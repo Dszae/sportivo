@@ -70,6 +70,13 @@ export default function MatchPlayer({ match }: Props) {
 
   // Initialize client preferences and listen for updates
   useEffect(() => {
+    (window as any).__SPORTIVO_IS_WATCHING__ = true;
+    return () => {
+      (window as any).__SPORTIVO_IS_WATCHING__ = false;
+    };
+  }, []);
+
+  useEffect(() => {
     const prefs = loadUserPreferences();
     setIsFavorite(prefs.starredMatches.includes(slug));
     if (prefs.timeZone) {

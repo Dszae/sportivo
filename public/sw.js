@@ -63,7 +63,19 @@ self.addEventListener('push', (event) => {
     ]
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  // Only display OS notification if user is NOT actively focused on the site
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      const isUserActivelyFocused = clientList.some(
+        (client) => client.focused && client.visibilityState === 'visible'
+      );
+      if (isUserActivelyFocused) {
+        // User is already watching / actively interacting with the tab. Silence notification!
+        return;
+      }
+      return self.registration.showNotification(title, options);
+    })
+  );
 });
 
 // 2. Notification Click Handler

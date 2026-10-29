@@ -1,9 +1,19 @@
 import * as Notifications from 'expo-notifications';
 import * as Haptics from 'expo-haptics';
-import { Platform } from 'react-native';
+import { Platform, AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const DISPATCHED_IMMEDIATE_KEY = 'sportivo_dispatched_immediate_keys';
+
+let isPlayerScreenFocused = false;
+
+export function setPlayerScreenActive(active: boolean): void {
+  isPlayerScreenFocused = active;
+}
+
+export function isUserCurrentlyWatching(): boolean {
+  return isPlayerScreenFocused && AppState.currentState === 'active';
+}
 
 // Configure foreground notification behavior
 Notifications.setNotificationHandler({
@@ -162,6 +172,11 @@ export async function notifyLiveMoment(options: {
   type: 'wicket' | 'boundary' | 'kickoff' | 'milestone';
 }): Promise<void> {
   try {
+    // STRICT RULE: If user is actively watching the match on screen, DO NOT interrupt!
+    if (isPlayerScreenFocused && AppState.currentState === 'active') {
+      return;
+    }
+
     const hasPermission = await requestNativeNotificationPermission();
     if (!hasPermission) return;
 

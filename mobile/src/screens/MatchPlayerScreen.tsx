@@ -26,7 +26,7 @@ import {
 } from '../components/Icons';
 import { Match, RootStackParamList, StreamSource, NplMatch } from '../types';
 import { toggleStarredMatch } from '../services/storage';
-import { triggerButtonHaptic } from '../services/notifications';
+import { triggerButtonHaptic, setPlayerScreenActive } from '../services/notifications';
 import {
   resolveMatchStreams,
   fetchLiveDeskMoments,
@@ -74,6 +74,14 @@ export default function MatchPlayerScreen() {
   const [upcomingMatches, setUpcomingMatches] = useState<NplMatch[]>([]);
 
   const videoRef = useRef<Video>(null);
+
+  // Mark player screen as active to silence intrusive notifications while watching
+  useEffect(() => {
+    setPlayerScreenActive(true);
+    return () => {
+      setPlayerScreenActive(false);
+    };
+  }, []);
 
   // Auto-resolve live streaming sources on screen open
   useEffect(() => {

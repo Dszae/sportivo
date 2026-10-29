@@ -351,48 +351,59 @@ export function dispatchNotification(params: {
   recordAlertDispatched(key);
 
   const prefs = loadUserPreferences();
-  if (prefs.notifications.soundEnabled) {
-    playNotificationChime();
-  }
 
-  // 1. Native Push Notification (Dispatched via Service Worker with vibration & action buttons)
-  if (
-    typeof window !== 'undefined' &&
-    'Notification' in window &&
-    Notification.permission === 'granted'
-  ) {
-    const notifOptions: NotificationOptions = {
-      body: `${matchTitle}\n${message}`,
-      icon: '/icon-192x192.png',
-      badge: '/favicon-48x48.png',
-      tag: key,
-      data: { url: matchUrl },
-      renotify: true,
-      requireInteraction: true,
-    };
+  // STRICT RULE: Only notify the user when they are NOT actively watching the stream!
+  // If the browser tab is focused and visible (user is watching), suppress OS notifications & audio chimes
+  const isWatching =
+    typeof document !== 'undefined' &&
+    document.visibilityState === 'visible' &&
+    typeof document.hasFocus === 'function' &&
+    document.hasFocus();
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready
-        .then((reg) => {
-          reg.showNotification(title, notifOptions).catch(() => {
+  // 1. Play chime and dispatch OS Native Push Notification ONLY when user is NOT watching
+  if (!isWatching) {
+    if (prefs.notifications.soundEnabled) {
+      playNotificationChime();
+    }
+
+    if (
+      typeof window !== 'undefined' &&
+      'Notification' in window &&
+      Notification.permission === 'granted'
+    ) {
+      const notifOptions: NotificationOptions = {
+        body: `${matchTitle}\n${message}`,
+        icon: '/icon-192x192.png',
+        badge: '/favicon-48x48.png',
+        tag: key,
+        data: { url: matchUrl },
+        renotify: true,
+        requireInteraction: true,
+      };
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready
+          .then((reg) => {
+            reg.showNotification(title, notifOptions).catch(() => {
+              try {
+                new Notification(title, notifOptions);
+              } catch {}
+            });
+          })
+          .catch(() => {
             try {
               new Notification(title, notifOptions);
             } catch {}
           });
-        })
-        .catch(() => {
-          try {
-            new Notification(title, notifOptions);
-          } catch {}
-        });
-    } else {
-      try {
-        new Notification(title, notifOptions);
-      } catch {}
+      } else {
+        try {
+          new Notification(title, notifOptions);
+        } catch {}
+      }
     }
   }
 
-  // 2. In-App Notification Center Record
+  // 2. In-App Notification Center Record (Always stored silently so drawer history stays updated)
   const alertItem: NotificationAlert = {
     id: `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
     type,
