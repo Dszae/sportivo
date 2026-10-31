@@ -1,7 +1,7 @@
 {
-  "version": "1.0.8",
-  "versionCode": 9,
+  "version": "1.0.9",
+  "versionCode": 10,
   "downloadUrl": "https://sportivo.dipeshsapkota7.com.np/download/sportivo.apk",
-  "releaseNotes": "Zero-latency NetTV direct stream, purged phantom future notifications, CREX ground scorer real-time engine.",
-  "publishedAt": "2026-10-28"
+  "releaseNotes": "Horizontal landscape fullscreen mode, multi-server DaddyLive & PPV cricket feeds, and isolated NPL telemetry.",
+  "publishedAt": "2026-10-31"
 }
