@@ -62,35 +62,69 @@ function extractTeams(name: string) {
   return undefined;
 }
 
+let activeMirrorDomains: string[] = ['ppv.st', 'ppv.tj', 'ppvs.pk', 'ppv.rw', 'ppv.ms', 'ppv.bi', 'ppv.ug'];
+let lastPingFetch = 0;
+const PING_TTL_MS = 15 * 60 * 1000; // Check mirror ping every 15 minutes
+
+async function refreshMirrorDomains(signal?: AbortSignal): Promise<void> {
+  const now = Date.now();
+  if (now - lastPingFetch < PING_TTL_MS) return;
+
+  try {
+    const timeoutSignal = AbortSignal.timeout(3500);
+    const effectiveSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
+    const res = await fetch(BACKUP_PING, { signal: effectiveSignal });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.success && Array.isArray(data.domains) && data.domains.length > 0) {
+        activeMirrorDomains = data.domains;
+        lastPingFetch = now;
+      }
+    }
+  } catch {}
+}
+
 async function getPpvData(signal?: AbortSignal): Promise<PpvCategoryItem[]> {
   const now = Date.now();
   if (cachedStreams && now - lastStreamsFetch < CACHE_TTL_MS) {
     return cachedStreams;
   }
 
+  // Refresh mirror domains periodically in background
+  refreshMirrorDomains(signal).catch(() => {});
+
   const timeoutSignal = AbortSignal.timeout(5000);
   const effectiveSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
 
-  try {
-    const res = await fetch(UPSTREAM, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Sportivo/2.0',
-        Accept: 'application/json',
-      },
-      signal: effectiveSignal,
-    });
+  // Try primary upstream first, then fallback to mirrors if primary is unreachable
+  const candidateUrls = [
+    UPSTREAM,
+    ...activeMirrorDomains.map((domain) => `https://api.${domain}/api/streams`),
+  ];
+  // Deduplicate URLs
+  const uniqueUrls = Array.from(new Set(candidateUrls));
 
-    if (res.ok) {
-      const data = (await res.json()) as PpvResponse;
-      if (data?.success && Array.isArray(data.streams)) {
-        cachedStreams = data.streams;
-        lastStreamsFetch = now;
-        return cachedStreams;
+  for (const url of uniqueUrls) {
+    try {
+      const res = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Sportivo/2.0',
+          Accept: 'application/json',
+        },
+        signal: effectiveSignal,
+      });
+
+      if (res.ok) {
+        const data = (await res.json()) as PpvResponse;
+        if (data?.success && Array.isArray(data.streams)) {
+          cachedStreams = data.streams;
+          lastStreamsFetch = now;
+          return cachedStreams;
+        }
       }
+    } catch (err: any) {
+      // Continue to next mirror candidate
     }
-  } catch (err: any) {
-    // If upstream fetch fails, use cached copy if available
-    if (cachedStreams) return cachedStreams;
   }
 
   return cachedStreams || [];
