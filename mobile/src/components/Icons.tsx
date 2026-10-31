@@ -297,6 +297,26 @@ export function RadioIcon({ size = 16, color = '#c9f36b', style }: IconProps) {
   );
 }
 
+export function MaximizeIcon({ size = 20, color = '#cbd5e1', style }: IconProps) {
+  return (
+    <ViewWrapper style={style}>
+      <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+        <Path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </Svg>
+    </ViewWrapper>
+  );
+}
+
+export function MinimizeIcon({ size = 20, color = '#cbd5e1', style }: IconProps) {
+  return (
+    <ViewWrapper style={style}>
+      <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+        <Path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </Svg>
+    </ViewWrapper>
+  );
+}
+
 import { View } from 'react-native';
 
 function ViewWrapper({ children, style }: { children: React.ReactNode; style?: any }) {

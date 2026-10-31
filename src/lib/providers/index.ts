@@ -50,10 +50,12 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
   const strmfree = adapters.strmfree;
   const espn = adapters.espn;
   const npl = adapters.npl;
+  const daddylive = adapters.daddylive;
 
-  // Ingest PPV, NPL, StrmFree, and ESPN
+  // Ingest PPV, NPL, DaddyLive, StrmFree, and ESPN
   const promises: Promise<any>[] = [
     ppv.fetchMatches(category, effectiveSignal),
+    daddylive.fetchMatches(category, effectiveSignal),
     strmfree.fetchMatches(category, effectiveSignal),
     espn.fetchMatches(category, effectiveSignal),
   ];
@@ -61,7 +63,7 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
     promises.push(npl.fetchMatches(category, effectiveSignal));
   }
 
-  const [ppvResults, strmfreeResults, espnResults, nplResults] = await Promise.allSettled(promises);
+  const [ppvResults, daddyResults, strmfreeResults, espnResults, nplResults] = await Promise.allSettled(promises);
 
   const matches: NormalizedMatch[] = [];
   const seenSlugs = new Set<string>();
@@ -146,7 +148,12 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
     ingest(nplResults.value);
   }
 
-  // 2. Ingest PPV (primary official stream provider: verified matches, 16:9 posters, and clean embeds)
+  // 2. Ingest DaddyLive (verified high-availability 24/7 sports networks)
+  if (daddyResults && daddyResults.status === 'fulfilled') {
+    ingest(daddyResults.value);
+  }
+
+  // 3. Ingest PPV (primary official stream provider: verified matches, 16:9 posters, and clean embeds)
   if (ppvResults.status === 'fulfilled') {
     ingest(ppvResults.value);
   }

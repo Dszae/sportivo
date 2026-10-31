@@ -10,8 +10,10 @@ import {
   Share,
   Platform,
   StatusBar,
+  BackHandler,
 } from 'react-native';
-import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import { Video, ResizeMode, AVPlaybackStatus, VideoFullscreenUpdate } from 'expo-av';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { WebView } from 'react-native-webview';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,6 +25,8 @@ import {
   LocationIcon,
   BookmarkIcon,
   RadioIcon,
+  MaximizeIcon,
+  MinimizeIcon,
 } from '../components/Icons';
 import { Match, RootStackParamList, StreamSource, NplMatch } from '../types';
 import { toggleStarredMatch } from '../services/storage';
@@ -82,6 +86,41 @@ export default function MatchPlayerScreen() {
   const [upcomingMatches, setUpcomingMatches] = useState<NplMatch[]>([]);
 
   const videoRef = useRef<Video>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Toggle horizontal landscape fullscreen
+  const toggleFullscreen = async () => {
+    try {
+      if (!isFullscreen) {
+        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT);
+        setIsFullscreen(true);
+        StatusBar.setHidden(true, 'fade');
+      } else {
+        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+        setIsFullscreen(false);
+        StatusBar.setHidden(false, 'fade');
+      }
+    } catch (err) {
+      console.warn('Orientation change error:', err);
+    }
+  };
+
+  // Handle hardware back button in landscape mode
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (isFullscreen) {
+        toggleFullscreen();
+        return true;
+      }
+      return false;
+    });
+
+    return () => {
+      backHandler.remove();
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
+      StatusBar.setHidden(false);
+    };
+  }, [isFullscreen]);
 
   // Mark player screen as active to silence intrusive notifications while watching
   useEffect(() => {
@@ -195,29 +234,31 @@ export default function MatchPlayerScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: topPadding }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#080a0b" />
+    <View style={[styles.container, isFullscreen ? { paddingTop: 0 } : { paddingTop: topPadding }]}>
+      <StatusBar barStyle="light-content" backgroundColor="#080a0b" hidden={isFullscreen} />
 
       {/* Top Bar with Back Button */}
-      <View style={styles.topBar}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-          accessibilityLabel="Back"
-        >
-          <ArrowBackIcon size={20} color="#c9f36b" />
-          <Text style={styles.backButtonText}>Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.topBarTitle} numberOfLines={1}>
-          {match.title}
-        </Text>
-        <TouchableOpacity onPress={handleShare} style={styles.shareButton} accessibilityLabel="Share">
-          <ShareIcon size={18} color="#cbd5e1" />
-        </TouchableOpacity>
-      </View>
+      {!isFullscreen && (
+        <View style={styles.topBar}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            accessibilityLabel="Back"
+          >
+            <ArrowBackIcon size={20} color="#c9f36b" />
+            <Text style={styles.backButtonText}>Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.topBarTitle} numberOfLines={1}>
+            {match.title}
+          </Text>
+          <TouchableOpacity onPress={handleShare} style={styles.shareButton} accessibilityLabel="Share">
+            <ShareIcon size={18} color="#cbd5e1" />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Video Player Stage (ExoPlayer Native Streaming) */}
-      <View style={styles.playerStage}>
+      <View style={[styles.playerStage, isFullscreen && styles.playerStageFullscreen]}>
         {activeStream.streamUrl || activeStream.embedUrl?.includes('.m3u8') ? (
           <Video
             ref={videoRef}
@@ -226,6 +267,23 @@ export default function MatchPlayerScreen() {
             useNativeControls
             resizeMode={ResizeMode.CONTAIN}
             shouldPlay={isPlaying}
+            onFullscreenUpdate={async (event) => {
+              if (
+                event.fullscreenUpdate === VideoFullscreenUpdate.PLAYER_WILL_PRESENT ||
+                event.fullscreenUpdate === VideoFullscreenUpdate.PLAYER_DID_PRESENT
+              ) {
+                setIsFullscreen(true);
+                StatusBar.setHidden(true, 'fade');
+                await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT).catch(() => {});
+              } else if (
+                event.fullscreenUpdate === VideoFullscreenUpdate.PLAYER_WILL_DISMISS ||
+                event.fullscreenUpdate === VideoFullscreenUpdate.PLAYER_DID_DISMISS
+              ) {
+                setIsFullscreen(false);
+                StatusBar.setHidden(false, 'fade');
+                await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
+              }
+            }}
             onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
               if (status.isLoaded) {
                 setIsBuffering(status.isBuffering);
@@ -260,30 +318,46 @@ export default function MatchPlayerScreen() {
             <Text style={styles.bufferingText}>Connecting to Live Broadcast...</Text>
           </View>
         )}
+
+        {/* Fullscreen Landscape Toggle Button */}
+        <TouchableOpacity
+          style={styles.fullscreenToggleBtn}
+          onPress={toggleFullscreen}
+          accessibilityLabel={isFullscreen ? 'Exit Fullscreen' : 'Landscape Fullscreen'}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
+          {isFullscreen ? (
+            <MinimizeIcon size={20} color="#ffffff" />
+          ) : (
+            <MaximizeIcon size={20} color="#ffffff" />
+          )}
+        </TouchableOpacity>
       </View>
 
-      {/* Switch Server Helper if user wants to change stream */}
-      {hasTimedOut && streams.length > 1 && (
-        <View style={styles.streamHelperBanner}>
-          <View style={styles.streamHelperTextRow}>
-            <AlertCircleIcon size={16} color="#fbbf24" />
-            <Text style={styles.streamHelperTitle}>Switch to backup stream if buffering</Text>
-          </View>
-          <View style={styles.streamHelperActions}>
-            <TouchableOpacity
-              style={styles.retryBtn}
-              onPress={() => {
-                setHasTimedOut(false);
-                setIsBuffering(true);
-                setSelectedServer((selectedServer + 1) % streams.length);
-              }}
-            >
-              <RefreshIcon size={12} color="#080a0b" />
-              <Text style={styles.retryBtnText}>Next Server</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
+      {!isFullscreen && (
+        <>
+          {/* Switch Server Helper if user wants to change stream */}
+          {hasTimedOut && streams.length > 1 && (
+            <View style={styles.streamHelperBanner}>
+              <View style={styles.streamHelperTextRow}>
+                <AlertCircleIcon size={16} color="#fbbf24" />
+                <Text style={styles.streamHelperTitle}>Switch to backup stream if buffering</Text>
+              </View>
+              <View style={styles.streamHelperActions}>
+                <TouchableOpacity
+                  style={styles.retryBtn}
+                  onPress={() => {
+                    setHasTimedOut(false);
+                    setIsBuffering(true);
+                    setSelectedServer((selectedServer + 1) % streams.length);
+                  }}
+                >
+                  <RefreshIcon size={12} color="#080a0b" />
+                  <Text style={styles.retryBtnText}>Next Server</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
 
       {/* Real-time Match Telemetry Bar (Live Score & Recent Balls) - NPL Matches Only */}
       {isNplMatch && liveDesk && (
@@ -540,6 +614,8 @@ export default function MatchPlayerScreen() {
           </View>
         </View>
       </ScrollView>
+      </>
+      )}
     </View>
   );
 }
@@ -591,6 +667,28 @@ const styles = StyleSheet.create({
     height: (width * 9) / 16,
     backgroundColor: '#000000',
     position: 'relative',
+  },
+  playerStageFullscreen: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: 99999,
+    backgroundColor: '#000000',
+  },
+  fullscreenToggleBtn: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    zIndex: 100,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    padding: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
   video: {
     width: '100%',
