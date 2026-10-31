@@ -58,6 +58,14 @@ export default function MatchPlayerScreen() {
 
   const topPadding = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0) + 8;
 
+  const isNplMatch =
+    match.category === 'cricket' &&
+    ((match.competition && match.competition.toLowerCase().includes('nepal')) ||
+      (match.league && match.league.toLowerCase().includes('npl')) ||
+      (match.id && match.id.toLowerCase().includes('npl')) ||
+      (match.title && match.title.toLowerCase().includes('npl')) ||
+      (Array.isArray(match.sources) && match.sources.some((s) => s.source === 'npl')));
+
   const [streams, setStreams] = useState<StreamSource[]>(match.streams || []);
   const [selectedServer, setSelectedServer] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -105,8 +113,10 @@ export default function MatchPlayerScreen() {
     };
   }, [match]);
 
-  // Poll Ground Scorer Ball Commentary & Live Moments (every 4s)
+  // Poll Ground Scorer Ball Commentary & Live Moments (every 4s) strictly for NPL matches
   useEffect(() => {
+    if (!isNplMatch) return;
+
     let isMounted = true;
     let timer: any = null;
 
@@ -137,7 +147,7 @@ export default function MatchPlayerScreen() {
       isMounted = false;
       if (timer) clearTimeout(timer);
     };
-  }, []);
+  }, [isNplMatch]);
 
   // Buffering timeout safeguard
   useEffect(() => {
@@ -275,8 +285,8 @@ export default function MatchPlayerScreen() {
         </View>
       )}
 
-      {/* Real-time Match Telemetry Bar (Live Score & Recent Balls) */}
-      {liveDesk && (
+      {/* Real-time Match Telemetry Bar (Live Score & Recent Balls) - NPL Matches Only */}
+      {isNplMatch && liveDesk && (
         <View style={styles.telemetryBar}>
           <View style={styles.telemetryScoreRow}>
             <View style={styles.telemetryBadge}>
@@ -331,112 +341,114 @@ export default function MatchPlayerScreen() {
       )}
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Interactive Match Hub Tabs */}
-        <View style={styles.hubContainer}>
-          <View style={styles.hubHeader}>
-            <TouchableOpacity
-              style={[styles.hubTab, activeHubTab === 'commentary' && styles.hubTabActive]}
-              onPress={() => setActiveHubTab('commentary')}
-            >
-              <Text style={[styles.hubTabText, activeHubTab === 'commentary' && styles.hubTabTextActive]}>
-                Commentary
-              </Text>
-            </TouchableOpacity>
+        {/* Interactive Match Hub Tabs - Strictly for NPL matches */}
+        {isNplMatch && (
+          <View style={styles.hubContainer}>
+            <View style={styles.hubHeader}>
+              <TouchableOpacity
+                style={[styles.hubTab, activeHubTab === 'commentary' && styles.hubTabActive]}
+                onPress={() => setActiveHubTab('commentary')}
+              >
+                <Text style={[styles.hubTabText, activeHubTab === 'commentary' && styles.hubTabTextActive]}>
+                  Commentary
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.hubTab, activeHubTab === 'upcoming' && styles.hubTabActive]}
-              onPress={() => setActiveHubTab('upcoming')}
-            >
-              <Text style={[styles.hubTabText, activeHubTab === 'upcoming' && styles.hubTabTextActive]}>
-                Fixtures
-              </Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.hubTab, activeHubTab === 'upcoming' && styles.hubTabActive]}
+                onPress={() => setActiveHubTab('upcoming')}
+              >
+                <Text style={[styles.hubTabText, activeHubTab === 'upcoming' && styles.hubTabTextActive]}>
+                  Fixtures
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.hubTab, activeHubTab === 'standings' && styles.hubTabActive]}
-              onPress={() => setActiveHubTab('standings')}
-            >
-              <Text style={[styles.hubTabText, activeHubTab === 'standings' && styles.hubTabTextActive]}>
-                Points Table
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Hub Tab Content */}
-          {activeHubTab === 'commentary' && (
-            <View style={styles.hubBody}>
-              {liveDesk && liveDesk.commentary && liveDesk.commentary.length > 0 ? (
-                liveDesk.commentary.map((comm, idx) => (
-                  <View key={idx} style={styles.commItem}>
-                    <View style={styles.commBallCol}>
-                      <Text style={styles.commBallText}>{comm.ball}</Text>
-                      {comm.outcome && (
-                        <View
-                          style={[
-                            styles.commBadge,
-                            comm.outcome === '6' && styles.ballSix,
-                            comm.outcome === '4' && styles.ballFour,
-                            comm.outcome === 'W' && styles.ballWicket,
-                          ]}
-                        >
-                          <Text style={styles.commBadgeText}>{comm.outcome}</Text>
-                        </View>
-                      )}
-                    </View>
-                    <View style={styles.commTextCol}>
-                      <Text style={styles.commBowlerText}>{comm.bowlerToBatsman}</Text>
-                      <Text style={styles.commDescText}>{comm.text}</Text>
-                    </View>
-                  </View>
-                ))
-              ) : (
-                <Text style={styles.emptyText}>Waiting for live ground scorer commentary feeds...</Text>
-              )}
+              <TouchableOpacity
+                style={[styles.hubTab, activeHubTab === 'standings' && styles.hubTabActive]}
+                onPress={() => setActiveHubTab('standings')}
+              >
+                <Text style={[styles.hubTabText, activeHubTab === 'standings' && styles.hubTabTextActive]}>
+                  Points Table
+                </Text>
+              </TouchableOpacity>
             </View>
-          )}
 
-          {activeHubTab === 'upcoming' && (
-            <View style={styles.hubBody}>
-              {upcomingMatches.map((m) => (
-                <View key={m.id} style={styles.upcomingCard}>
-                  <View style={styles.upcomingTop}>
-                    <Text style={styles.upcomingMatchNum}>Match {m.matchNumber}</Text>
-                    <Text style={styles.upcomingTime}>{formatKathmanduTime(m.timestamp)}</Text>
-                  </View>
-                  <Text style={styles.upcomingTitle}>
-                    {m.homeTeam} vs {m.awayTeam}
-                  </Text>
-                  <Text style={styles.upcomingVenue}>{m.venue}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {activeHubTab === 'standings' && (
-            <View style={styles.hubBody}>
-              <View style={styles.tableHeader}>
-                <Text style={[styles.tableCol, { flex: 3 }]}>Team</Text>
-                <Text style={[styles.tableCol, { flex: 1, textAlign: 'center' }]}>P</Text>
-                <Text style={[styles.tableCol, { flex: 1, textAlign: 'center' }]}>W</Text>
-                <Text style={[styles.tableCol, { flex: 1, textAlign: 'center' }]}>PTS</Text>
-                <Text style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}>NRR</Text>
+            {/* Hub Tab Content */}
+            {activeHubTab === 'commentary' && (
+              <View style={styles.hubBody}>
+                {liveDesk && liveDesk.commentary && liveDesk.commentary.length > 0 ? (
+                  liveDesk.commentary.map((comm, idx) => (
+                    <View key={idx} style={styles.commItem}>
+                      <View style={styles.commBallCol}>
+                        <Text style={styles.commBallText}>{comm.ball}</Text>
+                        {comm.outcome && (
+                          <View
+                            style={[
+                              styles.commBadge,
+                              comm.outcome === '6' && styles.ballSix,
+                              comm.outcome === '4' && styles.ballFour,
+                              comm.outcome === 'W' && styles.ballWicket,
+                            ]}
+                          >
+                            <Text style={styles.commBadgeText}>{comm.outcome}</Text>
+                          </View>
+                        )}
+                      </View>
+                      <View style={styles.commTextCol}>
+                        <Text style={styles.commBowlerText}>{comm.bowlerToBatsman}</Text>
+                        <Text style={styles.commDescText}>{comm.text}</Text>
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.emptyText}>Waiting for live ground scorer commentary feeds...</Text>
+                )}
               </View>
-              {NPL_TEAMS_DATA.map((t, idx) => (
-                <View key={idx} style={styles.tableRow}>
-                  <Text style={[styles.teamName, { flex: 3 }]} numberOfLines={1}>
-                    {idx + 1}. {t.name}
-                  </Text>
-                  <Text style={[styles.tableVal, { flex: 1, textAlign: 'center' }]}>{t.p}</Text>
-                  <Text style={[styles.tableVal, { flex: 1, textAlign: 'center', color: '#10b981' }]}>{t.w}</Text>
-                  <Text style={[styles.tableVal, { flex: 1, textAlign: 'center', fontWeight: '900', color: '#c9f36b' }]}>
-                    {t.pts}
-                  </Text>
-                  <Text style={[styles.tableVal, { flex: 1.5, textAlign: 'right' }]}>{t.nrr}</Text>
+            )}
+
+            {activeHubTab === 'upcoming' && (
+              <View style={styles.hubBody}>
+                {upcomingMatches.map((m) => (
+                  <View key={m.id} style={styles.upcomingCard}>
+                    <View style={styles.upcomingTop}>
+                      <Text style={styles.upcomingMatchNum}>Match {m.matchNumber}</Text>
+                      <Text style={styles.upcomingTime}>{formatKathmanduTime(m.timestamp)}</Text>
+                    </View>
+                    <Text style={styles.upcomingTitle}>
+                      {m.homeTeam} vs {m.awayTeam}
+                    </Text>
+                    <Text style={styles.upcomingVenue}>{m.venue}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {activeHubTab === 'standings' && (
+              <View style={styles.hubBody}>
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.tableCol, { flex: 3 }]}>Team</Text>
+                  <Text style={[styles.tableCol, { flex: 1, textAlign: 'center' }]}>P</Text>
+                  <Text style={[styles.tableCol, { flex: 1, textAlign: 'center' }]}>W</Text>
+                  <Text style={[styles.tableCol, { flex: 1, textAlign: 'center' }]}>PTS</Text>
+                  <Text style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}>NRR</Text>
                 </View>
-              ))}
-            </View>
-          )}
-        </View>
+                {NPL_TEAMS_DATA.map((t, idx) => (
+                  <View key={idx} style={styles.tableRow}>
+                    <Text style={[styles.teamName, { flex: 3 }]} numberOfLines={1}>
+                      {idx + 1}. {t.name}
+                    </Text>
+                    <Text style={[styles.tableVal, { flex: 1, textAlign: 'center' }]}>{t.p}</Text>
+                    <Text style={[styles.tableVal, { flex: 1, textAlign: 'center', color: '#10b981' }]}>{t.w}</Text>
+                    <Text style={[styles.tableVal, { flex: 1, textAlign: 'center', fontWeight: '900', color: '#c9f36b' }]}>
+                      {t.pts}
+                    </Text>
+                    <Text style={[styles.tableVal, { flex: 1.5, textAlign: 'right' }]}>{t.nrr}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Match Header Information */}
         <View style={styles.metaCard}>

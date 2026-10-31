@@ -772,10 +772,15 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
                   {selectedLeague !== 'All'
                     ? `No matches currently playing live in ${selectedLeague}.`
                     : `No matches broadcasting live right now in ${categoryLabel}.`}
+                  {upcomingMatches.length > 0 && (
+                    <span className="block sm:inline sm:ml-2 font-normal text-slate-400">
+                      Next kickoff: <strong className="text-white font-medium">{titleOf(upcomingMatches[0])}</strong> at {timeOf(upcomingMatches[0], timeZone)}
+                    </span>
+                  )}
                 </span>
               </div>
               <span className="text-[11px] text-[#c9f36b] font-medium flex items-center gap-1 shrink-0">
-                <span>Upcoming kickoff fixtures scheduled below (NST)</span>
+                <span>Kickoff fixtures below (NST)</span>
                 <span aria-hidden="true">&darr;</span>
               </span>
             </div>

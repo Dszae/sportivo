@@ -265,17 +265,42 @@ export class PpvAdapter implements ProviderAdapter {
 
     const isNative = validated.endsWith('.m3u8') || validated.endsWith('.mp4');
 
+    const resultStreams = [
+      {
+        embedUrl: validated,
+        hd: true,
+        language: foundStream.source_tag || (foundStream.locale ? foundStream.locale.toUpperCase() : 'HD English'),
+        isNativeVideo: isNative,
+        isSandboxedIframe: !isNative,
+      },
+    ];
+
+    // If stream has alternative substreams (e.g. Willow 2, Willow Sports), append them as alternate servers
+    if (Array.isArray(foundStream.substreams)) {
+      for (const sub of foundStream.substreams) {
+        if (!sub?.iframe) continue;
+        let subUrl = sub.iframe.trim();
+        if (subUrl.includes('<iframe')) {
+          const match = subUrl.match(/src=["']([^"']+)["']/i);
+          if (match && match[1]) subUrl = match[1];
+        }
+        const validSub = sanitizePlaybackUrl(subUrl);
+        if (validSub) {
+          const subNative = validSub.endsWith('.m3u8') || validSub.endsWith('.mp4');
+          resultStreams.push({
+            embedUrl: validSub,
+            hd: true,
+            language: sub.source_tag || sub.name || `Server ${resultStreams.length + 1}`,
+            isNativeVideo: subNative,
+            isSandboxedIframe: !subNative,
+          });
+        }
+      }
+    }
+
     return {
       status: 'ready',
-      streams: [
-        {
-          embedUrl: validated,
-          hd: true,
-          language: foundStream.locale ? foundStream.locale.toUpperCase() : 'HD English',
-          isNativeVideo: isNative,
-          isSandboxedIframe: !isNative,
-        },
-      ],
+      streams: resultStreams,
       provider: this.name,
     };
   }

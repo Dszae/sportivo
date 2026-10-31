@@ -67,6 +67,13 @@ export default function MatchPlayer({ match }: Props) {
   const isLive = status === 'Live';
   const ts = getMatchTimestamp(match);
   const league = match.category === 'football' ? detectFootballLeague(match) : null;
+  const isNplMatch =
+    match.category === 'cricket' &&
+    ((match.competition && match.competition.toLowerCase().includes('nepal')) ||
+      (match.league && match.league.toLowerCase().includes('npl')) ||
+      (match.id && match.id.toLowerCase().includes('npl')) ||
+      title.toLowerCase().includes('npl') ||
+      sources.some((s) => s.source === 'npl'));
 
   // Initialize client preferences and listen for updates
   useEffect(() => {
@@ -171,8 +178,10 @@ export default function MatchPlayer({ match }: Props) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Poll Ground Scorer Ball Commentary & Moments (every 4s)
+  // Poll Ground Scorer Ball Commentary & Moments (every 4s) - strictly for NPL matches only
   useEffect(() => {
+    if (!isNplMatch) return;
+
     let isMounted = true;
     let timer: any = null;
 
@@ -485,10 +494,10 @@ export default function MatchPlayer({ match }: Props) {
         </div>
       )}
 
-      {/* Main Player Frame Container */}
+      {/* Main Player Frame Container - compact default web size */}
       <div
         ref={playerContainerRef}
-        className="overflow-hidden rounded-2xl border border-white/10 bg-[#111a19] shadow-2xl shadow-black/80"
+        className="mx-auto w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-[#111a19] shadow-2xl shadow-black/80"
       >
         {/* Player Top Navigation & Live Telemetry Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 bg-[#0b100f] p-4">
@@ -749,226 +758,230 @@ export default function MatchPlayer({ match }: Props) {
         )}
       </div>
 
-      {/* Real-time Match Telemetry Bar (Live Score & Recent Balls) */}
-      <div className="rounded-2xl border border-white/10 bg-[#0d1413] p-4 shadow-xl">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5">
-              <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
-              <span className="text-xs font-black text-red-400 uppercase tracking-wider">Ground Feed</span>
-            </div>
+      {/* Real-time Match Telemetry Bar & Commentary Hub - strictly displayed on NPL Live matches */}
+      {isNplMatch && (
+        <>
+          <div className="rounded-2xl border border-white/10 bg-[#0d1413] p-4 shadow-xl">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5">
+                  <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
+                  <span className="text-xs font-black text-red-400 uppercase tracking-wider">Ground Feed</span>
+                </div>
 
-            {liveScore && (
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black text-white">{liveScore}</span>
-                {liveOvers && <span className="text-xs font-bold text-slate-400">({liveOvers} ov)</span>}
-                {liveCrr && <span className="text-xs font-bold text-[#e5b94f]">CRR: {liveCrr}</span>}
+                {liveScore && (
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-white">{liveScore}</span>
+                    {liveOvers && <span className="text-xs font-bold text-slate-400">({liveOvers} ov)</span>}
+                    {liveCrr && <span className="text-xs font-bold text-[#e5b94f]">CRR: {liveCrr}</span>}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* Recent Balls Strip */}
-          {recentBalls.length > 0 && (
-            <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mr-1">Overs:</span>
-              {recentBalls.slice(-12).map((b, idx) => {
-                const code = (b.code || '').toLowerCase();
-                const isFour = code === '4';
-                const isSix = code === '6';
-                const isWkt = code.includes('w') && !code.includes('wd');
-                const isDot = code === '0';
+              {/* Recent Balls Strip */}
+              {recentBalls.length > 0 && (
+                <div className="flex items-center gap-1.5 overflow-x-auto py-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mr-1">Overs:</span>
+                  {recentBalls.slice(-12).map((b, idx) => {
+                    const code = (b.code || '').toLowerCase();
+                    const isFour = code === '4';
+                    const isSix = code === '6';
+                    const isWkt = code.includes('w') && !code.includes('wd');
+                    const isDot = code === '0';
 
-                return (
-                  <span
-                    key={idx}
-                    className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-black transition shadow-sm ${
-                      isSix
-                        ? 'bg-purple-600 text-white ring-2 ring-purple-400'
-                        : isFour
-                        ? 'bg-emerald-500 text-black ring-2 ring-emerald-300'
-                        : isWkt
-                        ? 'bg-red-600 text-white ring-2 ring-red-400 animate-pulse'
-                        : isDot
-                        ? 'bg-slate-800 text-slate-400 border border-white/5'
-                        : 'bg-white/10 text-white border border-white/10'
-                    }`}
-                    title={`Over ${b.over}.${b.delivery}: ${b.code}`}
-                  >
-                    {isWkt ? 'W' : isDot ? '•' : b.code}
-                  </span>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Interactive Match Hub: Tabs for Commentary, Upcoming Fixtures & Points Table */}
-      <div className="rounded-2xl border border-white/10 bg-[#111a19] shadow-xl overflow-hidden">
-        {/* Hub Tabs Header */}
-        <div className="flex items-center gap-2 border-b border-white/10 bg-[#0a100f] px-4 pt-3">
-          <button
-            type="button"
-            onClick={() => setActiveHubTab('commentary')}
-            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
-              activeHubTab === 'commentary'
-                ? 'border-[#c9f36b] text-[#c9f36b]'
-                : 'border-transparent text-slate-400 hover:text-white'
-            }`}
-          >
-            <span className="h-2 w-2 rounded-full bg-[#c9f36b]"></span>
-            <span>Live Ball-by-Ball Commentary</span>
-            {commentaryList.length > 0 && (
-              <span className="rounded-full bg-white/10 px-1.5 py-0.2 text-[10px] text-slate-300">
-                {commentaryList.length}
-              </span>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveHubTab('upcoming')}
-            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
-              activeHubTab === 'upcoming'
-                ? 'border-[#c9f36b] text-[#c9f36b]'
-                : 'border-transparent text-slate-400 hover:text-white'
-            }`}
-          >
-            <span>Upcoming NPL Matches</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveHubTab('standings')}
-            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
-              activeHubTab === 'standings'
-                ? 'border-[#c9f36b] text-[#c9f36b]'
-                : 'border-transparent text-slate-400 hover:text-white'
-            }`}
-          >
-            <span>NPL Points Table</span>
-          </button>
-        </div>
-
-        {/* Tab 1: Live Ball-by-Ball Commentary Drawer */}
-        {activeHubTab === 'commentary' && (
-          <div className="p-5 max-h-96 overflow-y-auto divide-y divide-white/5">
-            {commentaryList.length === 0 ? (
-              <div className="py-8 text-center text-slate-400 text-xs">
-                <p>Waiting for live ball feeds from ground scorers...</p>
-                <p className="mt-1 text-slate-500">Live commentary updates dynamically on every delivery.</p>
-              </div>
-            ) : (
-              commentaryList.map((comm, idx) => (
-                <div key={idx} className="py-3 flex items-start gap-4 hover:bg-white/[0.02] px-2 rounded-xl transition">
-                  <div className="shrink-0 flex flex-col items-center">
-                    <span className="font-mono text-xs font-black text-[#c9f36b] bg-white/5 px-2 py-1 rounded-lg border border-white/5">
-                      {comm.ball}
-                    </span>
-                    {comm.outcome && (
+                    return (
                       <span
-                        className={`mt-1 text-[10px] font-black px-1.5 py-0.5 rounded ${
-                          comm.outcome === '6'
-                            ? 'bg-purple-600 text-white'
-                            : comm.outcome === '4'
-                            ? 'bg-emerald-500 text-black'
-                            : comm.outcome === 'W'
-                            ? 'bg-red-600 text-white'
-                            : 'bg-white/10 text-white'
+                        key={idx}
+                        className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-black transition shadow-sm ${
+                          isSix
+                            ? 'bg-purple-600 text-white ring-2 ring-purple-400'
+                            : isFour
+                            ? 'bg-emerald-500 text-black ring-2 ring-emerald-300'
+                            : isWkt
+                            ? 'bg-red-600 text-white ring-2 ring-red-400 animate-pulse'
+                            : isDot
+                            ? 'bg-slate-800 text-slate-400 border border-white/5'
+                            : 'bg-white/10 text-white border border-white/10'
                         }`}
+                        title={`Over ${b.over}.${b.delivery}: ${b.code}`}
                       >
-                        {comm.outcome}
+                        {isWkt ? 'W' : isDot ? '•' : b.code}
                       </span>
-                    )}
-                  </div>
-
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-[#e5b94f]">{comm.bowlerToBatsman}</p>
-                    <p className="mt-1 text-xs leading-relaxed text-slate-200">{comm.text}</p>
-                  </div>
+                    );
+                  })}
                 </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* Tab 2: Upcoming NPL Matches with Countdown */}
-        {activeHubTab === 'upcoming' && (
-          <div className="p-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {upcomingNplMatches.map((m) => (
-                <div
-                  key={m.id}
-                  className="rounded-xl border border-white/5 bg-white/[0.02] p-4 flex flex-col justify-between hover:border-white/20 transition"
-                >
-                  <div className="flex items-center justify-between text-[11px] text-slate-400">
-                    <span className="font-bold text-[#e5b94f]">Match {m.matchNumber}</span>
-                    <span className="font-mono text-[#c9f36b] font-bold">{formatCountdown(m.timestamp)}</span>
-                  </div>
-
-                  <div className="my-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <img src={m.homeTeamLogo} alt="" className="h-6 w-6 object-contain" />
-                      <span className="text-xs font-bold text-white">{m.homeTeam}</span>
-                    </div>
-                    <span className="text-[10px] font-black text-slate-500">VS</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-white">{m.awayTeam}</span>
-                      <img src={m.awayTeamLogo} alt="" className="h-6 w-6 object-contain" />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-white/5 pt-2 flex items-center justify-between text-[10px] text-slate-400">
-                    <span>{timeOf(match, 'Asia/Kathmandu')}</span>
-                    <a
-                      href={`/cricket/match/${slugify(`${m.homeTeam} vs ${m.awayTeam}`)}/`}
-                      className="text-[#c9f36b] font-bold hover:underline"
-                    >
-                      Match Center &rarr;
-                    </a>
-                  </div>
-                </div>
-              ))}
+              )}
             </div>
           </div>
-        )}
 
-        {/* Tab 3: Points Table */}
-        {activeHubTab === 'standings' && (
-          <div className="p-5 overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-white/10 text-slate-400 text-[10px] uppercase tracking-wider">
-                  <th className="py-2 px-3">Team</th>
-                  <th className="py-2 px-3 text-center">P</th>
-                  <th className="py-2 px-3 text-center">W</th>
-                  <th className="py-2 px-3 text-center">L</th>
-                  <th className="py-2 px-3 text-center">PTS</th>
-                  <th className="py-2 px-3 text-right">NRR</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {nplStandings.map((team, idx) => (
-                  <tr key={team.name} className="hover:bg-white/[0.02] transition">
-                    <td className="py-2.5 px-3 flex items-center gap-2">
-                      <span className="font-mono text-slate-500 text-[10px] w-3">{idx + 1}</span>
-                      {NPL_TEAMS[team.name]?.logo && (
-                        <img src={NPL_TEAMS[team.name].logo} alt="" className="h-5 w-5 object-contain" />
-                      )}
-                      <span className="font-bold text-white">{team.name}</span>
-                    </td>
-                    <td className="py-2.5 px-3 text-center font-mono text-slate-300">{team.p}</td>
-                    <td className="py-2.5 px-3 text-center font-mono text-emerald-400">{team.w}</td>
-                    <td className="py-2.5 px-3 text-center font-mono text-red-400">{team.l}</td>
-                    <td className="py-2.5 px-3 text-center font-mono font-black text-[#c9f36b]">{team.pts}</td>
-                    <td className="py-2.5 px-3 text-right font-mono text-slate-300">{team.nrr}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Interactive Match Hub: Tabs for Commentary, Upcoming Fixtures & Points Table */}
+          <div className="rounded-2xl border border-white/10 bg-[#111a19] shadow-xl overflow-hidden">
+            {/* Hub Tabs Header */}
+            <div className="flex items-center gap-2 border-b border-white/10 bg-[#0a100f] px-4 pt-3">
+              <button
+                type="button"
+                onClick={() => setActiveHubTab('commentary')}
+                className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
+                  activeHubTab === 'commentary'
+                    ? 'border-[#c9f36b] text-[#c9f36b]'
+                    : 'border-transparent text-slate-400 hover:text-white'
+                }`}
+              >
+                <span className="h-2 w-2 rounded-full bg-[#c9f36b]"></span>
+                <span>Live Ball-by-Ball Commentary</span>
+                {commentaryList.length > 0 && (
+                  <span className="rounded-full bg-white/10 px-1.5 py-0.2 text-[10px] text-slate-300">
+                    {commentaryList.length}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveHubTab('upcoming')}
+                className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
+                  activeHubTab === 'upcoming'
+                    ? 'border-[#c9f36b] text-[#c9f36b]'
+                    : 'border-transparent text-slate-400 hover:text-white'
+                }`}
+              >
+                <span>Upcoming NPL Matches</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveHubTab('standings')}
+                className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
+                  activeHubTab === 'standings'
+                    ? 'border-[#c9f36b] text-[#c9f36b]'
+                    : 'border-transparent text-slate-400 hover:text-white'
+                }`}
+              >
+                <span>NPL Points Table</span>
+              </button>
+            </div>
+
+            {/* Tab 1: Live Ball-by-Ball Commentary Drawer */}
+            {activeHubTab === 'commentary' && (
+              <div className="p-5 max-h-96 overflow-y-auto divide-y divide-white/5">
+                {commentaryList.length === 0 ? (
+                  <div className="py-8 text-center text-slate-400 text-xs">
+                    <p>Waiting for live ball feeds from ground scorers...</p>
+                    <p className="mt-1 text-slate-500">Live commentary updates dynamically on every delivery.</p>
+                  </div>
+                ) : (
+                  commentaryList.map((comm, idx) => (
+                    <div key={idx} className="py-3 flex items-start gap-4 hover:bg-white/[0.02] px-2 rounded-xl transition">
+                      <div className="shrink-0 flex flex-col items-center">
+                        <span className="font-mono text-xs font-black text-[#c9f36b] bg-white/5 px-2 py-1 rounded-lg border border-white/5">
+                          {comm.ball}
+                        </span>
+                        {comm.outcome && (
+                          <span
+                            className={`mt-1 text-[10px] font-black px-1.5 py-0.5 rounded ${
+                              comm.outcome === '6'
+                                ? 'bg-purple-600 text-white'
+                                : comm.outcome === '4'
+                                ? 'bg-emerald-500 text-black'
+                                : comm.outcome === 'W'
+                                ? 'bg-red-600 text-white'
+                                : 'bg-white/10 text-white'
+                            }`}
+                          >
+                            {comm.outcome}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex-1">
+                        <p className="text-xs font-bold text-[#e5b94f]">{comm.bowlerToBatsman}</p>
+                        <p className="mt-1 text-xs leading-relaxed text-slate-200">{comm.text}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* Tab 2: Upcoming NPL Matches with Countdown */}
+            {activeHubTab === 'upcoming' && (
+              <div className="p-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {upcomingNplMatches.map((m) => (
+                    <div
+                      key={m.id}
+                      className="rounded-xl border border-white/5 bg-white/[0.02] p-4 flex flex-col justify-between hover:border-white/20 transition"
+                    >
+                      <div className="flex items-center justify-between text-[11px] text-slate-400">
+                        <span className="font-bold text-[#e5b94f]">Match {m.matchNumber}</span>
+                        <span className="font-mono text-[#c9f36b] font-bold">{formatCountdown(m.timestamp)}</span>
+                      </div>
+
+                      <div className="my-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <img src={m.homeTeamLogo} alt="" className="h-6 w-6 object-contain" />
+                          <span className="text-xs font-bold text-white">{m.homeTeam}</span>
+                        </div>
+                        <span className="text-[10px] font-black text-slate-500">VS</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-white">{m.awayTeam}</span>
+                          <img src={m.awayTeamLogo} alt="" className="h-6 w-6 object-contain" />
+                        </div>
+                      </div>
+
+                      <div className="border-t border-white/5 pt-2 flex items-center justify-between text-[10px] text-slate-400">
+                        <span>{timeOf(match, 'Asia/Kathmandu')}</span>
+                        <a
+                          href={`/cricket/match/${slugify(`${m.homeTeam} vs ${m.awayTeam}`)}/`}
+                          className="text-[#c9f36b] font-bold hover:underline"
+                        >
+                          Match Center &rarr;
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tab 3: Points Table */}
+            {activeHubTab === 'standings' && (
+              <div className="p-5 overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-white/10 text-slate-400 text-[10px] uppercase tracking-wider">
+                      <th className="py-2 px-3">Team</th>
+                      <th className="py-2 px-3 text-center">P</th>
+                      <th className="py-2 px-3 text-center">W</th>
+                      <th className="py-2 px-3 text-center">L</th>
+                      <th className="py-2 px-3 text-center">PTS</th>
+                      <th className="py-2 px-3 text-right">NRR</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {nplStandings.map((team, idx) => (
+                      <tr key={team.name} className="hover:bg-white/[0.02] transition">
+                        <td className="py-2.5 px-3 flex items-center gap-2">
+                          <span className="font-mono text-slate-500 text-[10px] w-3">{idx + 1}</span>
+                          {NPL_TEAMS[team.name]?.logo && (
+                            <img src={NPL_TEAMS[team.name].logo} alt="" className="h-5 w-5 object-contain" />
+                          )}
+                          <span className="font-bold text-white">{team.name}</span>
+                        </td>
+                        <td className="py-2.5 px-3 text-center font-mono text-slate-300">{team.p}</td>
+                        <td className="py-2.5 px-3 text-center font-mono text-emerald-400">{team.w}</td>
+                        <td className="py-2.5 px-3 text-center font-mono text-red-400">{team.l}</td>
+                        <td className="py-2.5 px-3 text-center font-mono font-black text-[#c9f36b]">{team.pts}</td>
+                        <td className="py-2.5 px-3 text-right font-mono text-slate-300">{team.nrr}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
 
       {/* Match Tools & Action Panel */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

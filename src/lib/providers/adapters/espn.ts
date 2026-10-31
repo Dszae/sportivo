@@ -66,11 +66,14 @@ export class EspnAdapter implements ProviderAdapter {
           'esp.1', // La Liga
           'ger.1', // Bundesliga
           'ita.1', // Serie A
+          'fra.1', // Ligue 1
           'uefa.champions', // Champions League
+          'uefa.europa', // Europa League
+          'afc.champions', // AFC Champions League
         ];
 
         for (const league of leagues) {
-          if (matches.length >= 25) break;
+          if (matches.length >= 60) break;
           try {
             const res = await fetch(
               `https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/scoreboard`,
