@@ -275,6 +275,17 @@ export class PpvAdapter implements ProviderAdapter {
       },
     ];
 
+    // Add alternate HTML5 engine (#player=clappr) if this is an embed player
+    if (!isNative && validated.includes('embed/')) {
+      resultStreams.push({
+        embedUrl: `${validated}#player=clappr`,
+        hd: true,
+        language: `${foundStream.source_tag || 'HD'} (Alt Player)`,
+        isNativeVideo: false,
+        isSandboxedIframe: true,
+      });
+    }
+
     // If stream has alternative substreams (e.g. Willow 2, Willow Sports), append them as alternate servers
     if (Array.isArray(foundStream.substreams)) {
       for (const sub of foundStream.substreams) {
