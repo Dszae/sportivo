@@ -241,7 +241,7 @@ Sportivo exposes clean public endpoints for match schedules and live telemetry:
 
 - 🌐 **Personal Website**: [dipeshsapkota7.com.np](https://www.dipeshsapkota7.com.np/)
 - 🐙 **GitHub Profile**: [@Dszae](https://github.com/Dszae)
-- 💼 **LinkedIn**: [linkedin.com/in/dszae](https://www.linkedin.com/in/dszae/)
+- 💼 **LinkedIn**: [linkedin.com/in/dipeshsapkota7](https://www.linkedin.com/in/dipeshsapkota7/)
 - 📄 **Developer Profile on Sportivo**: [About Dipesh Sapkota](https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/)
 - 📧 **Contact**: [dsz.ae18@gmail.com](mailto:dsz.ae18@gmail.com)
 

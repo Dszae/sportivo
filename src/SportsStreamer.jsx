@@ -548,7 +548,7 @@ export default function SportsStreamer() {
             </a>
 
             <a 
-              href="https://linkedin.com/in/dszae" 
+              href="https://www.linkedin.com/in/dipeshsapkota7/" 
               target="_blank" 
               rel="noopener noreferrer"
               className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-blue-400 hover:bg-slate-700 transition"

@@ -140,14 +140,14 @@ export default function AboutScreen() {
 
           <TouchableOpacity
             style={styles.linkRow}
-            onPress={() => openLink('https://linkedin.com/in/dszae')}
+            onPress={() => openLink('https://www.linkedin.com/in/dipeshsapkota7/')}
           >
             <View style={styles.linkIconBox}>
               <LinkedinIcon size={18} color="#c9f36b" />
             </View>
             <View style={styles.linkTextBox}>
               <Text style={styles.linkLabel}>LinkedIn</Text>
-              <Text style={styles.linkValue}>linkedin.com/in/dszae</Text>
+              <Text style={styles.linkValue}>linkedin.com/in/dipeshsapkota7</Text>
             </View>
             <ChevronForwardIcon size={16} color="#64748b" />
           </TouchableOpacity>
