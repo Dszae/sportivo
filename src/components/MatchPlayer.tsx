@@ -110,13 +110,21 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
     };
   }, [slug]);
 
-  // Fullscreen event listener
+  // Fullscreen event listener (cross-browser support)
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement));
+      const doc: any = document;
+      const fsElement = doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement;
+      setIsFullscreen(Boolean(fsElement));
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+    };
   }, []);
 
   // Jump to Live Edge on explicit user request
@@ -421,11 +429,26 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
   };
 
   const toggleFullscreen = () => {
-    if (!playerContainerRef.current) return;
-    if (!document.fullscreenElement) {
-      playerContainerRef.current.requestFullscreen().catch(() => {});
+    const elem: any = playerContainerRef.current;
+    if (!elem) return;
+    const doc: any = document;
+    const isFs = Boolean(doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement);
+    if (!isFs) {
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch(() => {});
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+      } else if (elem.mozRequestFullScreen) {
+        elem.mozRequestFullScreen();
+      }
     } else {
-      document.exitFullscreen().catch(() => {});
+      if (doc.exitFullscreen) {
+        doc.exitFullscreen().catch(() => {});
+      } else if (doc.webkitExitFullscreen) {
+        doc.webkitExitFullscreen();
+      } else if (doc.mozCancelFullScreen) {
+        doc.mozCancelFullScreen();
+      }
     }
   };
 
@@ -500,92 +523,115 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
       {/* Main Player Frame Container - compact default web size (can be fullscreened anytime) */}
       <div
         ref={playerContainerRef}
-        className="mx-auto w-full max-w-2xl lg:max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-[#111a19] shadow-2xl shadow-black/80"
+        className={`sportivo-player-container mx-auto w-full overflow-hidden transition-all ${
+          isFullscreen
+            ? 'fixed inset-0 z-50 h-screen w-screen max-w-none rounded-none border-0 bg-black flex flex-col justify-center'
+            : 'max-w-2xl lg:max-w-3xl rounded-2xl border border-white/10 bg-[#111a19] shadow-2xl shadow-black/80'
+        }`}
       >
-        {/* Player Top Navigation & Live Telemetry Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 bg-[#0b100f] p-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span
-                className={`flex items-center gap-1.5 rounded px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white ${
-                  isLive ? 'bg-red-600' : 'border border-amber-400/40 bg-amber-400/10 text-amber-300'
-                }`}
-              >
-                {isLive && <span className="h-1.5 w-1.5 animate-ping rounded-full bg-white"></span>}
-                {isLive ? 'LIVE' : status === 'Final' ? 'FINAL' : 'SCHEDULED'}
-              </span>
-              <h2 className="text-base font-bold text-slate-100">{title}</h2>
-            </div>
-
-            {sources.length > 1 && (
-              <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Servers:</span>
-                {sources.map((_s, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleSourceChange(idx)}
-                    className={`rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition ${
-                      selectedSourceIndex === idx
-                        ? 'bg-[#c9f36b] text-[#0a1110] shadow-sm font-black'
-                        : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
-                    }`}
-                  >
-                    Server DSZ{idx + 1}
-                  </button>
-                ))}
+        {/* Player Top Navigation & Live Telemetry Bar - completely hidden in fullscreen mode */}
+        {!isFullscreen && (
+          <div className="player-top-bar flex flex-wrap items-center justify-between gap-3 border-b border-white/5 bg-[#0b100f] p-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`flex items-center gap-1.5 rounded px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white ${
+                    isLive ? 'bg-red-600' : 'border border-amber-400/40 bg-amber-400/10 text-amber-300'
+                  }`}
+                >
+                  {isLive && <span className="h-1.5 w-1.5 animate-ping rounded-full bg-white"></span>}
+                  {isLive ? 'LIVE' : status === 'Final' ? 'FINAL' : 'SCHEDULED'}
+                </span>
+                <h2 className="text-base font-bold text-slate-100">{title}</h2>
               </div>
-            )}
-          </div>
 
-          <div className="flex items-center gap-2">
-            {/* Live Edge Sync Button */}
-            <button
-              type="button"
-              onClick={jumpToLiveEdge}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/50 bg-red-500/10 px-3 py-1.5 text-xs font-black text-red-400 hover:bg-red-500 hover:text-white transition shadow-sm active:scale-95"
-              title="Press 'L' key to jump directly to live broadcast edge"
-            >
-              <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
-              <span>LIVE</span>
-            </button>
-
-            {/* Keyboard Shortcuts Guide Pill */}
-            <div className="hidden sm:flex items-center gap-1 text-[10px] text-slate-400 border border-white/10 bg-white/5 px-2 py-1.5 rounded-lg" title="Hotkeys: Space (Play/Pause), M (Mute), F (Fullscreen), L (Live Edge), N (Alerts)">
-              <span className="font-mono bg-white/10 px-1 rounded text-slate-200">Space</span>
-              <span className="font-mono bg-white/10 px-1 rounded text-slate-200">M</span>
-              <span className="font-mono bg-white/10 px-1 rounded text-slate-200">F</span>
-              <span className="font-mono bg-white/10 px-1 rounded text-[#c9f36b]">L</span>
+              {sources.length > 1 && (
+                <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Servers:</span>
+                  {sources.map((_s, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleSourceChange(idx)}
+                      className={`rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition ${
+                        selectedSourceIndex === idx
+                          ? 'bg-[#c9f36b] text-[#0a1110] shadow-sm font-black'
+                          : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      Server DSZ{idx + 1}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Fullscreen Button */}
+            <div className="flex items-center gap-2">
+              {/* Live Edge Sync Button */}
+              <button
+                type="button"
+                onClick={jumpToLiveEdge}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/50 bg-red-500/10 px-3 py-1.5 text-xs font-black text-red-400 hover:bg-red-500 hover:text-white transition shadow-sm active:scale-95"
+                title="Press 'L' key to jump directly to live broadcast edge"
+              >
+                <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
+                <span>LIVE</span>
+              </button>
+
+              {/* Keyboard Shortcuts Guide Pill */}
+              <div className="hidden sm:flex items-center gap-1 text-[10px] text-slate-400 border border-white/10 bg-white/5 px-2 py-1.5 rounded-lg" title="Hotkeys: Space (Play/Pause), M (Mute), F (Fullscreen), L (Live Edge), N (Alerts)">
+                <span className="font-mono bg-white/10 px-1 rounded text-slate-200">Space</span>
+                <span className="font-mono bg-white/10 px-1 rounded text-slate-200">M</span>
+                <span className="font-mono bg-white/10 px-1 rounded text-slate-200">F</span>
+                <span className="font-mono bg-white/10 px-1 rounded text-[#c9f36b]">L</span>
+              </div>
+
+              {/* Fullscreen Button */}
+              <button
+                type="button"
+                onClick={toggleFullscreen}
+                className="rounded-lg border border-white/10 bg-white/5 p-2 text-slate-300 hover:border-white/20 hover:text-white transition"
+                title={isFullscreen ? 'Exit Fullscreen (F)' : 'Enter Fullscreen (F)'}
+                aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  {isFullscreen ? (
+                    <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
+                  ) : (
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                  )}
+                </svg>
+              </button>
+
+              <a
+                href="../"
+                className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-300 hover:border-white/20 hover:text-white transition"
+              >
+                &larr; Fixtures
+              </a>
+            </div>
+          </div>
+        )}
+
+        {/* Video / Player Display Area */}
+        <div
+          className={`player-display-area relative group flex items-center justify-center overflow-hidden bg-black ${
+            isFullscreen ? 'h-full w-full' : 'aspect-video'
+          }`}
+        >
+          {isFullscreen && (
             <button
               type="button"
               onClick={toggleFullscreen}
-              className="rounded-lg border border-white/10 bg-white/5 p-2 text-slate-300 hover:border-white/20 hover:text-white transition"
-              title={isFullscreen ? 'Exit Fullscreen (F)' : 'Enter Fullscreen (F)'}
-              aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+              className="absolute top-4 right-4 z-50 rounded-xl bg-black/70 p-2.5 text-white/80 hover:bg-black hover:text-white backdrop-blur border border-white/10 transition opacity-0 group-hover:opacity-100 focus:opacity-100 shadow-xl"
+              title="Exit Fullscreen (F or Esc)"
+              aria-label="Exit Fullscreen"
             >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                {isFullscreen ? (
-                  <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
-                ) : (
-                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
-                )}
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
               </svg>
             </button>
-
-            <a
-              href="../"
-              className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-300 hover:border-white/20 hover:text-white transition"
-            >
-              &larr; Fixtures
-            </a>
-          </div>
-        </div>
-
-        {/* Video / Player Display Area */}
-        <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-black">
+          )}
           {/* STATE 1: IDLE */}
           {playerState === 'idle' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden bg-[#0a100f] px-6 text-center">
@@ -729,9 +775,9 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
           )}
         </div>
 
-        {/* Server Selection & Latency Toolbar */}
-        {streams.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 border-t border-white/5 bg-[#0b100f] p-3 text-xs">
+        {/* Server Selection & Latency Toolbar - hidden in fullscreen mode */}
+        {streams.length > 0 && !isFullscreen && (
+          <div className="player-server-bar flex flex-wrap items-center gap-2 border-t border-white/5 bg-[#0b100f] p-3 text-xs">
             <span className="mr-1 font-bold text-slate-500">Servers:</span>
             {streams.map((stream, index) => (
               <button
