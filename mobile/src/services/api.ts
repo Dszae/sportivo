@@ -133,6 +133,15 @@ export async function resolveMatchStreams(match: Match): Promise<StreamSource[]>
   if (allResolved.length === 0 && isNpl) {
     allResolved.push(
       {
+        id: 'npl-yonotv-primary',
+        source: 'npl',
+        label: 'Action Sports HD (YonoTV Live)',
+        embedUrl: 'https://yonotv.pages.dev/fc',
+        streamUrl: 'https://yonotv.pages.dev/fc',
+        isDirectStream: false,
+        hd: true,
+      },
+      {
         id: 'npl-nettv-direct',
         source: 'npl',
         label: 'Action Sports HD (Native Stream)',

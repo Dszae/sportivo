@@ -322,9 +322,9 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "status": "LIVE",
     "homeScore": "94/2 (12.4 ov)",
     "broadcast": {
-      "provider": "Action Sports HD / NetTV",
-      "authorizedEmbedUrl": "https://ott-lb.nettv.com.np/iptvlivestream/hpremiumPAID/playlist.m3u8",
-      "isHls": true,
+      "provider": "Action Sports HD / YonoTV",
+      "authorizedEmbedUrl": "https://yonotv.pages.dev/fc",
+      "isHls": false,
       "availabilityStatus": "online"
     },
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-10"

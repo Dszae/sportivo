@@ -208,10 +208,10 @@ export default function MatchPlayerScreen() {
   const fallbackStream: StreamSource = {
     id: 'server-1',
     source: 'npl',
-    label: 'Action Sports HD (Native Stream)',
-    embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
-    streamUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
-    isDirectStream: true,
+    label: 'Action Sports HD (YonoTV Live)',
+    embedUrl: 'https://yonotv.pages.dev/fc',
+    streamUrl: 'https://yonotv.pages.dev/fc',
+    isDirectStream: false,
     hd: true,
   };
 

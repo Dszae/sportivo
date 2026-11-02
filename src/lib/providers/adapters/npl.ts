@@ -153,43 +153,48 @@ export const nplAdapter: ProviderAdapter = {
   async resolvePlayback(id: string, signal?: AbortSignal): Promise<PlaybackResolution> {
     const knownFixture = NPL_FIXTURES_2026.find((m) => m.id.toLowerCase() === id.toLowerCase());
 
-    // 0. Default streams for Match 4 / active NPL fixtures
-    if (id.toLowerCase().includes('npl26-04') || id.toLowerCase().includes('npl4') || id.toLowerCase().includes('pokhara') || id.toLowerCase().includes('sudurpaschim') || knownFixture?.status === 'LIVE') {
-      return {
-        status: 'ready',
-        provider: 'Action Sports HD Direct',
-        streams: [
-          {
-            embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
-            hd: true,
-            isNativeVideo: true,
-            isSandboxedIframe: false,
-            language: 'Action Sports HD (Direct Native - 0 Delay)',
-          },
-          {
-            embedUrl: 'https://yonotv-now.pages.dev/plyrr?src=https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
-            hd: true,
-            isNativeVideo: false,
-            isSandboxedIframe: false,
-            language: 'Action Sports HD (Web Player)',
-          },
-          {
-            embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_live/tracks-v1a1/mono.m3u8',
-            hd: true,
-            isNativeVideo: true,
-            isSandboxedIframe: false,
-            language: 'Action Sports HD (Server 2)',
-          },
-          {
-            embedUrl: 'https://yonotv-now.pages.dev/plyrr?src=https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_live/tracks-v1a1/mono.m3u8',
-            hd: true,
-            isNativeVideo: false,
-            isSandboxedIframe: false,
-            language: 'Action Sports HD (Server 2 Web Player)',
-          },
-        ],
-      };
-    }
+    // 0. Primary Live Stream: YonoTV Official Live Broadcast (Action Sports HD)
+    return {
+      status: 'ready',
+      provider: 'Action Sports HD / YonoTV',
+      streams: [
+        {
+          embedUrl: 'https://yonotv.pages.dev/fc',
+          hd: true,
+          isNativeVideo: false,
+          isSandboxedIframe: false,
+          language: 'Action Sports HD (Server 1 - YonoTV Live)',
+        },
+        {
+          embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
+          hd: true,
+          isNativeVideo: true,
+          isSandboxedIframe: false,
+          language: 'Action Sports HD (Direct Native - 0 Delay)',
+        },
+        {
+          embedUrl: 'https://yonotv-now.pages.dev/plyrr?src=https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
+          hd: true,
+          isNativeVideo: false,
+          isSandboxedIframe: false,
+          language: 'Action Sports HD (Server 2 Web Player)',
+        },
+        {
+          embedUrl: 'https://ott-lb.nettv.com.np/iptvlivestream/hpremiumPAID/playlist.m3u8',
+          hd: true,
+          isNativeVideo: true,
+          isSandboxedIframe: false,
+          language: 'NetTV Action Sports (Server 3)',
+        },
+        {
+          embedUrl: 'https://yonotv-now.pages.dev/hlsplyrr?src=https://ott-lb.nettv.com.np/iptvlivestream/hpremiumPAID/playlist.m3u8',
+          hd: true,
+          isNativeVideo: false,
+          isSandboxedIframe: false,
+          language: 'NetTV Action Sports (Server 3 Web Player)',
+        },
+      ],
+    };
 
     // 1. Query NPL Backend Microservice (if running or configured)
     const backendBase =

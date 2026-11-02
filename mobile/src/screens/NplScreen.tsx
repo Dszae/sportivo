@@ -187,6 +187,15 @@ export default function NplScreen() {
                     ],
                     streams: [
                       {
+                        id: 'yonotv-primary',
+                        source: 'npl',
+                        label: 'Action Sports HD (YonoTV Live)',
+                        embedUrl: 'https://yonotv.pages.dev/fc',
+                        streamUrl: 'https://yonotv.pages.dev/fc',
+                        isDirectStream: false,
+                        hd: true,
+                      },
+                      {
                         id: 'nettv-hls',
                         source: 'npl',
                         label: 'Action Sports HD (Native Stream)',
