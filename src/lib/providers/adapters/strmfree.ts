@@ -202,7 +202,7 @@ export class StrmFreeAdapter implements ProviderAdapter {
           .map((url, idx) => ({
             embedUrl: url,
             hd: url.includes('1080p') || url.includes('720p'),
-            language: `Server ${idx + 1}`,
+            language: `Server DSZ${idx + 1}`,
             isSandboxedIframe: true,
           }));
 
@@ -239,7 +239,7 @@ export class StrmFreeAdapter implements ProviderAdapter {
           {
             embedUrl: fallbackUrl,
             hd: true,
-            language: 'Server 1 (Primary)',
+            language: 'Server DSZ1',
             isSandboxedIframe: true,
           },
         ],

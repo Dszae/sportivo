@@ -311,33 +311,56 @@ export class PpvAdapter implements ProviderAdapter {
 
     // High-availability CDN mirrors for major 24/7 cricket networks
     if (foundStream.uri_name?.includes('willow') || foundStream.name?.toLowerCase().includes('willow')) {
-      resultStreams.unshift({
-        embedUrl: 'https://strmfree.st/embed/soccer/willow1080p',
-        hd: true,
-        language: 'Server 1 (StrmFree HD)',
-        isNativeVideo: false,
-        isSandboxedIframe: true,
-      });
-      resultStreams.push({
-        embedUrl: 'https://yonotv-now.pages.dev/iplyrr?src=https://embedindia.st/embed/247-willow',
-        hd: true,
-        language: 'Willow Mirror (YonoTV)',
-        isNativeVideo: false,
-        isSandboxedIframe: false,
-      });
+      resultStreams.unshift(
+        {
+          embedUrl: 'https://thedaddy.pk/player/stream-346.php',
+          hd: true,
+          language: 'Server DSZ1',
+          isNativeVideo: false,
+          isSandboxedIframe: true,
+        },
+        {
+          embedUrl: 'https://thedaddy.pk/stream/stream-346.php',
+          hd: true,
+          language: 'Server DSZ2',
+          isNativeVideo: false,
+          isSandboxedIframe: true,
+        },
+        {
+          embedUrl: 'https://yonotv.pages.dev/fc',
+          hd: true,
+          language: 'Server DSZ3',
+          isNativeVideo: false,
+          isSandboxedIframe: false,
+        }
+      );
     } else if (foundStream.uri_name?.includes('fox-cricket') || foundStream.name?.toLowerCase().includes('fox cricket')) {
-      resultStreams.push({
-        embedUrl: 'https://yonotv-now.pages.dev/iplyrr?src=https://embedindia.st/embed/247-fox-cricket',
-        hd: true,
-        language: 'Fox Cricket Mirror (YonoTV)',
-        isNativeVideo: false,
-        isSandboxedIframe: false,
-      });
+      resultStreams.unshift(
+        {
+          embedUrl: 'https://yonotv.pages.dev/fc',
+          hd: true,
+          language: 'Server DSZ1',
+          isNativeVideo: false,
+          isSandboxedIframe: false,
+        },
+        {
+          embedUrl: 'https://thedaddy.pk/player/stream-369.php',
+          hd: true,
+          language: 'Server DSZ2',
+          isNativeVideo: false,
+          isSandboxedIframe: true,
+        }
+      );
     }
+
+    const dszStreams = resultStreams.map((s, idx) => ({
+      ...s,
+      language: `Server DSZ${idx + 1}`,
+    }));
 
     return {
       status: 'ready',
-      streams: resultStreams,
+      streams: dszStreams,
       provider: this.name,
     };
   }

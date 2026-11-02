@@ -92,9 +92,9 @@ export class TimstAdapter implements ProviderAdapter {
             ? channelStreams.map((s, idx) => ({
                 source: 'timst',
                 id: s.url || channelKey,
-                label: s.name ? `${s.name} ${idx + 1}` : `Timst Server ${idx + 1}`,
+                label: `Server DSZ${idx + 1}`,
               }))
-            : [{ source: 'timst', id: channelKey, label: 'Timst HD' }],
+            : [{ source: 'timst', id: channelKey, label: 'Server DSZ1' }],
         });
       }
 
@@ -172,7 +172,7 @@ export class TimstAdapter implements ProviderAdapter {
         {
           embedUrl: validated,
           hd: true,
-          language: streamLabel,
+          language: 'Server DSZ1',
           isNativeVideo: isNative,
           isSandboxedIframe: !isNative,
         },

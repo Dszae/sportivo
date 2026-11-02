@@ -44,7 +44,7 @@ export class DaddyLiveAdapter implements ProviderAdapter {
           {
             source: this.name,
             id: ch.id,
-            label: `${ch.title} (Server 1)`,
+            label: `${ch.title} (Server DSZ1)`,
           },
         ],
       }));
@@ -99,7 +99,7 @@ export class DaddyLiveAdapter implements ProviderAdapter {
       .map((url, idx) => ({
         embedUrl: url,
         hd: true,
-        language: idx === 0 ? 'Server 1 (DaddyLive)' : `Server ${idx + 1}`,
+        language: `Server DSZ${idx + 1}`,
         isSandboxedIframe: true,
       }));
 

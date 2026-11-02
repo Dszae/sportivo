@@ -223,7 +223,7 @@ async function discoverAndProbeNplStreams(signal?: AbortSignal) {
     hd: true,
     isNativeVideo: s.isNative,
     isSandboxedIframe: false,
-    language: idx === 0 ? `Server 1 (${s.label})` : `Server ${idx + 1} (${s.label})`,
+    language: `Server DSZ${idx + 1}`,
   }));
 
   // Fallback defaults if upstream was completely unreachable
@@ -234,14 +234,14 @@ async function discoverAndProbeNplStreams(signal?: AbortSignal) {
         hd: true,
         isNativeVideo: false,
         isSandboxedIframe: false,
-        language: 'Action Sports HD (Server 1 - Live)',
+        language: 'Server DSZ1',
       },
       {
         embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
         hd: true,
         isNativeVideo: true,
         isSandboxedIframe: false,
-        language: 'Action Sports HD (Direct Native)',
+        language: 'Server DSZ2',
       }
     );
   }
@@ -351,7 +351,7 @@ export const nplAdapter: ProviderAdapter = {
           hd: true,
           isNativeVideo: isNative,
           isSandboxedIframe: !isNative,
-          language: 'Action Sports HD (Auto Failover)',
+          language: 'Server DSZ1',
         },
       ],
     };

@@ -114,7 +114,7 @@ export async function resolveMatchStreams(match: Match): Promise<StreamSource[]>
               allResolved.push({
                 id: `${s.source}-${idx}`,
                 source: s.source,
-                label: item.language || `Server ${allResolved.length + 1} (${s.source})`,
+                label: `Server DSZ${allResolved.length + 1}`,
                 embedUrl: url,
                 streamUrl: isDirect ? url : undefined,
                 isDirectStream: isDirect,
@@ -135,7 +135,7 @@ export async function resolveMatchStreams(match: Match): Promise<StreamSource[]>
       {
         id: 'npl-yonotv-primary',
         source: 'npl',
-        label: 'Action Sports HD (YonoTV Live)',
+        label: 'Server DSZ1',
         embedUrl: 'https://yonotv.pages.dev/fc',
         streamUrl: 'https://yonotv.pages.dev/fc',
         isDirectStream: false,
@@ -144,7 +144,7 @@ export async function resolveMatchStreams(match: Match): Promise<StreamSource[]>
       {
         id: 'npl-nettv-direct',
         source: 'npl',
-        label: 'Action Sports HD (Native Stream)',
+        label: 'Server DSZ2',
         embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
         streamUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
         isDirectStream: true,
@@ -153,7 +153,7 @@ export async function resolveMatchStreams(match: Match): Promise<StreamSource[]>
       {
         id: 'npl-nettv-server2',
         source: 'npl',
-        label: 'Action Sports HD (Server 2)',
+        label: 'Server DSZ3',
         embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_live/tracks-v1a1/mono.m3u8',
         streamUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_live/tracks-v1a1/mono.m3u8',
         isDirectStream: true,

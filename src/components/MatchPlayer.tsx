@@ -293,7 +293,7 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
                 hls.destroy();
                 hlsInstanceRef.current = null;
                 setActiveStream(nextStream);
-                setFailoverToast(`⚡ Auto-failover: Switched to ${nextStream.language || `Server ${currentIdx + 2}`}`);
+                setFailoverToast(`⚡ Auto-failover: Switched to Server DSZ${currentIdx + 2}`);
                 setTimeout(() => setFailoverToast(null), 3500);
               } else {
                 hls.destroy();
@@ -519,8 +519,8 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
 
             {sources.length > 1 && (
               <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Providers:</span>
-                {sources.map((s, idx) => (
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Servers:</span>
+                {sources.map((_s, idx) => (
                   <button
                     key={idx}
                     type="button"
@@ -531,7 +531,7 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
                         : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
                     }`}
                   >
-                    {s.label || s.source || `Provider ${idx + 1}`}
+                    Server DSZ{idx + 1}
                   </button>
                 ))}
               </div>
@@ -744,7 +744,7 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
                     : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
                 }`}
               >
-                {stream.language || `Server ${index + 1}`} {stream.hd ? 'HD' : ''}
+                Server DSZ{index + 1} {stream.hd ? 'HD' : ''}
               </button>
             ))}
 

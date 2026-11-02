@@ -592,7 +592,7 @@ export default function MatchPlayerScreen() {
                     <View style={styles.serverTitleRow}>
                       <RadioIcon size={15} color={isCurrent ? '#c9f36b' : '#94a3b8'} />
                       <Text style={[styles.serverTitle, isCurrent && styles.serverTitleActive]}>
-                        {stream.label || `Server ${idx + 1}`}
+                        Server DSZ{idx + 1}
                       </Text>
                       {stream.hd && (
                         <View style={styles.hdBadge}>
@@ -601,7 +601,7 @@ export default function MatchPlayerScreen() {
                       )}
                     </View>
                     <Text style={styles.serverSourceText}>
-                      Provider: {stream.source || 'Verified CDN'} · NST Synced
+                      High-Speed Stream · NST Synced
                     </Text>
                   </View>
 
