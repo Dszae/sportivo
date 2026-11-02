@@ -41,8 +41,18 @@ export class StrmFreeAdapter implements ProviderAdapter {
 
         if (Array.isArray(items)) {
           for (const item of items) {
-            const title = typeof item.name === 'string' ? item.name.trim() : '';
+            let title = typeof item.name === 'string' ? item.name.trim() : '';
             if (!title) continue;
+
+            if (category === 'cricket') {
+              if (title.toLowerCase() === 'willow') {
+                title = 'Willow Cricket Live';
+              } else if (title.toLowerCase() === 'sky sports cricket') {
+                title = 'Sky Sports Cricket Live';
+              } else if (!title.toLowerCase().includes('cricket') && !/\s+vs\.?\s+|\s+v\s+/i.test(title)) {
+                title = `${title} Cricket Live`;
+              }
+            }
 
             const slug = slugify(title);
             if (seenSlugs.has(slug)) continue;

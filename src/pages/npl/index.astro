@@ -3,6 +3,40 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
 import NplSchedule from '../../components/NplSchedule';
+import MatchPlayer from '../../components/MatchPlayer';
+import { NPL_FIXTURES_2026 } from '../../lib/data/nplData';
+import type { Match } from '../../lib/sportivo';
+
+const now = Date.now();
+const liveFixture = NPL_FIXTURES_2026.find(
+  (m) =>
+    m.status === 'LIVE' ||
+    (now >= m.timestamp - 15 * 60 * 1000 && now <= m.timestamp + 4.5 * 3600 * 1000 && m.status !== 'COMPLETED')
+);
+
+const liveMatch: Match | undefined = liveFixture
+  ? {
+      id: liveFixture.id,
+      title: `${liveFixture.homeTeam} vs ${liveFixture.awayTeam}`,
+      category: 'cricket',
+      competition: 'Nepal Premier League',
+      league: 'NPL',
+      status: 'Live',
+      date: liveFixture.timestamp,
+      teams: {
+        home: { name: liveFixture.homeTeam, badge: liveFixture.homeTeamLogo },
+        away: { name: liveFixture.awayTeam, badge: liveFixture.awayTeamLogo },
+      },
+      poster: liveFixture.homeTeamLogo || 'https://nepalpremierleague.org/icon.svg',
+      sources: [
+        {
+          source: 'npl',
+          id: liveFixture.id,
+          label: liveFixture.broadcast?.provider || 'Action Sports HD / NetTV',
+        },
+      ],
+    }
+  : undefined;
 
 const title = 'NPL Live Match & Schedule — Nepal Premier League 2026 Live Scores & Streams | Sportivo';
 const description = 'Watch NPL live match online today! Follow Nepal Premier League 2026 ball-by-ball live scores, team standings, full match schedule in Nepal Standard Time (NST), and authorized high-definition live streams on Sportivo.';
@@ -147,6 +181,25 @@ const nplJsonLd = {
         <span aria-hidden="true">/</span>
         <span class="text-[#c9f36b] font-semibold" aria-current="page">NPL 2026</span>
       </nav>
+
+      {/* Featured Live Match Player (strictly in NPL Live section with full Ball-by-ball commentary and table) */}
+      {liveMatch && (
+        <section class="mb-10 rounded-3xl border border-red-500/30 bg-[#0c1413] p-4 sm:p-6 shadow-2xl ring-1 ring-red-500/20">
+          <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+              <span class="relative flex h-3 w-3">
+                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
+                <span class="relative inline-flex h-3 w-3 rounded-full bg-red-500"></span>
+              </span>
+              <h2 class="text-lg sm:text-xl font-black text-white">NPL Match Happening Right Now</h2>
+            </div>
+            <span class="rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-[11px] font-black text-red-400 uppercase tracking-wider">
+              Live Broadcast · TU Ground, Kirtipur
+            </span>
+          </div>
+          <MatchPlayer client:load match={liveMatch} showNplHub={true} />
+        </section>
+      )}
 
       {/* Main NPL Schedule Desk Component */}
       <section class="rounded-3xl border border-white/[0.08] bg-[#0a0f0e]/60 p-6 sm:p-8 lg:p-10 backdrop-blur-sm shadow-2xl shadow-black/40">

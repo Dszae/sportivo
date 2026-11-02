@@ -46,13 +46,23 @@ function toNormalizedMatch(m: NplMatch): NormalizedMatch {
     },
   ];
 
+  const now = Date.now();
+  const isMatchWindow = now >= m.timestamp - 15 * 60 * 1000 && now <= m.timestamp + 4.5 * 60 * 60 * 1000;
+  const isPast = now > m.timestamp + 4.5 * 60 * 60 * 1000;
+  let status: 'Live' | 'Final' | 'Upcoming' = 'Upcoming';
+  if (m.status === 'COMPLETED' || isPast) {
+    status = 'Final';
+  } else if (m.status === 'LIVE' || isMatchWindow) {
+    status = 'Live';
+  }
+
   return {
     id: m.id,
     title: `${m.homeTeam} vs ${m.awayTeam}`,
     category: 'cricket',
     competition: 'Nepal Premier League',
     league: 'NPL',
-    status: m.status === 'LIVE' ? 'Live' : m.status === 'COMPLETED' ? 'Final' : 'Upcoming',
+    status,
     date: m.timestamp,
     teams: {
       home: {
@@ -275,16 +285,20 @@ export const nplAdapter: ProviderAdapter = {
           if (srcMatch && srcMatch[1]) {
             streamUrl = decodeURIComponent(srcMatch[1]);
           }
-          const safeUrl = sanitizePlaybackUrl(streamUrl);
-          if (safeUrl && (safeUrl.endsWith('.m3u8') || safeUrl.endsWith('.mp4'))) {
+          const isNative = safeUrl.endsWith('.m3u8') || safeUrl.endsWith('.mp4');
+          if (safeUrl && (isNative || safeUrl.includes('pages.dev'))) {
             const isRumble = safeUrl.includes('rumble');
-            const isNetTv = safeUrl.includes('nettvstreamz');
+            const isNetTv = safeUrl.includes('nettvstreamz') || safeUrl.includes('nettv.com.np');
             discovered.push({
               key,
               url: safeUrl,
               isRumble,
               isNetTv,
-              label: isRumble ? 'Rumble Cloud HD' : isNetTv ? 'NetTV Action Sports HD' : `${key} Stream`,
+              label: isRumble
+                ? 'Rumble Cloud HD'
+                : isNetTv
+                ? 'NetTV Action Sports HD'
+                : `${key} Action Sports Feed`,
             });
           }
         }

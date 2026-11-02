@@ -43,7 +43,7 @@ export async function checkLiveMatchMoments(): Promise<void> {
     }
 
     const fixtures = await fetchNplFixtures();
-    const liveMatches = fixtures.filter((f) => f.status === 'LIVE' || f.id === 'npl26-04');
+    const liveMatches = fixtures.filter((f) => f.status === 'LIVE');
 
     for (const match of liveMatches) {
       const matchId = match.id;

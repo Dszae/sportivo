@@ -26,9 +26,12 @@ interface StreamItem {
   isSandboxedIframe?: boolean;
 }
 
-type Props = { match: Match };
+type Props = {
+  match: Match;
+  showNplHub?: boolean; // Ball-by-ball commentary and table hub strictly in NPL live section only
+};
 
-export default function MatchPlayer({ match }: Props) {
+export default function MatchPlayer({ match, showNplHub = false }: Props) {
   const sources = match.sources || [];
   const [selectedSourceIndex, setSelectedSourceIndex] = useState(0);
   const currentSource = sources[selectedSourceIndex];
@@ -178,9 +181,9 @@ export default function MatchPlayer({ match }: Props) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Poll Ground Scorer Ball Commentary & Moments (every 4s) - strictly for NPL matches only
+  // Poll Ground Scorer Ball Commentary & Moments (every 4s) - strictly for NPL matches in NPL Live section only
   useEffect(() => {
-    if (!isNplMatch) return;
+    if (!showNplHub || !isNplMatch) return;
 
     let isMounted = true;
     let timer: any = null;
@@ -494,10 +497,10 @@ export default function MatchPlayer({ match }: Props) {
         </div>
       )}
 
-      {/* Main Player Frame Container - compact default web size */}
+      {/* Main Player Frame Container - compact default web size (can be fullscreened anytime) */}
       <div
         ref={playerContainerRef}
-        className="mx-auto w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-[#111a19] shadow-2xl shadow-black/80"
+        className="mx-auto w-full max-w-2xl lg:max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-[#111a19] shadow-2xl shadow-black/80"
       >
         {/* Player Top Navigation & Live Telemetry Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 bg-[#0b100f] p-4">
@@ -758,8 +761,8 @@ export default function MatchPlayer({ match }: Props) {
         )}
       </div>
 
-      {/* Real-time Match Telemetry Bar & Commentary Hub - strictly displayed on NPL Live matches */}
-      {isNplMatch && (
+      {/* Real-time Match Telemetry Bar & Commentary Hub - strictly displayed in NPL Live section only */}
+      {showNplHub && isNplMatch && (
         <>
           <div className="rounded-2xl border border-white/10 bg-[#0d1413] p-4 shadow-xl">
             <div className="flex flex-wrap items-center justify-between gap-3">

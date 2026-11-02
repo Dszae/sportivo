@@ -180,39 +180,41 @@ export function slugify(value: string) {
 }
 
 export function statusOf(match: Match) {
-  // 1. Explicit status from upstream or tournament ground truth
+  // 1. Explicit final status from upstream or tournament ground truth
   const statusStr = String(match.status || '').toLowerCase().trim();
   const timeStr = String(match.time || '').toLowerCase().trim();
-  if (['live', 'inplay', 'in-play', 'ongoing'].includes(statusStr) || timeStr === 'live') {
-    return 'Live';
-  }
   if (['finished', 'complete', 'completed', 'ended', 'result', 'final'].includes(statusStr)) {
     return 'Final';
   }
 
-  // 2. Timestamp-based calculation:
+  // 2. Timestamp-based calculation (guards against stale "LIVE" statuses):
   const rawDate = match.date || match.startTime || match.start_at || match.timestamp;
   if (rawDate) {
     const start = typeof rawDate === 'number' ? rawDate : new Date(rawDate).getTime();
     if (!Number.isNaN(start) && start > 0) {
       const now = Date.now();
-      // If kickoff is more than 10 minutes in the future, it is strictly UPCOMING
-      if (start - now > 10 * 60 * 1000) {
-        return 'Upcoming';
-      }
-      // Cricket matches can last up to 5.5 hours (including delays & presentations)
       const maxDuration = match.category === 'cricket' ? 5.5 * 60 * 60 * 1000 : 3.5 * 60 * 60 * 1000;
-      if (now >= start - 10 * 60 * 1000 && now <= start + maxDuration) {
-        return 'Live';
-      }
+
+      // If past maximum duration, match is strictly Final
       if (now > start + maxDuration) {
-        // Verified active stream sources (e.g. NPL) should remain accessible rather than prematurely terminating
-        if (match.sources && match.sources.length > 0 && match.sources.some((s) => s.source === 'npl')) {
-          return 'Live';
-        }
         return 'Final';
       }
+
+      // If kickoff is more than 15 minutes in the future, it is strictly Upcoming
+      if (start - now > 15 * 60 * 1000) {
+        return 'Upcoming';
+      }
+
+      // Within kickoff window (-15 mins to +maxDuration) -> Live
+      if (now >= start - 15 * 60 * 1000 && now <= start + maxDuration) {
+        return 'Live';
+      }
     }
+  }
+
+  // 3. Explicit upstream Live status
+  if (['live', 'inplay', 'in-play', 'ongoing'].includes(statusStr) || timeStr === 'live') {
+    return 'Live';
   }
 
   // 3. 24/7 channels or permanent continuous feeds (e.g. Willow Cricket with date <= 0)

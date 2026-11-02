@@ -87,7 +87,7 @@ export async function resolveMatchStreams(match: Match): Promise<StreamSource[]>
         match.title.toLowerCase().includes('npl')));
 
   if (sources.length === 0 && isNpl) {
-    sources = [{ source: 'npl', id: match.id || 'npl26-04', label: 'Action Sports HD / NPL Live' }];
+    sources = [{ source: 'npl', id: match.id || 'npl26-10', label: 'Action Sports HD / NPL Live' }];
   }
 
   const allResolved: StreamSource[] = [];

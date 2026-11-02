@@ -48,13 +48,18 @@ if (validCategory) {
       });
 
       if (nplMatch) {
+        const now = Date.now();
+        const isMatchWindow = now >= nplMatch.timestamp - 15 * 60 * 1000 && now <= nplMatch.timestamp + 4.5 * 3600 * 1000;
+        const isPast = now > nplMatch.timestamp + 4.5 * 3600 * 1000;
+        const nplStatus = nplMatch.status === 'COMPLETED' || isPast ? 'Final' : nplMatch.status === 'LIVE' || isMatchWindow ? 'Live' : 'Upcoming';
+
         match = {
           id: nplMatch.id,
           title: `${nplMatch.homeTeam} vs ${nplMatch.awayTeam}`,
           category: 'cricket',
           competition: nplMatch.competition || 'Nepal Premier League',
           league: 'NPL',
-          status: nplMatch.status === 'LIVE' ? 'Live' : nplMatch.status === 'COMPLETED' ? 'Final' : 'Upcoming',
+          status: nplStatus,
           date: nplMatch.timestamp,
           teams: {
             home: { name: nplMatch.homeTeam, badge: nplMatch.homeTeamLogo },
@@ -84,7 +89,13 @@ if (validCategory) {
             category: 'cricket' as Category,
             competition: 'Nepal Premier League',
             league: 'NPL',
-            status: m.status === 'LIVE' ? 'Live' : m.status === 'COMPLETED' ? 'Final' : 'Upcoming',
+            status:
+              m.status === 'COMPLETED' || Date.now() > m.timestamp + 4.5 * 3600 * 1000
+                ? 'Final'
+                : m.status === 'LIVE' ||
+                  (Date.now() >= m.timestamp - 15 * 60 * 1000 && Date.now() <= m.timestamp + 4.5 * 3600 * 1000)
+                ? 'Live'
+                : 'Upcoming',
             date: m.timestamp,
             teams: {
               home: { name: m.homeTeam, badge: m.homeTeamLogo },

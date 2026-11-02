@@ -92,7 +92,7 @@ export default function MatchPlayerScreen() {
   const toggleFullscreen = async () => {
     try {
       if (!isFullscreen) {
-        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT);
+        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
         setIsFullscreen(true);
         StatusBar.setHidden(true, 'fade');
       } else {
@@ -274,7 +274,7 @@ export default function MatchPlayerScreen() {
               ) {
                 setIsFullscreen(true);
                 StatusBar.setHidden(true, 'fade');
-                await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT).catch(() => {});
+                await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE).catch(() => {});
               } else if (
                 event.fullscreenUpdate === VideoFullscreenUpdate.PLAYER_WILL_DISMISS ||
                 event.fullscreenUpdate === VideoFullscreenUpdate.PLAYER_DID_DISMISS

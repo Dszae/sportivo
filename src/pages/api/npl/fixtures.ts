@@ -76,7 +76,7 @@ async function fetchOfficialScoreUpdates(): Promise<Map<string, Partial<NplMatch
       }
 
       // If match is LIVE, scrape the dedicated match scorecard for live ball-by-ball overs & wickets
-      if (isLive || id === 'npl26-04') {
+      if (isLive) {
         try {
           const detailRes = await fetch(`https://nepalpremierleague.org/matches/${id}`, {
             headers: { 'User-Agent': 'Sportivo-LiveDesk/1.0' },
@@ -188,6 +188,28 @@ export const GET: APIRoute = async () => {
       });
     }
   } catch {}
+
+  // 3. Dynamic time calibration: Ensure past matches cannot show as LIVE, and today's active match shows as LIVE
+  const now = Date.now();
+  fixtures = fixtures.map((f) => {
+    const isPast = now > f.timestamp + 4.5 * 3600 * 1000;
+    const isMatchWindow = now >= f.timestamp - 15 * 60 * 1000 && now <= f.timestamp + 4.5 * 3600 * 1000;
+
+    let finalStatus = f.status;
+    if (isPast) {
+      finalStatus = 'COMPLETED';
+    } else if (isMatchWindow && f.status !== 'COMPLETED') {
+      finalStatus = 'LIVE';
+    } else if (now < f.timestamp - 15 * 60 * 1000) {
+      finalStatus = 'UPCOMING';
+    }
+
+    return {
+      ...f,
+      status: finalStatus,
+      broadcast: finalStatus === 'COMPLETED' ? undefined : f.broadcast,
+    };
+  });
 
   return new Response(
     JSON.stringify({

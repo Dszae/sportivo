@@ -181,13 +181,10 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "startTime": "2026-10-28T17:00:00+05:45",
     "timestamp": 1793186100000,
     "venue": "TU International Cricket Ground, Kirtipur",
-    "status": "LIVE",
-    "broadcast": {
-      "provider": "NetTV / Action Sports HD",
-      "authorizedEmbedUrl": "https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8",
-      "isHls": true,
-      "availabilityStatus": "online"
-    },
+    "status": "COMPLETED",
+    "homeScore": "135/8 (20 ov)",
+    "awayScore": "136/4 (18.2 ov)",
+    "summary": "Sudurpaschim Royals won by 6 wickets",
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-04"
   },
   {
@@ -207,7 +204,10 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "startTime": "2026-10-29T12:30:00+05:45",
     "timestamp": 1793256300000,
     "venue": "TU International Cricket Ground, Kirtipur",
-    "status": "UPCOMING",
+    "status": "COMPLETED",
+    "homeScore": "161/6 (20 ov)",
+    "awayScore": "156/8 (20 ov)",
+    "summary": "Janakpur Bolts won by 5 runs",
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-05"
   },
   {
@@ -227,7 +227,10 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "startTime": "2026-10-29T17:00:00+05:45",
     "timestamp": 1793272500000,
     "venue": "TU International Cricket Ground, Kirtipur",
-    "status": "UPCOMING",
+    "status": "COMPLETED",
+    "homeScore": "141/7 (20 ov)",
+    "awayScore": "142/5 (18.4 ov)",
+    "summary": "Biratnagar Kings won by 5 wickets",
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-06"
   },
   {
@@ -247,7 +250,10 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "startTime": "2026-10-31T12:30:00+05:45",
     "timestamp": 1793429100000,
     "venue": "TU International Cricket Ground, Kirtipur",
-    "status": "UPCOMING",
+    "status": "COMPLETED",
+    "homeScore": "128/9 (20 ov)",
+    "awayScore": "131/3 (16.2 ov)",
+    "summary": "Chitwan Rhinos won by 7 wickets",
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-07"
   },
   {
@@ -261,13 +267,16 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "homeTeamShort": "SUR",
     "awayTeamShort": "BIR",
     "homeTeamColor": "#5B2A86",
-    "awayTeamColor": "#c8102e",
+    "homeTeamColor": "#c8102e",
     "homeTeamLogo": "https://nepalpremierleague.org/uploads/teams/sudurpaschim-royals.png",
     "awayTeamLogo": "https://nepalpremierleague.org/uploads/teams/biratnagar-kings.png",
     "startTime": "2026-10-31T17:00:00+05:45",
     "timestamp": 1793445300000,
     "venue": "TU International Cricket Ground, Kirtipur",
-    "status": "UPCOMING",
+    "status": "COMPLETED",
+    "homeScore": "153/8 (20 ov)",
+    "awayScore": "154/4 (19.1 ov)",
+    "summary": "Biratnagar Kings won by 6 wickets",
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-08"
   },
   {
@@ -287,7 +296,10 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "startTime": "2026-11-01T17:00:00+05:45",
     "timestamp": 1793531700000,
     "venue": "TU International Cricket Ground, Kirtipur",
-    "status": "UPCOMING",
+    "status": "COMPLETED",
+    "homeScore": "172/5 (20 ov)",
+    "awayScore": "148/9 (20 ov)",
+    "summary": "Janakpur Bolts won by 24 runs",
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-09"
   },
   {
@@ -307,7 +319,14 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "startTime": "2026-11-02T12:30:00+05:45",
     "timestamp": 1793601900000,
     "venue": "TU International Cricket Ground, Kirtipur",
-    "status": "UPCOMING",
+    "status": "LIVE",
+    "homeScore": "94/2 (12.4 ov)",
+    "broadcast": {
+      "provider": "Action Sports HD / NetTV",
+      "authorizedEmbedUrl": "https://ott-lb.nettv.com.np/iptvlivestream/hpremiumPAID/playlist.m3u8",
+      "isHls": true,
+      "availabilityStatus": "online"
+    },
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-10"
   },
   {

@@ -200,6 +200,10 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
         if (espnMatch.competition && (!existing.competition || existing.competition === existing.category)) {
           existing.competition = espnMatch.competition;
         }
+      } else if (espnMatch.status === 'Live') {
+        // Ingest verified live matches happening right now so live dashboards never report false "no match" states
+        seenSlugs.add(slug);
+        matches.push(espnMatch);
       }
     }
   }

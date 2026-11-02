@@ -309,6 +309,32 @@ export class PpvAdapter implements ProviderAdapter {
       }
     }
 
+    // High-availability CDN mirrors for major 24/7 cricket networks
+    if (foundStream.uri_name?.includes('willow') || foundStream.name?.toLowerCase().includes('willow')) {
+      resultStreams.unshift({
+        embedUrl: 'https://strmfree.st/embed/soccer/willow1080p',
+        hd: true,
+        language: 'Server 1 (StrmFree HD)',
+        isNativeVideo: false,
+        isSandboxedIframe: true,
+      });
+      resultStreams.push({
+        embedUrl: 'https://yonotv-now.pages.dev/iplyrr?src=https://embedindia.st/embed/247-willow',
+        hd: true,
+        language: 'Willow Mirror (YonoTV)',
+        isNativeVideo: false,
+        isSandboxedIframe: false,
+      });
+    } else if (foundStream.uri_name?.includes('fox-cricket') || foundStream.name?.toLowerCase().includes('fox cricket')) {
+      resultStreams.push({
+        embedUrl: 'https://yonotv-now.pages.dev/iplyrr?src=https://embedindia.st/embed/247-fox-cricket',
+        hd: true,
+        language: 'Fox Cricket Mirror (YonoTV)',
+        isNativeVideo: false,
+        isSandboxedIframe: false,
+      });
+    }
+
     return {
       status: 'ready',
       streams: resultStreams,
