@@ -51,7 +51,8 @@ if (validCategory) {
         const now = Date.now();
         const isPast = now > nplMatch.timestamp + 4.0 * 3600 * 1000;
         const isMatchWindow = now >= nplMatch.timestamp - 15 * 60 * 1000 && now <= nplMatch.timestamp + 4.0 * 3600 * 1000;
-        const nplStatus = nplMatch.status === 'COMPLETED' || isPast ? 'Final' : isMatchWindow ? 'Live' : 'Upcoming';
+        const isConcluded = nplMatch.status === 'COMPLETED' || Boolean(nplMatch.summary && nplMatch.summary.toLowerCase().includes('won by'));
+        const nplStatus = isConcluded || isPast ? 'Final' : isMatchWindow ? 'Live' : 'Upcoming';
 
         match = {
           id: nplMatch.id,

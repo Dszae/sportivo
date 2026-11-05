@@ -368,8 +368,70 @@ export default function NplSchedule() {
     );
   };
 
+  const liveFixture = useMemo(() => fixtures.find((m) => m.status === 'LIVE'), [fixtures]);
+  const liveSlug = liveFixture ? slugify(`${liveFixture.homeTeam} vs ${liveFixture.awayTeam}`) : '';
+  const liveStreamUrl = liveSlug ? `/cricket/match/${encodeURIComponent(liveSlug)}/` : '';
+
   return (
     <div className="w-full">
+      {/* Featured Live Match Banner - 100% reactive to real-time sync */}
+      {liveFixture && (
+        <section className="mb-10 overflow-hidden rounded-3xl border border-red-500/50 bg-gradient-to-br from-[#1c0808] via-[#0d1413] to-[#0a0f0e] p-6 sm:p-8 shadow-2xl ring-1 ring-red-500/30">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4 mb-6">
+            <div className="flex items-center gap-2.5">
+              <span className="relative flex h-3.5 w-3.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex h-3.5 w-3.5 rounded-full bg-red-500"></span>
+              </span>
+              <span className="text-xs font-black uppercase tracking-wider text-red-400">Match Happening Right Now</span>
+            </div>
+            <span className="rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-xs font-black text-red-300">
+              Match {liveFixture.matchNumber} · {liveFixture.venue || 'TU International Cricket Ground'}
+            </span>
+          </div>
+
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex-1">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-xs font-black uppercase tracking-wider text-white shadow-sm">
+                  <span className="h-2 w-2 animate-ping rounded-full bg-white"></span>
+                  LIVE ON AIR
+                </span>
+                <span className="text-xs font-bold text-slate-300">Nepal Premier League 2026</span>
+              </div>
+
+              <h2 className="mt-3 text-2xl sm:text-4xl font-black text-white tracking-tight">
+                {liveFixture.homeTeam} <span className="text-red-500 font-light text-xl sm:text-2xl">vs</span> {liveFixture.awayTeam}
+              </h2>
+
+              <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-300">
+                <span className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 font-bold text-white">
+                  <span>📅 Today</span>
+                  <span>•</span>
+                  <span>Kickoff: {formatKathmanduTime(liveFixture.timestamp)}</span>
+                </span>
+                {liveFixture.homeScore && (
+                  <span className="rounded-lg border border-[#c9f36b]/30 bg-[#c9f36b]/10 px-3 py-1.5 font-mono text-sm font-black text-[#c9f36b]">
+                    Live Score: {liveFixture.homeScore}
+                  </span>
+                )}
+                <span className="text-slate-400">Broadcasting live on Action Sports HD &amp; Multi-Server Digital Stream</span>
+              </div>
+            </div>
+
+            <div className="shrink-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <a
+                href={liveStreamUrl}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-600 hover:bg-red-500 px-7 py-4 text-sm font-black text-white shadow-xl shadow-red-950/60 transition-all hover:scale-105 active:scale-95"
+              >
+                <span className="h-2.5 w-2.5 rounded-full bg-white animate-pulse"></span>
+                <span>Watch Live Stream ⚡</span>
+              </a>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* NPL Tournament Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/[0.08] pb-5">
         <div className="flex items-center gap-3.5">

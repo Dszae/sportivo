@@ -41,7 +41,7 @@ function toNplBackendId(id: string): string {
 function toNormalizedMatch(m: NplMatch): NormalizedMatch {
   const now = Date.now();
   let status: 'Live' | 'Final' | 'Upcoming' = 'Upcoming';
-  if (m.status === 'COMPLETED') {
+  if (m.status === 'COMPLETED' || (m.summary && m.summary.toLowerCase().includes('won by'))) {
     status = 'Final';
   } else {
     const isPast = now > m.timestamp + 4.0 * 60 * 60 * 1000;

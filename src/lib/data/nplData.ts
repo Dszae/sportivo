@@ -440,13 +440,10 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "startTime": "2026-11-05T17:00:00+05:45",
     "timestamp": 1793877300000,
     "venue": "TU International Cricket Ground, Kirtipur",
-    "status": "LIVE",
-    "broadcast": {
-      "provider": "NetTV 1080p Master / Action Sports HD",
-      "authorizedEmbedUrl": "https://ott-lb.nettv.com.np/npl/live_match/index.mpd",
-      "isHls": false,
-      "availabilityStatus": "online"
-    },
+    "status": "COMPLETED",
+    "homeScore": "86/1 (9.4 ov)",
+    "awayScore": "83/10 (18.3 ov)",
+    "summary": "Kathmandu Gurkhas won by 9 wickets (62 balls remaining)",
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-15"
   },
   {
@@ -799,7 +796,7 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
 export function getCalibratedNplFixtures(nowMs: number = Date.now()): NplMatch[] {
   return NPL_FIXTURES_2026.map((m) => {
     // If tournament record already marks this match as finished/completed, strictly respect it!
-    if (m.status === 'COMPLETED') {
+    if (m.status === 'COMPLETED' || (m.summary && m.summary.toLowerCase().includes('won by'))) {
       return {
         ...m,
         status: 'COMPLETED',
