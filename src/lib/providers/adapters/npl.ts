@@ -3,6 +3,15 @@ import { sanitizePlaybackUrl } from '../allowlist';
 import { logDiagnostic } from '../diagnostics';
 import { NPL_FIXTURES_2026, type NplMatch } from '../../data/nplData';
 
+let streamService: any = null;
+try {
+  streamService = require('../../../../npl/streamService');
+} catch {
+  try {
+    streamService = require('../../../../../mobile/npl/streamService');
+  } catch {}
+}
+
 let cachedNplMatches: NormalizedMatch[] | null = null;
 let lastNplFetch = 0;
 const CACHE_TTL_MS = 60 * 1000; // 60s cache
@@ -329,7 +338,30 @@ export const nplAdapter: ProviderAdapter = {
 
   async resolvePlayback(id: string, signal?: AbortSignal): Promise<PlaybackResolution> {
     try {
-      // Step 1: Autonomous upstream link crawler & real-time health prober
+      // Step 1: Query streamService for verified working live broadcast
+      if (streamService && typeof streamService.getAutoStream === 'function') {
+        const auto = await streamService.getAutoStream();
+        const allActive = await streamService.getAllActiveStreams();
+        const activeList = allActive && allActive.length > 0 ? allActive : auto ? [auto] : [];
+
+        if (activeList.length > 0) {
+          const liveStreams = activeList.map((s: any, idx: number) => ({
+            embedUrl: s.url,
+            hd: true,
+            isNativeVideo: !s.isEmbed && (s.url.includes('.m3u8') || s.url.includes('.mp4')),
+            isSandboxedIframe: s.isEmbed,
+            language: `Server DSZ${idx + 1}`,
+          }));
+
+          return {
+            status: 'ready',
+            provider: auto?.name || 'Action Sports HD (Auto-Discovered & Verified)',
+            streams: liveStreams,
+          };
+        }
+      }
+
+      // Step 2: Autonomous upstream link crawler & real-time health prober
       const liveStreams = await discoverAndProbeNplStreams(signal);
       if (liveStreams && liveStreams.length > 0) {
         return {
@@ -342,23 +374,23 @@ export const nplAdapter: ProviderAdapter = {
       logDiagnostic('npl', 'error', `Autonomous probe failure: ${err?.message}`);
     }
 
-    // Step 2: Fallback to verified broadcast configuration with multi-server failover
+    // Step 3: Fallback to verified broadcast configuration with multi-server failover
     return {
       status: 'ready',
       provider: 'Action Sports HD / YonoTV',
       streams: [
         {
-          embedUrl: 'https://yonotv.pages.dev/fc2',
+          embedUrl: 'https://yonotv.pages.dev/LINK?id=NP4',
           hd: true,
           isNativeVideo: false,
-          isSandboxedIframe: false,
+          isSandboxedIframe: true,
           language: 'Server DSZ1',
         },
         {
-          embedUrl: 'https://yonotv.pages.dev/wtv',
+          embedUrl: 'https://my.finalspot.top/hembedplayer/NEPALCRIC/4/500/400',
           hd: true,
           isNativeVideo: false,
-          isSandboxedIframe: false,
+          isSandboxedIframe: true,
           language: 'Server DSZ2',
         },
         {
@@ -367,13 +399,6 @@ export const nplAdapter: ProviderAdapter = {
           isNativeVideo: false,
           isSandboxedIframe: false,
           language: 'Server DSZ3',
-        },
-        {
-          embedUrl: 'https://my.finalspot.top/hembedplayer/NEPALCRIC/4/500/400',
-          hd: true,
-          isNativeVideo: false,
-          isSandboxedIframe: true,
-          language: 'Server DSZ4',
         },
       ],
     };
