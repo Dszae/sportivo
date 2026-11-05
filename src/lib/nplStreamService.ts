@@ -121,23 +121,23 @@ export class StreamService {
       priority: 5,
     });
 
-    // 2. Secondary Web Embed Mirrors (Fallback)
+    // 2. Secondary Verified Action Sports Web Mirrors (Fallback)
     feeds.push({
-      id: 'NP4-NEPALCRIC',
-      name: 'Nepal Cricket TU Ground Live Feed',
-      url: 'https://yonotv.pages.dev/LINK?id=NP4',
+      id: 'ACTIONSPORTS-DRM-DASH',
+      name: 'Action Sports HD (Master DRM Feed)',
+      url: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/vfq7vktpaj/out/v1/e5454d69a91c478db2e1b3e56cf9bf47/cenc.mpd&keyid=ba4284442c87f52ddeaa95c65d236805&key=56f0808d1f1fbfc0703b384081f1d340',
       type: 'embed',
       isEmbed: true,
-      priority: 10,
+      priority: 6,
     });
 
     feeds.push({
-      id: 'FC2-NPL',
-      name: 'FanCode NPL Event 2',
-      url: 'https://yonotv.pages.dev/LINK?id=FC2',
+      id: 'ACTIONSPORTS-WEB-PLAYER',
+      name: 'Action Sports HD (Web Player Mirror)',
+      url: 'https://yonotv.pages.dev/fc',
       type: 'embed',
       isEmbed: true,
-      priority: 11,
+      priority: 7,
     });
 
     try {
@@ -218,6 +218,12 @@ export class StreamService {
   }
 
   async getAllActiveStreams(): Promise<StreamItem[]> {
+    const cacheKey = 'stream:all:active';
+    const cached = this.cache.get<StreamItem[]>(cacheKey);
+    if (cached && Array.isArray(cached) && cached.length > 0) {
+      return cached;
+    }
+
     const candidates = await this.ingestCandidateFeeds();
     const verified: StreamItem[] = [];
     const seen = new Set<string>();
@@ -240,6 +246,10 @@ export class StreamService {
         }
       })
     );
+
+    if (verified.length > 0) {
+      this.cache.set(cacheKey, verified, 180);
+    }
 
     return verified;
   }

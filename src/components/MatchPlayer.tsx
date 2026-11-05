@@ -31,6 +31,39 @@ type Props = {
   showNplHub?: boolean; // Ball-by-ball commentary and table hub strictly in NPL live section only
 };
 
+// Shaka Player dynamic CDN loader for zero-delay DASH (.mpd) streams
+let shakaLoadPromise: Promise<any> | null = null;
+function getShaka(): Promise<any> {
+  if (typeof window === 'undefined') return Promise.reject(new Error('Window undefined'));
+  if ((window as any).shaka) return Promise.resolve((window as any).shaka);
+  if (shakaLoadPromise) return shakaLoadPromise;
+
+  shakaLoadPromise = new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[data-shaka]');
+    if (existing) {
+      if ((window as any).shaka) {
+        resolve((window as any).shaka);
+      } else {
+        existing.addEventListener('load', () => resolve((window as any).shaka));
+        existing.addEventListener('error', reject);
+      }
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.compiled.js';
+    script.async = true;
+    script.setAttribute('data-shaka', 'true');
+    script.onload = () => resolve((window as any).shaka);
+    script.onerror = (e) => {
+      shakaLoadPromise = null;
+      reject(e);
+    };
+    document.head.appendChild(script);
+  });
+
+  return shakaLoadPromise;
+}
+
 export default function MatchPlayer({ match, showNplHub = false }: Props) {
   const sources = match.sources || [];
   const [selectedSourceIndex, setSelectedSourceIndex] = useState(0);
@@ -62,6 +95,7 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsInstanceRef = useRef<any>(null);
+  const shakaInstanceRef = useRef<any>(null);
   const isResolvingRef = useRef(false);
 
   const title = titleOf(match);
@@ -131,8 +165,14 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
   const jumpToLiveEdge = () => {
     const video = videoRef.current;
     const hls = hlsInstanceRef.current;
+    const shaka = shakaInstanceRef.current;
     if (video) {
-      if (hls && typeof hls.liveSyncPosition === 'number' && hls.liveSyncPosition > 0) {
+      if (shaka && typeof shaka.seekRange === 'function') {
+        const range = shaka.seekRange();
+        if (range && typeof range.end === 'number' && range.end > 0) {
+          video.currentTime = Math.max(0, range.end - 0.5);
+        }
+      } else if (hls && typeof hls.liveSyncPosition === 'number' && hls.liveSyncPosition > 0) {
         video.currentTime = hls.liveSyncPosition;
       } else if (video.seekable && video.seekable.length > 0) {
         video.currentTime = video.seekable.end(video.seekable.length - 1);
@@ -231,17 +271,84 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
     };
   }, []);
 
-  // Continuous HLS Streaming Engine - isolated strictly to stream URL changes
+  // Continuous Video Streaming Engine - supporting both HLS (.m3u8) and zero-delay NetTV DASH (.mpd)
   const streamUrl = activeStream?.embedUrl;
   const isNative = activeStream?.isNativeVideo;
 
   useEffect(() => {
     let hls: any = null;
+    let shakaPlayer: any = null;
 
     if (!streamUrl || !isNative || !videoRef.current) return;
     const video = videoRef.current;
 
-    if (streamUrl.includes('.m3u8')) {
+    // 1. DASH (.mpd) Stream Engine via Shaka Player (NetTV 1080p Zero-Delay Cluster)
+    if (streamUrl.includes('.mpd')) {
+      getShaka()
+        .then((shaka) => {
+          if (!shaka || !shaka.Player || !shaka.Player.isBrowserSupported()) {
+            setPlayerState('unsupported');
+            setErrorMessage('Your browser does not support DASH playback.');
+            return;
+          }
+
+          shaka.polyfill.installAll();
+          const player = new shaka.Player();
+          shakaPlayer = player;
+          shakaInstanceRef.current = player;
+
+          player
+            .attach(video)
+            .then(() => {
+              player.configure({
+                streaming: {
+                  lowLatencyMode: true,
+                  inaccurateManifestTolerance: 0,
+                  rebufferingGoal: 0.5,
+                  bufferingGoal: 2,
+                  bufferBehind: 10,
+                  retryParameters: {
+                    maxAttempts: 5,
+                    baseDelay: 500,
+                    backoffFactor: 1.5,
+                    fuzzFactor: 0.5,
+                    timeout: 8000,
+                  },
+                },
+              });
+
+              return player.load(streamUrl);
+            })
+            .then(() => {
+              setPlayerState('playing');
+              video.play().catch(() => {
+                video.muted = true;
+                video.play().catch(() => {});
+              });
+            })
+            .catch((err: any) => {
+              console.warn('[Shaka] Playback notice:', err?.message || err);
+              const currentIdx = streams.findIndex((s) => s.embedUrl === streamUrl);
+              if (currentIdx >= 0 && currentIdx < streams.length - 1) {
+                const nextStream = streams[currentIdx + 1];
+                if (shakaPlayer) {
+                  shakaPlayer.destroy().catch(() => {});
+                  shakaInstanceRef.current = null;
+                }
+                setActiveStream(nextStream);
+                setFailoverToast(`⚡ Auto-failover: Switched to Server DSZ${currentIdx + 2}`);
+                setTimeout(() => setFailoverToast(null), 3500);
+              } else {
+                setPlayerState('failed');
+                setErrorMessage('Broadcast feed is reconnecting to upstream servers.');
+              }
+            });
+        })
+        .catch(() => {
+          setPlayerState('failed');
+          setErrorMessage('Could not initialize video streaming engine.');
+        });
+    } else if (streamUrl.includes('.m3u8')) {
       import('hls.js').then(({ default: Hls }) => {
         if (!Hls.isSupported()) {
           if (video.canPlayType('application/vnd.apple.mpegurl')) {
@@ -258,7 +365,6 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
         }
 
         // Rock-solid continuous streaming config:
-        // NetTV broadcasts 10-12s chunks. Maintaining a 3-segment buffer (~30s) prevents underruns, pauses, and decoder stalls.
         hls = new Hls({
           enableWorker: true,
           lowLatencyMode: false,
@@ -277,13 +383,11 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           setPlayerState('playing');
           video.play().catch(() => {
-            // Autoplay with sound blocked -> fallback to muted
             video.muted = true;
             video.play().catch(() => {});
           });
         });
 
-        // Failover only on fatal unrecoverable errors
         hls.on(Hls.Events.ERROR, (_event: any, data: any) => {
           if (!data.fatal) return;
 
@@ -326,18 +430,22 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
         hls.destroy();
         hlsInstanceRef.current = null;
       }
+      if (shakaPlayer) {
+        shakaPlayer.destroy().catch(() => {});
+        shakaInstanceRef.current = null;
+      }
     };
   }, [streamUrl, isNative]);
 
   // Resolves playback signals on explicit user action
-  async function resolvePlayback() {
+  async function resolvePlayback(force = false) {
     if (!currentSource?.source || !currentSource.id) {
       setPlayerState('unsupported');
       setErrorMessage('No valid stream source configured for this fixture.');
       return;
     }
 
-    if (isResolvingRef.current) return;
+    if (isResolvingRef.current && !force) return;
     isResolvingRef.current = true;
     setPlayerState('resolving');
     setErrorMessage('');
@@ -346,7 +454,9 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
     const sid = encodeURIComponent(currentSource.id);
 
     try {
-      const res = await fetch(`/api/stream/${src}/${sid}/`);
+      const res = await fetch(`/api/stream/${src}/${sid}/`, {
+        signal: AbortSignal.timeout(6000),
+      });
       const data = await res.json();
 
       if (!res.ok) {
@@ -367,7 +477,11 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
             isNative = item.isNativeVideo;
           } else {
             const cleanPath = safeUrl.split('?')[0].toLowerCase();
-            isNative = cleanPath.endsWith('.m3u8') || cleanPath.endsWith('.mp4');
+            isNative =
+              cleanPath.endsWith('.m3u8') ||
+              cleanPath.endsWith('.mp4') ||
+              cleanPath.endsWith('.mpd') ||
+              safeUrl.includes('.mpd');
           }
 
           return {
@@ -664,7 +778,7 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
               {isLive || sources.length > 0 ? (
                 <button
                   type="button"
-                  onClick={resolvePlayback}
+                  onClick={() => resolvePlayback(true)}
                   aria-label={`Start broadcast stream for ${title}`}
                   className="relative z-10 group inline-flex items-center gap-3 rounded-2xl bg-[#c9f36b] px-6 py-3.5 text-sm font-black text-[#0a1110] shadow-lg shadow-[#c9f36b]/20 hover:bg-[#b8e25d] focus:outline-none focus:ring-4 focus:ring-[#c9f36b]/40 transition-all hover:scale-105 active:scale-95"
                 >

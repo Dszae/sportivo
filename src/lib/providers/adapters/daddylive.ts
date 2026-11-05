@@ -22,7 +22,7 @@ const VERIFIED_CRICKET_CHANNELS: Array<{ id: string; name: string; title: string
 export class DaddyLiveAdapter implements ProviderAdapter {
   readonly name = 'daddylive';
   readonly isAuthorized = false; // Commercial license/authorization unverified
-  readonly statusClassification = 'partially-verified' as const;
+  readonly statusClassification = 'restricted' as const;
 
   private getApiKey(): string | null {
     // Strictly server-side environment variable only

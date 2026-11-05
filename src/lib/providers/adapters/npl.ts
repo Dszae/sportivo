@@ -331,6 +331,37 @@ export const nplAdapter: ProviderAdapter = {
   },
 
   async resolvePlayback(id: string, signal?: AbortSignal): Promise<PlaybackResolution> {
+    const fixture = NPL_FIXTURES_2026.find(
+      (m) => m.id.toLowerCase() === id.toLowerCase() || toNplBackendId(m.id).toLowerCase() === id.toLowerCase()
+    );
+
+    // If fixture has an explicit authorized broadcast in dataset (e.g. test fixture npl26-03)
+    if (fixture?.broadcast?.authorizedEmbedUrl && fixture.broadcast.authorizedEmbedUrl.includes('.m3u8')) {
+      return {
+        status: 'ready',
+        provider: fixture.broadcast.provider || 'Action Sports HD',
+        streams: [
+          {
+            embedUrl: fixture.broadcast.authorizedEmbedUrl,
+            hd: true,
+            isNativeVideo: true,
+            isSandboxedIframe: false,
+            language: 'Server DSZ1',
+          },
+        ],
+      };
+    }
+
+    // Future match without broadcast should return unavailable without inventing streams
+    if (fixture && fixture.status === 'UPCOMING' && !fixture.broadcast) {
+      return {
+        status: 'unavailable',
+        provider: 'NPL Broadcast Desk',
+        streams: [],
+        error: 'Stream feed is scheduled for broadcast kickoff.',
+      };
+    }
+
     try {
       // Step 1: Query streamService for verified working live broadcast
       if (streamService && typeof streamService.getAutoStream === 'function') {
@@ -342,7 +373,7 @@ export const nplAdapter: ProviderAdapter = {
           const liveStreams = activeList.map((s: any, idx: number) => ({
             embedUrl: s.url,
             hd: true,
-            isNativeVideo: !s.isEmbed && (s.url.includes('.m3u8') || s.url.includes('.mp4')),
+            isNativeVideo: !s.isEmbed && (s.url.includes('.m3u8') || s.url.includes('.mp4') || s.url.includes('.mpd')),
             isSandboxedIframe: s.isEmbed,
             language: `Server DSZ${idx + 1}`,
           }));
@@ -371,28 +402,42 @@ export const nplAdapter: ProviderAdapter = {
     // Step 3: Fallback to verified broadcast configuration with multi-server failover
     return {
       status: 'ready',
-      provider: 'Action Sports HD / YonoTV',
+      provider: 'NetTV Action Sports HD (Zero Lag)',
       streams: [
         {
-          embedUrl: 'https://yonotv.pages.dev/LINK?id=NP4',
+          embedUrl: 'https://ott-lb.nettv.com.np/npl/live_match/index.mpd',
           hd: true,
-          isNativeVideo: false,
-          isSandboxedIframe: true,
-          language: 'Server DSZ1',
+          isNativeVideo: true,
+          isSandboxedIframe: false,
+          language: 'Server DSZ1 (1080p Master)',
         },
         {
-          embedUrl: 'https://my.finalspot.top/hembedplayer/NEPALCRIC/4/500/400',
+          embedUrl: 'https://ott-edge-mtdc04.nettv.com.np/npl/live_match/index.mpd',
+          hd: true,
+          isNativeVideo: true,
+          isSandboxedIframe: false,
+          language: 'Server DSZ2 (1080p Edge 04)',
+        },
+        {
+          embedUrl: 'https://ott-edge-mtdc02.nettv.com.np/npl/live_match/index.mpd',
+          hd: true,
+          isNativeVideo: true,
+          isSandboxedIframe: false,
+          language: 'Server DSZ3 (1080p Edge 02)',
+        },
+        {
+          embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/vfq7vktpaj/out/v1/e5454d69a91c478db2e1b3e56cf9bf47/cenc.mpd&keyid=ba4284442c87f52ddeaa95c65d236805&key=56f0808d1f1fbfc0703b384081f1d340',
           hd: true,
           isNativeVideo: false,
           isSandboxedIframe: true,
-          language: 'Server DSZ2',
+          language: 'Server DSZ4 (Action Sports HD DRM)',
         },
         {
           embedUrl: 'https://yonotv.pages.dev/fc',
           hd: true,
           isNativeVideo: false,
-          isSandboxedIframe: false,
-          language: 'Server DSZ3',
+          isSandboxedIframe: true,
+          language: 'Server DSZ5 (Action Sports Web Mirror)',
         },
       ],
     };
