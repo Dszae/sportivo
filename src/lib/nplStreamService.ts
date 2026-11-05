@@ -1,13 +1,39 @@
-import NodeCache from 'node-cache';
+class SimpleMemoryCache {
+  private store = new Map<string, { value: any; expiry: number }>();
 
-if (!((global as any).__STREAM_SERVICE_SAFETY_INIT__)) {
-  (global as any).__STREAM_SERVICE_SAFETY_INIT__ = true;
-  process.on('uncaughtException', (err: any) => {
-    console.warn('[StreamServer] Prevented crash from uncaught exception:', err?.message);
-  });
-  process.on('unhandledRejection', (reason: any) => {
-    console.warn('[StreamServer] Prevented crash from unhandled rejection:', reason);
-  });
+  get<T>(key: string): T | undefined {
+    const item = this.store.get(key);
+    if (!item) return undefined;
+    if (Date.now() > item.expiry) {
+      this.store.delete(key);
+      return undefined;
+    }
+    return item.value as T;
+  }
+
+  set(key: string, value: any, ttlSeconds: number = 900): void {
+    this.store.set(key, { value, expiry: Date.now() + ttlSeconds * 1000 });
+  }
+
+  del(key: string): void {
+    this.store.delete(key);
+  }
+
+  flushAll(): void {
+    this.store.clear();
+  }
+}
+
+if (typeof process !== 'undefined' && typeof process.on === 'function') {
+  if (!((globalThis as any).__STREAM_SERVICE_SAFETY_INIT__)) {
+    (globalThis as any).__STREAM_SERVICE_SAFETY_INIT__ = true;
+    process.on('uncaughtException', (err: any) => {
+      console.warn('[StreamServer] Prevented crash from uncaught exception:', err?.message);
+    });
+    process.on('unhandledRejection', (reason: any) => {
+      console.warn('[StreamServer] Prevented crash from unhandled rejection:', reason);
+    });
+  }
 }
 
 export interface StreamItem {
@@ -26,11 +52,11 @@ export interface StreamItem {
  * Dynamically ingests, validates, caches, and selects active live feeds.
  */
 export class StreamService {
-  private cache: NodeCache;
+  private cache: SimpleMemoryCache;
   private directoryUrl: string;
 
   constructor() {
-    this.cache = new NodeCache({ stdTTL: 900, checkperiod: 120, useClones: false });
+    this.cache = new SimpleMemoryCache();
     this.directoryUrl = process.env.STREAM_DIRECTORY_URL || 'https://yonotv.pages.dev/LINK';
   }
 

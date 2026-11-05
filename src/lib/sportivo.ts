@@ -1,5 +1,3 @@
-import { sanitizePlaybackUrl, fetchUnifiedMatches, resolveUnifiedPlayback } from './providers';
-
 export const categories = ['football', 'cricket', 'basketball'] as const;
 export type Category = (typeof categories)[number];
 
@@ -422,6 +420,7 @@ export function publicUrl(value: string | undefined): string | null {
 
 export async function fetchMatches(category: Category, signal?: AbortSignal): Promise<Match[]> {
   try {
+    const { fetchUnifiedMatches } = await import('./providers');
     const list = await fetchUnifiedMatches(category, signal);
     return list.slice(0, 30);
   } catch {
@@ -440,9 +439,12 @@ export async function fetchLiveMatches(signal?: AbortSignal): Promise<Match[]> {
 }
 
 export async function fetchStream(source: string, id: string) {
-  const resolution = await resolveUnifiedPlayback(source, id);
-  if (resolution.status === 'ready' && resolution.streams.length > 0) {
-    return resolution.streams;
-  }
+  try {
+    const { resolveUnifiedPlayback } = await import('./providers');
+    const resolution = await resolveUnifiedPlayback(source, id);
+    if (resolution.status === 'ready' && resolution.streams.length > 0) {
+      return resolution.streams;
+    }
+  } catch {}
   return [];
 }
