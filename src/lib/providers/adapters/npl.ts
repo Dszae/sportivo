@@ -129,8 +129,11 @@ async function discoverAndProbeNplStreams(signal?: AbortSignal) {
         const key = m[1];
         let streamUrl = m[2].trim();
 
-        // Match all NPL and relevant Nepal cricket feeds
-        const isNplKey = /^(npl|np|nep|fc|aus44)/i.test(key) || key.toLowerCase().includes('nepal');
+        // Strictly match genuine NPL and Nepal cricket feeds (never match BBL, WBBL, AUS, or generic feeds)
+        const isExcluded = /^(aus|ind|eng|pak|wpl|fc2|fc3|acc|saff)/i.test(key);
+        if (isExcluded) continue;
+
+        const isNplKey = /^(npl|np[0-9]*|nep[0-9]*|npp)$/i.test(key) || key.toLowerCase().includes('nepal') || key.toUpperCase() === 'FC';
         if (!isNplKey) continue;
 
         // Extract nested raw media URLs if wrapped in player queries (?src=...)
@@ -232,32 +235,18 @@ async function discoverAndProbeNplStreams(signal?: AbortSignal) {
   if (formattedStreams.length === 0) {
     formattedStreams.push(
       {
-        embedUrl: 'https://yonotv.pages.dev/fc2',
+        embedUrl: 'https://yonotv.pages.dev/fc',
         hd: true,
         isNativeVideo: false,
         isSandboxedIframe: false,
         language: 'Server DSZ1',
       },
       {
-        embedUrl: 'https://yonotv.pages.dev/wtv',
-        hd: true,
-        isNativeVideo: false,
-        isSandboxedIframe: false,
-        language: 'Server DSZ2',
-      },
-      {
-        embedUrl: 'https://yonotv.pages.dev/fc',
-        hd: true,
-        isNativeVideo: false,
-        isSandboxedIframe: false,
-        language: 'Server DSZ3',
-      },
-      {
         embedUrl: 'https://my.finalspot.top/hembedplayer/NEPALCRIC/4/500/400',
         hd: true,
         isNativeVideo: false,
         isSandboxedIframe: true,
-        language: 'Server DSZ4',
+        language: 'Server DSZ2',
       }
     );
   }

@@ -40,5 +40,22 @@
     "tailwindcss": "^3.4.19",
     "typescript": "^5.9.3",
     "vite": "^8.3.0"
-  }
+  },
+  "description": "<div align=\"center\">",
+  "main": "postcss.config.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dszae/sportivo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Dszae/sportivo/issues"
+  },
+  "homepage": "https://github.com/Dszae/sportivo#readme"
 }
