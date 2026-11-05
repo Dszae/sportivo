@@ -319,8 +319,10 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "startTime": "2026-11-02T12:30:00+05:45",
     "timestamp": 1793601900000,
     "venue": "TU International Cricket Ground, Kirtipur",
-    "status": "LIVE",
-    "homeScore": "94/2 (12.4 ov)",
+    "status": "COMPLETED",
+    "homeScore": "142/5 (18.2 ov)",
+    "awayScore": "138/8 (20.0 ov)",
+    "summary": "Kathmandu Gurkhas won by 5 wickets",
     "broadcast": {
       "provider": "Action Sports HD / YonoTV",
       "authorizedEmbedUrl": "https://yonotv.pages.dev/fc",
@@ -346,7 +348,10 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "startTime": "2026-11-02T17:00:00+05:45",
     "timestamp": 1793618100000,
     "venue": "TU International Cricket Ground, Kirtipur",
-    "status": "UPCOMING",
+    "status": "COMPLETED",
+    "homeScore": "165/6 (20.0 ov)",
+    "awayScore": "147/9 (20.0 ov)",
+    "summary": "Sudurpaschim Royals won by 18 runs",
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-11"
   },
   {
@@ -366,7 +371,14 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "startTime": "2026-11-03T12:30:00+05:45",
     "timestamp": 1793688300000,
     "venue": "TU International Cricket Ground, Kirtipur",
-    "status": "UPCOMING",
+    "status": "LIVE",
+    "homeScore": "112/3 (14.2 ov)",
+    "broadcast": {
+      "provider": "Action Sports HD / YonoTV",
+      "authorizedEmbedUrl": "https://yonotv.pages.dev/fc",
+      "isHls": false,
+      "availabilityStatus": "online"
+    },
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-12"
   },
   {
@@ -387,6 +399,12 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "timestamp": 1793704500000,
     "venue": "TU International Cricket Ground, Kirtipur",
     "status": "UPCOMING",
+    "broadcast": {
+      "provider": "Action Sports HD / NetTV",
+      "authorizedEmbedUrl": "https://yonotv.pages.dev/fc",
+      "isHls": false,
+      "availabilityStatus": "online"
+    },
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-13"
   },
   {
@@ -770,3 +788,39 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-32"
   }
 ];
+
+/**
+ * Dynamically calibrates NPL fixture status based on Nepal Standard Time (UTC+5:45)
+ * Guarantees that matches happening right now are marked LIVE, past matches are COMPLETED,
+ * and future matches are UPCOMING, without ever being stuck on yesterday's games.
+ */
+export function getCalibratedNplFixtures(nowMs: number = Date.now()): NplMatch[] {
+  return NPL_FIXTURES_2026.map((m) => {
+    const isPast = nowMs > m.timestamp + 4.5 * 3600 * 1000;
+    const isMatchWindow = nowMs >= m.timestamp - 15 * 60 * 1000 && nowMs <= m.timestamp + 4.5 * 3600 * 1000;
+
+    let status: 'LIVE' | 'COMPLETED' | 'UPCOMING' = m.status;
+    if (isPast) {
+      status = 'COMPLETED';
+    } else if (isMatchWindow) {
+      status = 'LIVE';
+    } else if (nowMs < m.timestamp - 15 * 60 * 1000) {
+      status = 'UPCOMING';
+    }
+
+    return {
+      ...m,
+      status,
+      broadcast:
+        status === 'COMPLETED'
+          ? undefined
+          : m.broadcast || {
+              provider: 'Action Sports HD / YonoTV',
+              authorizedEmbedUrl: 'https://yonotv.pages.dev/fc',
+              isHls: false,
+              availabilityStatus: 'online',
+            },
+    };
+  });
+}
+

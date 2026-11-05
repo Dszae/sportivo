@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { NPL_FIXTURES_2026, type NplMatch } from '../lib/data/nplData';
+import { NPL_FIXTURES_2026, getCalibratedNplFixtures, type NplMatch } from '../lib/data/nplData';
 import { slugify, publicUrl } from '../lib/sportivo';
 import { loadUserPreferences, saveUserPreferences, type UserPreferences } from '../lib/preferences';
 import { playNotificationChime, requestNotificationPermission } from '../lib/notificationService';
@@ -61,7 +61,7 @@ function formatKathmanduDate(timestamp: number): string {
 
 export default function NplSchedule() {
   const [activeTab, setActiveTab] = useState<Tab>('today');
-  const [fixtures, setFixtures] = useState<NplMatch[]>(NPL_FIXTURES_2026);
+  const [fixtures, setFixtures] = useState<NplMatch[]>(() => getCalibratedNplFixtures());
   const [query, setQuery] = useState('');
   const [lastSyncTime, setLastSyncTime] = useState('Just now');
 
@@ -185,9 +185,11 @@ export default function NplSchedule() {
   const renderMatchCard = (m: NplMatch) => {
     const matchSlug = slugify(`${m.homeTeam} vs ${m.awayTeam}`);
     const detailUrl = `/cricket/match/${encodeURIComponent(matchSlug)}/`;
-    const isLive = m.status === 'LIVE';
-    const isCompleted = m.status === 'COMPLETED';
-    const hasAuthorizedBroadcast = Boolean(m.broadcast && m.broadcast.authorizedEmbedUrl);
+    const nowMs = Date.now();
+    const isLive =
+      m.status === 'LIVE' ||
+      (nowMs >= m.timestamp - 15 * 60 * 1000 && nowMs <= m.timestamp + 4.5 * 3600 * 1000 && m.status !== 'COMPLETED');
+    const isCompleted = m.status === 'COMPLETED' || (!isLive && nowMs > m.timestamp + 4.5 * 3600 * 1000);
     const isFollowed =
       prefs.starredMatches.includes(`npl-match-${m.matchNumber}`) ||
       prefs.favoriteTeams.some(
@@ -347,18 +349,18 @@ export default function NplSchedule() {
             <span aria-hidden="true">&rarr;</span>
           </a>
 
-          {/* Watch Live Button strictly displayed ONLY when match is actively LIVE */}
-          {isLive && hasAuthorizedBroadcast ? (
+          {/* Watch Live Button strictly displayed whenever match is actively LIVE */}
+          {isLive ? (
             <a
               href={detailUrl}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-3.5 py-1.5 text-xs font-black text-white shadow-md hover:bg-red-500 transition-all hover:scale-105"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-3.5 py-1.5 text-xs font-black text-white shadow-md hover:bg-red-500 transition-all hover:scale-105 active:scale-95"
             >
               <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
               <span>Watch Live</span>
             </a>
           ) : (
             <span className="text-[11px] text-slate-400 italic">
-              {isCompleted ? 'Match Concluded' : 'Broadcast TBA'}
+              {isCompleted ? 'Match Concluded' : `Starts at ${formatKathmanduTime(m.timestamp)}`}
             </span>
           )}
         </div>

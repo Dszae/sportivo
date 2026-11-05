@@ -256,7 +256,11 @@ const matchJsonLd = match
             </p>
           </div>
 
-          <MatchPlayer client:load match={match} />
+          <MatchPlayer
+            client:load
+            match={match}
+            showNplHub={Boolean(category === 'cricket' && (match.league === 'NPL' || match.competition?.toLowerCase().includes('nepal premier league') || match.sources?.some((s) => s.source === 'npl')))}
+          />
 
           {/* Match Context & Editorial Preview for Search Engines & Visitors */}
           <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">

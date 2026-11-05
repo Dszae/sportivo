@@ -50,10 +50,12 @@ function toNormalizedMatch(m: NplMatch): NormalizedMatch {
   const isMatchWindow = now >= m.timestamp - 15 * 60 * 1000 && now <= m.timestamp + 4.5 * 60 * 60 * 1000;
   const isPast = now > m.timestamp + 4.5 * 60 * 60 * 1000;
   let status: 'Live' | 'Final' | 'Upcoming' = 'Upcoming';
-  if (m.status === 'COMPLETED' || isPast) {
+  if (isPast) {
     status = 'Final';
-  } else if (m.status === 'LIVE' || isMatchWindow) {
+  } else if (isMatchWindow) {
     status = 'Live';
+  } else if (m.status === 'COMPLETED') {
+    status = 'Final';
   }
 
   return {

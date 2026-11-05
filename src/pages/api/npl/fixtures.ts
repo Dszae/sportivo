@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { NPL_FIXTURES_2026, type NplMatch } from '../../../lib/data/nplData';
+import { NPL_FIXTURES_2026, getCalibratedNplFixtures, type NplMatch } from '../../../lib/data/nplData';
 
 export const prerender = false;
 
@@ -114,7 +114,7 @@ async function fetchOfficialScoreUpdates(): Promise<Map<string, Partial<NplMatch
 }
 
 export const GET: APIRoute = async () => {
-  let fixtures: NplMatch[] = NPL_FIXTURES_2026;
+  let fixtures: NplMatch[] = getCalibratedNplFixtures();
 
   // 1. Check Supabase for real-time live score and status overrides
   try {
