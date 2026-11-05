@@ -2,15 +2,7 @@ import type { Category, NormalizedMatch, PlaybackResolution, ProviderAdapter } f
 import { sanitizePlaybackUrl } from '../allowlist';
 import { logDiagnostic } from '../diagnostics';
 import { NPL_FIXTURES_2026, type NplMatch } from '../../data/nplData';
-
-let streamService: any = null;
-try {
-  streamService = require('../../../../npl/streamService');
-} catch {
-  try {
-    streamService = require('../../../../../mobile/npl/streamService');
-  } catch {}
-}
+import { streamService } from '../../nplStreamService';
 
 let cachedNplMatches: NormalizedMatch[] | null = null;
 let lastNplFetch = 0;

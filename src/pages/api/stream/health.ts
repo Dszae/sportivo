@@ -1,15 +1,7 @@
 import type { APIRoute } from 'astro';
+import { streamService } from '../../../lib/nplStreamService';
 
 export const prerender = false;
-
-let streamService: any = null;
-try {
-  streamService = require('../../../../npl/streamService');
-} catch {
-  try {
-    streamService = require('../../../../../mobile/npl/streamService');
-  } catch {}
-}
 
 export const GET: APIRoute = async ({ request }) => {
   const urlObj = new URL(request.url);
@@ -23,14 +15,7 @@ export const GET: APIRoute = async ({ request }) => {
   }
 
   try {
-    let alive = false;
-    if (streamService && typeof streamService.isStreamAlive === 'function') {
-      alive = await streamService.isStreamAlive(targetUrl);
-    } else {
-      const probe = await fetch(targetUrl, { method: 'HEAD', signal: AbortSignal.timeout(3500) });
-      alive = probe.ok || probe.status === 200 || probe.status === 206;
-    }
-
+    const alive = await streamService.isStreamAlive(targetUrl);
     return Response.json(
       { url: targetUrl, alive, status: alive ? 200 : 503 },
       {
@@ -52,4 +37,3 @@ export const GET: APIRoute = async ({ request }) => {
     );
   }
 };
-

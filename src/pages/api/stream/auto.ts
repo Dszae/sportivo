@@ -1,25 +1,10 @@
 import type { APIRoute } from 'astro';
+import { streamService } from '../../../lib/nplStreamService';
 
 export const prerender = false;
 
-let streamService: any = null;
-try {
-  streamService = require('../../../../npl/streamService');
-} catch {
-  try {
-    streamService = require('../../../../../mobile/npl/streamService');
-  } catch {}
-}
-
 export const GET: APIRoute = async () => {
   try {
-    if (!streamService || typeof streamService.getAutoStream !== 'function') {
-      return Response.json(
-        { error: 'StreamService module is unavailable' },
-        { status: 503, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
-      );
-    }
-
     const stream = await streamService.getAutoStream();
     return Response.json(stream, {
       headers: {
@@ -35,4 +20,3 @@ export const GET: APIRoute = async () => {
     );
   }
 };
-
