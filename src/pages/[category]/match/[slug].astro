@@ -66,13 +66,16 @@ if (validCategory) {
             away: { name: nplMatch.awayTeam, badge: nplMatch.awayTeamLogo },
           },
           poster: nplMatch.homeTeamLogo || 'https://nepalpremierleague.org/icon.svg',
-          sources: [
-            {
-              source: 'npl',
-              id: nplMatch.id,
-              label: nplMatch.broadcast?.provider || 'NPL Live Broadcast',
-            },
-          ],
+          sources:
+            nplStatus === 'Final'
+              ? []
+              : [
+                  {
+                    source: 'npl',
+                    id: nplMatch.id,
+                    label: nplMatch.broadcast?.provider || 'NPL Live Broadcast',
+                  },
+                ],
         };
       }
     }

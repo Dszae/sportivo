@@ -25,6 +25,7 @@
     "node-cache": "^5.1.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "shaka-player": "^5.3.3",
     "web-push": "^3.6.7"
   },
   "devDependencies": {

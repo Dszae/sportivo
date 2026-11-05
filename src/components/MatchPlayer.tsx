@@ -45,7 +45,10 @@ function getShaka(): Promise<any> {
         resolve((window as any).shaka);
       } else {
         existing.addEventListener('load', () => resolve((window as any).shaka));
-        existing.addEventListener('error', reject);
+        existing.addEventListener('error', (e) => {
+          shakaLoadPromise = null;
+          reject(e);
+        });
       }
       return;
     }
@@ -283,13 +286,29 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
     if (!streamUrl || !isNative || !videoEl) return;
     const video = videoEl;
 
+    const failoverToNext = () => {
+      const currentIdx = streams.findIndex((s) => s.embedUrl === streamUrl);
+      if (currentIdx >= 0 && currentIdx < streams.length - 1) {
+        const nextStream = streams[currentIdx + 1];
+        if (shakaPlayer) {
+          shakaPlayer.destroy().catch(() => {});
+          shakaInstanceRef.current = null;
+        }
+        setActiveStream(nextStream);
+        setFailoverToast(`⚡ Auto-failover: Switched to Server DSZ${currentIdx + 2}`);
+        setTimeout(() => setFailoverToast(null), 3500);
+      } else {
+        setPlayerState('failed');
+        setErrorMessage('Broadcast feed is reconnecting to upstream servers.');
+      }
+    };
+
     // 1. DASH (.mpd) Stream Engine via Shaka Player (NetTV 1080p Zero-Delay Cluster)
     if (streamUrl.includes('.mpd')) {
       getShaka()
         .then((shaka) => {
           if (!shaka || !shaka.Player || !shaka.Player.isBrowserSupported()) {
-            setPlayerState('unsupported');
-            setErrorMessage('Your browser does not support DASH playback.');
+            failoverToNext();
             return;
           }
 
@@ -297,6 +316,11 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
           const player = new shaka.Player();
           shakaPlayer = player;
           shakaInstanceRef.current = player;
+
+          player.addEventListener('error', (event: any) => {
+            console.warn('[Shaka] Runtime error:', event?.detail);
+            failoverToNext();
+          });
 
           player
             .attach(video)
@@ -309,14 +333,28 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
                   bufferingGoal: 2,
                   bufferBehind: 10,
                   retryParameters: {
-                    maxAttempts: 5,
+                    maxAttempts: 3,
                     baseDelay: 500,
                     backoffFactor: 1.5,
                     fuzzFactor: 0.5,
-                    timeout: 8000,
+                    timeout: 5000,
                   },
                 },
               });
+
+              // ClearKey DRM decryption if key credentials are present in URL params
+              try {
+                const urlObj = new URL(streamUrl, 'https://sportivo.internal');
+                const keyId = urlObj.searchParams.get('keyid');
+                const key = urlObj.searchParams.get('key');
+                if (keyId && key) {
+                  player.configure({
+                    drm: {
+                      clearKeys: { [keyId]: key },
+                    },
+                  });
+                }
+              } catch {}
 
               return player.load(streamUrl);
             })
@@ -329,25 +367,12 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
             })
             .catch((err: any) => {
               console.warn('[Shaka] Playback notice:', err?.message || err);
-              const currentIdx = streams.findIndex((s) => s.embedUrl === streamUrl);
-              if (currentIdx >= 0 && currentIdx < streams.length - 1) {
-                const nextStream = streams[currentIdx + 1];
-                if (shakaPlayer) {
-                  shakaPlayer.destroy().catch(() => {});
-                  shakaInstanceRef.current = null;
-                }
-                setActiveStream(nextStream);
-                setFailoverToast(`⚡ Auto-failover: Switched to Server DSZ${currentIdx + 2}`);
-                setTimeout(() => setFailoverToast(null), 3500);
-              } else {
-                setPlayerState('failed');
-                setErrorMessage('Broadcast feed is reconnecting to upstream servers.');
-              }
+              failoverToNext();
             });
         })
-        .catch(() => {
-          setPlayerState('failed');
-          setErrorMessage('Could not initialize video streaming engine.');
+        .catch((err: any) => {
+          console.warn('[Shaka] Init failure:', err);
+          failoverToNext();
         });
     } else if (streamUrl.includes('.m3u8')) {
       import('hls.js').then(({ default: Hls }) => {
@@ -440,6 +465,12 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
 
   // Resolves playback signals on explicit user action
   async function resolvePlayback(force = false) {
+    if (status === 'Final') {
+      setPlayerState('unavailable');
+      setErrorMessage('This match has concluded. Live broadcast has ended.');
+      return;
+    }
+
     if (!currentSource?.source || !currentSource.id) {
       setPlayerState('unsupported');
       setErrorMessage('No valid stream source configured for this fixture.');
@@ -512,12 +543,12 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
     }
   }
 
-  // Auto-connect to live stream if match is live or has active stream source
+  // Auto-connect to live stream ONLY if match is actively LIVE and not concluded
   useEffect(() => {
-    if ((isLive || currentSource?.source === 'npl') && sources.length > 0 && playerState === 'idle' && !isResolvingRef.current) {
+    if (isLive && status !== 'Final' && sources.length > 0 && playerState === 'idle' && !isResolvingRef.current) {
       resolvePlayback();
     }
-  }, [isLive, currentSource, sources.length, playerState]);
+  }, [isLive, status, sources.length, playerState]);
 
   const handleSourceChange = (idx: number) => {
     setSelectedSourceIndex(idx);
@@ -772,11 +803,24 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
 
                 <h3 className="mt-2 text-xl sm:text-2xl font-black text-white">{title}</h3>
                 <p className="mt-2 text-xs font-semibold text-slate-300">
-                  {isLive ? 'Broadcasting live now' : `Kickoff: ${timeOf(match, 'Asia/Kathmandu')} (Nepal Standard Time)`}
+                  {status === 'Final'
+                    ? 'Match Concluded — Broadcast Offline'
+                    : isLive
+                    ? 'Broadcasting live now'
+                    : `Kickoff: ${timeOf(match, 'Asia/Kathmandu')} (Nepal Standard Time)`}
                 </p>
               </div>
 
-              {isLive || sources.length > 0 ? (
+              {status === 'Final' ? (
+                <div className="relative z-10 flex flex-col items-center max-w-md rounded-2xl border border-white/10 bg-black/75 p-5 backdrop-blur-md shadow-2xl">
+                  <div className="flex items-center gap-2 rounded-full border border-slate-500/30 bg-slate-500/10 px-3.5 py-1 text-xs font-bold text-slate-300">
+                    <span className="h-2 w-2 rounded-full bg-slate-400"></span>
+                    <span>MATCH CONCLUDED</span>
+                  </div>
+                  <p className="mt-3 text-base sm:text-lg font-black text-white">Full-Time / Final Result</p>
+                  <p className="text-xs text-slate-400 mt-1">This broadcast has ended. Check the scorecards and upcoming fixtures below.</p>
+                </div>
+              ) : isLive || sources.length > 0 ? (
                 <button
                   type="button"
                   onClick={() => resolvePlayback(true)}

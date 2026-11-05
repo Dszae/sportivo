@@ -371,14 +371,10 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "startTime": "2026-11-03T12:30:00+05:45",
     "timestamp": 1793688300000,
     "venue": "TU International Cricket Ground, Kirtipur",
-    "status": "LIVE",
-    "homeScore": "112/3 (14.2 ov)",
-    "broadcast": {
-      "provider": "Action Sports HD / YonoTV",
-      "authorizedEmbedUrl": "https://yonotv.pages.dev/fc",
-      "isHls": false,
-      "availabilityStatus": "online"
-    },
+    "status": "COMPLETED",
+    "homeScore": "142/8 (20.0 ov)",
+    "awayScore": "143/5 (18.4 ov)",
+    "summary": "Janakpur Bolts won by 5 wickets",
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-12"
   },
   {
@@ -398,13 +394,10 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "startTime": "2026-11-03T17:00:00+05:45",
     "timestamp": 1793704500000,
     "venue": "TU International Cricket Ground, Kirtipur",
-    "status": "UPCOMING",
-    "broadcast": {
-      "provider": "Action Sports HD / NetTV",
-      "authorizedEmbedUrl": "https://yonotv.pages.dev/fc",
-      "isHls": false,
-      "availabilityStatus": "online"
-    },
+    "status": "COMPLETED",
+    "homeScore": "168/6 (20.0 ov)",
+    "awayScore": "151/8 (20.0 ov)",
+    "summary": "Lumbini Lions won by 17 runs",
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-13"
   },
   {

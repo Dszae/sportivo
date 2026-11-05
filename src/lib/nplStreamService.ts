@@ -101,7 +101,7 @@ export class StreamService {
   async ingestCandidateFeeds(): Promise<StreamItem[]> {
     const feeds: StreamItem[] = [];
 
-    // 1. NetTV Unencrypted 1080p DASH Cluster (Zero-Delay Real-Time Live Edge)
+    // 1. NetTV 1080p Master DASH (Zero-Delay Real-Time Live Edge)
     feeds.push({
       id: 'NETTV-DASH-LB',
       name: 'NetTV 1080p Master (Zero Lag)',
@@ -111,50 +111,14 @@ export class StreamService {
       priority: 1,
     });
 
+    // 2. High-Availability Direct Web Players (Immediate Zero-Failure Failover)
     feeds.push({
-      id: 'NETTV-DASH-EDGE3',
-      name: 'NetTV Edge 03 (1080p Direct)',
-      url: 'https://ott-edge-mtdc03.nettv.com.np/npl/live_match/index.mpd',
-      type: 'dash',
-      isEmbed: false,
-      priority: 2,
-    });
-
-    feeds.push({
-      id: 'NETTV-DASH-EDGE1',
-      name: 'NetTV Edge 01 (1080p Direct)',
-      url: 'https://ott-edge-mtdc01.nettv.com.np/npl/live_match/index.mpd',
-      type: 'dash',
-      isEmbed: false,
-      priority: 3,
-    });
-
-    feeds.push({
-      id: 'NETTV-DASH-EDGE2',
-      name: 'NetTV Edge 02 (1080p Direct)',
-      url: 'https://ott-edge-mtdc02.nettv.com.np/npl/live_match/index.mpd',
-      type: 'dash',
-      isEmbed: false,
-      priority: 4,
-    });
-
-    feeds.push({
-      id: 'NETTV-DASH-EDGE4',
-      name: 'NetTV Edge 04 (1080p Direct)',
-      url: 'https://ott-edge-mtdc04.nettv.com.np/npl/live_match/index.mpd',
-      type: 'dash',
-      isEmbed: false,
-      priority: 5,
-    });
-
-    // 2. Secondary Verified Action Sports Web Mirrors (Fallback)
-    feeds.push({
-      id: 'ACTIONSPORTS-DRM-DASH',
-      name: 'Action Sports HD (Master DRM Feed)',
-      url: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/vfq7vktpaj/out/v1/e5454d69a91c478db2e1b3e56cf9bf47/cenc.mpd&keyid=ba4284442c87f52ddeaa95c65d236805&key=56f0808d1f1fbfc0703b384081f1d340',
+      id: 'NEPALCRIC-DIRECT',
+      name: 'Action Sports HD (TU Ground Feed)',
+      url: 'https://my.finalspot.top/hembedplayer/NEPALCRIC/4/500/400',
       type: 'embed',
       isEmbed: true,
-      priority: 6,
+      priority: 2,
     });
 
     feeds.push({
@@ -163,7 +127,34 @@ export class StreamService {
       url: 'https://yonotv.pages.dev/fc',
       type: 'embed',
       isEmbed: true,
-      priority: 7,
+      priority: 3,
+    });
+
+    feeds.push({
+      id: 'TRUCKREFUSE-DIRECT',
+      name: 'Nepal Cricket Digital Feed',
+      url: 'https://truckrefuse.net/e/66ci9zl8uuao6',
+      type: 'embed',
+      isEmbed: true,
+      priority: 4,
+    });
+
+    feeds.push({
+      id: 'ACTIONSPORTS-DRM-DASH',
+      name: 'Action Sports HD (Master DRM Feed)',
+      url: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/vfq7vktpaj/out/v1/e5454d69a91c478db2e1b3e56cf9bf47/cenc.mpd&keyid=ba4284442c87f52ddeaa95c65d236805&key=56f0808d1f1fbfc0703b384081f1d340',
+      type: 'embed',
+      isEmbed: true,
+      priority: 5,
+    });
+
+    feeds.push({
+      id: 'NETTV-DASH-EDGE',
+      name: 'NetTV Edge 03 (Direct)',
+      url: 'https://ott-edge-mtdc03.nettv.com.np/npl/live_match/index.mpd',
+      type: 'dash',
+      isEmbed: false,
+      priority: 6,
     });
 
     try {

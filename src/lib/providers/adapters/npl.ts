@@ -39,14 +39,6 @@ function toNplBackendId(id: string): string {
  * Convert NplMatch record into NormalizedMatch for Sportivo aggregator
  */
 function toNormalizedMatch(m: NplMatch): NormalizedMatch {
-  const sources = [
-    {
-      source: 'npl',
-      id: m.id,
-      label: m.broadcast?.provider || 'NPL Live Feed',
-    },
-  ];
-
   const now = Date.now();
   let status: 'Live' | 'Final' | 'Upcoming' = 'Upcoming';
   if (m.status === 'COMPLETED') {
@@ -60,6 +52,17 @@ function toNormalizedMatch(m: NplMatch): NormalizedMatch {
       status = 'Live';
     }
   }
+
+  const sources =
+    status === 'Final'
+      ? []
+      : [
+          {
+            source: 'npl',
+            id: m.id,
+            label: m.broadcast?.provider || 'NPL Live Feed',
+          },
+        ];
 
   return {
     id: m.id,
@@ -368,6 +371,16 @@ export const nplAdapter: ProviderAdapter = {
       };
     }
 
+    // Completed match should return unavailable - match has ended!
+    if (fixture && (fixture.status === 'COMPLETED' || Date.now() > fixture.timestamp + 4 * 3600 * 1000)) {
+      return {
+        status: 'unavailable',
+        provider: 'NPL Broadcast Desk',
+        streams: [],
+        error: 'This match has concluded. Live broadcast is no longer on air.',
+      };
+    }
+
     // Future match without broadcast should return unavailable without inventing streams
     if (fixture && fixture.status === 'UPCOMING' && !fixture.broadcast) {
       return {
@@ -429,32 +442,39 @@ export const nplAdapter: ProviderAdapter = {
           language: 'Server DSZ1 (1080p Master)',
         },
         {
-          embedUrl: 'https://ott-edge-mtdc04.nettv.com.np/npl/live_match/index.mpd',
-          hd: true,
-          isNativeVideo: true,
-          isSandboxedIframe: false,
-          language: 'Server DSZ2 (1080p Edge 04)',
-        },
-        {
-          embedUrl: 'https://ott-edge-mtdc02.nettv.com.np/npl/live_match/index.mpd',
-          hd: true,
-          isNativeVideo: true,
-          isSandboxedIframe: false,
-          language: 'Server DSZ3 (1080p Edge 02)',
-        },
-        {
-          embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/vfq7vktpaj/out/v1/e5454d69a91c478db2e1b3e56cf9bf47/cenc.mpd&keyid=ba4284442c87f52ddeaa95c65d236805&key=56f0808d1f1fbfc0703b384081f1d340',
+          embedUrl: 'https://my.finalspot.top/hembedplayer/NEPALCRIC/4/500/400',
           hd: true,
           isNativeVideo: false,
           isSandboxedIframe: true,
-          language: 'Server DSZ4 (Action Sports HD DRM)',
+          language: 'Server DSZ2 (TU Ground Live Feed)',
         },
         {
           embedUrl: 'https://yonotv.pages.dev/fc',
           hd: true,
           isNativeVideo: false,
           isSandboxedIframe: true,
-          language: 'Server DSZ5 (Action Sports Web Mirror)',
+          language: 'Server DSZ3 (Action Sports Web Mirror)',
+        },
+        {
+          embedUrl: 'https://truckrefuse.net/e/66ci9zl8uuao6',
+          hd: true,
+          isNativeVideo: false,
+          isSandboxedIframe: true,
+          language: 'Server DSZ4 (Nepal Cricket Digital)',
+        },
+        {
+          embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/vfq7vktpaj/out/v1/e5454d69a91c478db2e1b3e56cf9bf47/cenc.mpd&keyid=ba4284442c87f52ddeaa95c65d236805&key=56f0808d1f1fbfc0703b384081f1d340',
+          hd: true,
+          isNativeVideo: false,
+          isSandboxedIframe: true,
+          language: 'Server DSZ5 (Action Sports HD DRM)',
+        },
+        {
+          embedUrl: 'https://ott-edge-mtdc03.nettv.com.np/npl/live_match/index.mpd',
+          hd: true,
+          isNativeVideo: true,
+          isSandboxedIframe: false,
+          language: 'Server DSZ6 (1080p Edge 03)',
         },
       ],
     };
