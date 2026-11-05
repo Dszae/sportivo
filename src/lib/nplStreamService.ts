@@ -241,6 +241,7 @@ export class StreamService {
             url: feed.url,
             type: feed.type || (feed.url.includes('.mpd') ? 'dash' : feed.isEmbed ? 'embed' : 'hls'),
             isEmbed: feed.isEmbed,
+            priority: feed.priority,
             status: 'online',
           });
         }
@@ -248,6 +249,7 @@ export class StreamService {
     );
 
     if (verified.length > 0) {
+      verified.sort((a, b) => (a.priority || 99) - (b.priority || 99));
       this.cache.set(cacheKey, verified, 180);
     }
 

@@ -94,6 +94,7 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null);
   const hlsInstanceRef = useRef<any>(null);
   const shakaInstanceRef = useRef<any>(null);
   const isResolvingRef = useRef(false);
@@ -163,7 +164,7 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
 
   // Jump to Live Edge on explicit user request
   const jumpToLiveEdge = () => {
-    const video = videoRef.current;
+    const video = videoEl || videoRef.current;
     const hls = hlsInstanceRef.current;
     const shaka = shakaInstanceRef.current;
     if (video) {
@@ -279,8 +280,8 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
     let hls: any = null;
     let shakaPlayer: any = null;
 
-    if (!streamUrl || !isNative || !videoRef.current) return;
-    const video = videoRef.current;
+    if (!streamUrl || !isNative || !videoEl) return;
+    const video = videoEl;
 
     // 1. DASH (.mpd) Stream Engine via Shaka Player (NetTV 1080p Zero-Delay Cluster)
     if (streamUrl.includes('.mpd')) {
@@ -435,7 +436,7 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
         shakaInstanceRef.current = null;
       }
     };
-  }, [streamUrl, isNative]);
+  }, [streamUrl, isNative, videoEl]);
 
   // Resolves playback signals on explicit user action
   async function resolvePlayback(force = false) {
@@ -867,12 +868,14 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
             <>
               {activeStream.isNativeVideo ? (
                 <video
-                  ref={videoRef}
+                  ref={(el) => {
+                    (videoRef as any).current = el;
+                    setVideoEl(el);
+                  }}
                   controls
                   autoPlay
                   playsInline
-                  className="h-full w-full"
-                  src={activeStream.embedUrl.includes('.m3u8') ? undefined : activeStream.embedUrl}
+                  className="h-full w-full bg-black"
                 ></video>
               ) : (
                 <iframe

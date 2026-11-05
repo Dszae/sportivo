@@ -386,6 +386,7 @@ export const nplAdapter: ProviderAdapter = {
         const activeList = allActive && allActive.length > 0 ? allActive : auto ? [auto] : [];
 
         if (activeList.length > 0) {
+          activeList.sort((a: any, b: any) => (a.priority || 99) - (b.priority || 99));
           const liveStreams = activeList.map((s: any, idx: number) => ({
             embedUrl: s.url,
             hd: true,
