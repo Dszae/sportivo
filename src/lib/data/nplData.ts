@@ -816,7 +816,7 @@ export function getCalibratedNplFixtures(nowMs: number = Date.now()): NplMatch[]
           ? undefined
           : m.broadcast || {
               provider: 'Action Sports HD / YonoTV',
-              authorizedEmbedUrl: 'https://yonotv.pages.dev/fc',
+              authorizedEmbedUrl: 'https://yonotv.pages.dev/fc2',
               isHls: false,
               availabilityStatus: 'online',
             },

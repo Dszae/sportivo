@@ -130,7 +130,7 @@ async function discoverAndProbeNplStreams(signal?: AbortSignal) {
         let streamUrl = m[2].trim();
 
         // Match all NPL and relevant Nepal cricket feeds
-        const isNplKey = key.startsWith('NPL') || key.toLowerCase().includes('nepal');
+        const isNplKey = /^(npl|np|nep|fc|aus44)/i.test(key) || key.toLowerCase().includes('nepal');
         if (!isNplKey) continue;
 
         // Extract nested raw media URLs if wrapped in player queries (?src=...)
@@ -232,18 +232,32 @@ async function discoverAndProbeNplStreams(signal?: AbortSignal) {
   if (formattedStreams.length === 0) {
     formattedStreams.push(
       {
-        embedUrl: 'https://yonotv.pages.dev/fc',
+        embedUrl: 'https://yonotv.pages.dev/fc2',
         hd: true,
         isNativeVideo: false,
         isSandboxedIframe: false,
         language: 'Server DSZ1',
       },
       {
-        embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
+        embedUrl: 'https://yonotv.pages.dev/wtv',
         hd: true,
-        isNativeVideo: true,
+        isNativeVideo: false,
         isSandboxedIframe: false,
         language: 'Server DSZ2',
+      },
+      {
+        embedUrl: 'https://yonotv.pages.dev/fc',
+        hd: true,
+        isNativeVideo: false,
+        isSandboxedIframe: false,
+        language: 'Server DSZ3',
+      },
+      {
+        embedUrl: 'https://my.finalspot.top/hembedplayer/NEPALCRIC/4/500/400',
+        hd: true,
+        isNativeVideo: false,
+        isSandboxedIframe: true,
+        language: 'Server DSZ4',
       }
     );
   }
@@ -339,21 +353,38 @@ export const nplAdapter: ProviderAdapter = {
       logDiagnostic('npl', 'error', `Autonomous probe failure: ${err?.message}`);
     }
 
-    // Step 2: Fallback to static verified broadcast configuration
-    const fixture = NPL_FIXTURES_2026.find((m) => m.id === id);
-    const fallbackUrl = fixture?.broadcast?.authorizedEmbedUrl || 'https://yonotv.pages.dev/fc';
-    const isNative = fallbackUrl.endsWith('.m3u8') || fallbackUrl.endsWith('.mp4');
-
+    // Step 2: Fallback to verified broadcast configuration with multi-server failover
     return {
       status: 'ready',
-      provider: fixture?.broadcast?.provider || 'Action Sports HD',
+      provider: 'Action Sports HD / YonoTV',
       streams: [
         {
-          embedUrl: fallbackUrl,
+          embedUrl: 'https://yonotv.pages.dev/fc2',
           hd: true,
-          isNativeVideo: isNative,
-          isSandboxedIframe: !isNative,
+          isNativeVideo: false,
+          isSandboxedIframe: false,
           language: 'Server DSZ1',
+        },
+        {
+          embedUrl: 'https://yonotv.pages.dev/wtv',
+          hd: true,
+          isNativeVideo: false,
+          isSandboxedIframe: false,
+          language: 'Server DSZ2',
+        },
+        {
+          embedUrl: 'https://yonotv.pages.dev/fc',
+          hd: true,
+          isNativeVideo: false,
+          isSandboxedIframe: false,
+          language: 'Server DSZ3',
+        },
+        {
+          embedUrl: 'https://my.finalspot.top/hembedplayer/NEPALCRIC/4/500/400',
+          hd: true,
+          isNativeVideo: false,
+          isSandboxedIframe: true,
+          language: 'Server DSZ4',
         },
       ],
     };

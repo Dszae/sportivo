@@ -28,6 +28,7 @@ export const APPROVED_PLAYBACK_DOMAINS = [
   'rumble.com',
   'rumble.cloud',
   'nepalpremierleague.org',
+  'finalspot.top',
 ] as const;
 
 export function isAllowedPlaybackDomain(hostname: string): boolean {
