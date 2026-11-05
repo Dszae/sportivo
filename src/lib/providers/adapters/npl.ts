@@ -48,15 +48,17 @@ function toNormalizedMatch(m: NplMatch): NormalizedMatch {
   ];
 
   const now = Date.now();
-  const isMatchWindow = now >= m.timestamp - 15 * 60 * 1000 && now <= m.timestamp + 4.5 * 60 * 60 * 1000;
-  const isPast = now > m.timestamp + 4.5 * 60 * 60 * 1000;
   let status: 'Live' | 'Final' | 'Upcoming' = 'Upcoming';
-  if (isPast) {
+  if (m.status === 'COMPLETED') {
     status = 'Final';
-  } else if (isMatchWindow) {
-    status = 'Live';
-  } else if (m.status === 'COMPLETED') {
-    status = 'Final';
+  } else {
+    const isPast = now > m.timestamp + 3.5 * 60 * 60 * 1000;
+    const isMatchWindow = now >= m.timestamp - 15 * 60 * 1000 && now <= m.timestamp + 3.5 * 60 * 60 * 1000;
+    if (isPast) {
+      status = 'Final';
+    } else if (isMatchWindow) {
+      status = 'Live';
+    }
   }
 
   return {

@@ -192,13 +192,21 @@ export const GET: APIRoute = async () => {
   // 3. Dynamic time calibration: Ensure past matches cannot show as LIVE, and today's active match shows as LIVE
   const now = Date.now();
   fixtures = fixtures.map((f) => {
-    const isPast = now > f.timestamp + 4.5 * 3600 * 1000;
-    const isMatchWindow = now >= f.timestamp - 15 * 60 * 1000 && now <= f.timestamp + 4.5 * 3600 * 1000;
+    if (f.status === 'COMPLETED') {
+      return {
+        ...f,
+        status: 'COMPLETED',
+        broadcast: undefined,
+      };
+    }
+
+    const isPast = now > f.timestamp + 3.5 * 3600 * 1000;
+    const isMatchWindow = now >= f.timestamp - 15 * 60 * 1000 && now <= f.timestamp + 3.5 * 3600 * 1000;
 
     let finalStatus = f.status;
     if (isPast) {
       finalStatus = 'COMPLETED';
-    } else if (isMatchWindow && f.status !== 'COMPLETED') {
+    } else if (isMatchWindow) {
       finalStatus = 'LIVE';
     } else if (now < f.timestamp - 15 * 60 * 1000) {
       finalStatus = 'UPCOMING';

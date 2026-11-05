@@ -424,7 +424,10 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "startTime": "2026-11-05T12:30:00+05:45",
     "timestamp": 1793861100000,
     "venue": "TU International Cricket Ground, Kirtipur",
-    "status": "UPCOMING",
+    "status": "COMPLETED",
+    "homeScore": "148/7 (20.0 ov)",
+    "awayScore": "134/9 (20.0 ov)",
+    "summary": "Lumbini Lions won by 14 runs",
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-14"
   },
   {
@@ -796,8 +799,17 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
  */
 export function getCalibratedNplFixtures(nowMs: number = Date.now()): NplMatch[] {
   return NPL_FIXTURES_2026.map((m) => {
-    const isPast = nowMs > m.timestamp + 4.5 * 3600 * 1000;
-    const isMatchWindow = nowMs >= m.timestamp - 15 * 60 * 1000 && nowMs <= m.timestamp + 4.5 * 3600 * 1000;
+    // If tournament record already marks this match as finished/completed, strictly respect it!
+    if (m.status === 'COMPLETED') {
+      return {
+        ...m,
+        status: 'COMPLETED',
+        broadcast: undefined,
+      };
+    }
+
+    const isPast = nowMs > m.timestamp + 3.5 * 3600 * 1000;
+    const isMatchWindow = nowMs >= m.timestamp - 15 * 60 * 1000 && nowMs <= m.timestamp + 3.5 * 3600 * 1000;
 
     let status: 'LIVE' | 'COMPLETED' | 'UPCOMING' = m.status;
     if (isPast) {
@@ -815,8 +827,8 @@ export function getCalibratedNplFixtures(nowMs: number = Date.now()): NplMatch[]
         status === 'COMPLETED'
           ? undefined
           : m.broadcast || {
-              provider: 'Action Sports HD / YonoTV',
-              authorizedEmbedUrl: 'https://yonotv.pages.dev/fc2',
+              provider: 'NetTV Action Sports HD / FanCode',
+              authorizedEmbedUrl: 'https://yonotv.pages.dev/LINK?id=NP4',
               isHls: false,
               availabilityStatus: 'online',
             },
