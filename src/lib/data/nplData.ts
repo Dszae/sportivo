@@ -807,8 +807,8 @@ export function getCalibratedNplFixtures(nowMs: number = Date.now()): NplMatch[]
       };
     }
 
-    const isPast = nowMs > m.timestamp + 3.5 * 3600 * 1000;
-    const isMatchWindow = nowMs >= m.timestamp - 15 * 60 * 1000 && nowMs <= m.timestamp + 3.5 * 3600 * 1000;
+    const isPast = nowMs > m.timestamp + 4.0 * 3600 * 1000;
+    const isMatchWindow = nowMs >= m.timestamp - 15 * 60 * 1000 && nowMs <= m.timestamp + 4.0 * 3600 * 1000;
 
     let status: 'LIVE' | 'COMPLETED' | 'UPCOMING' = m.status;
     if (isPast) {

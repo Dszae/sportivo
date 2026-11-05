@@ -49,8 +49,8 @@ if (validCategory) {
 
       if (nplMatch) {
         const now = Date.now();
-        const isPast = now > nplMatch.timestamp + 3.5 * 3600 * 1000;
-        const isMatchWindow = now >= nplMatch.timestamp - 15 * 60 * 1000 && now <= nplMatch.timestamp + 3.5 * 3600 * 1000;
+        const isPast = now > nplMatch.timestamp + 4.0 * 3600 * 1000;
+        const isMatchWindow = now >= nplMatch.timestamp - 15 * 60 * 1000 && now <= nplMatch.timestamp + 4.0 * 3600 * 1000;
         const nplStatus = nplMatch.status === 'COMPLETED' || isPast ? 'Final' : isMatchWindow ? 'Live' : 'Upcoming';
 
         match = {
