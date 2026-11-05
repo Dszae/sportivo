@@ -133,10 +133,10 @@ async function discoverAndProbeNplStreams(signal?: AbortSignal) {
         let streamUrl = m[2].trim();
 
         // Strictly match genuine NPL and Nepal cricket feeds (never match BBL, WBBL, AUS, or generic feeds)
-        const isExcluded = /^(aus|ind|eng|pak|wpl|fc2|fc3|acc|saff)/i.test(key);
+        const isExcluded = /^(aus|ind|eng|pak|wpl|fc2|fc3|acc|saff|np4)/i.test(key);
         if (isExcluded) continue;
 
-        const isNplKey = /^(npl|np[0-9]*|nep[0-9]*|npp)$/i.test(key) || key.toLowerCase().includes('nepal') || key.toUpperCase() === 'FC';
+        const isNplKey = /^(npl|nep[0-9]*|npp)$/i.test(key) || key.toLowerCase().includes('nepal') || key.toUpperCase() === 'NP';
         if (!isNplKey) continue;
 
         // Extract nested raw media URLs if wrapped in player queries (?src=...)
@@ -217,20 +217,22 @@ async function discoverAndProbeNplStreams(signal?: AbortSignal) {
     })
   );
 
-  // Auto-rank: verified healthy feeds first, prioritized fast web player / low-latency
+  // Auto-rank: verified healthy feeds first, prioritizing NetTV DASH zero-lag cluster and genuine Action Sports
   probed.sort((a, b) => {
+    if (a.url.includes('nettv.com.np') && !b.url.includes('nettv.com.np')) return -1;
+    if (!a.url.includes('nettv.com.np') && b.url.includes('nettv.com.np')) return 1;
+    if (a.url.includes('cenc.mpd') && !b.url.includes('cenc.mpd')) return -1;
+    if (!a.url.includes('cenc.mpd') && b.url.includes('cenc.mpd')) return 1;
     if (a.isAlive && !b.isAlive) return -1;
     if (!a.isAlive && b.isAlive) return 1;
-    if (a.url.includes('/fc')) return -1;
-    if (b.url.includes('/fc')) return 1;
     return a.latency - b.latency;
   });
 
   const formattedStreams = probed.map((s, idx) => ({
     embedUrl: s.url,
     hd: true,
-    isNativeVideo: s.isNative,
-    isSandboxedIframe: false,
+    isNativeVideo: s.url.includes('.mpd') || s.url.includes('.m3u8') || s.url.includes('.mp4'),
+    isSandboxedIframe: s.url.includes('plyrr') || s.url.includes('pages.dev'),
     language: `Server DSZ${idx + 1}`,
   }));
 
@@ -238,18 +240,32 @@ async function discoverAndProbeNplStreams(signal?: AbortSignal) {
   if (formattedStreams.length === 0) {
     formattedStreams.push(
       {
-        embedUrl: 'https://yonotv.pages.dev/fc',
+        embedUrl: 'https://ott-lb.nettv.com.np/npl/live_match/index.mpd',
         hd: true,
-        isNativeVideo: false,
+        isNativeVideo: true,
         isSandboxedIframe: false,
-        language: 'Server DSZ1',
+        language: 'Server DSZ1 (1080p Master)',
       },
       {
-        embedUrl: 'https://my.finalspot.top/hembedplayer/NEPALCRIC/4/500/400',
+        embedUrl: 'https://ott-edge-mtdc04.nettv.com.np/npl/live_match/index.mpd',
+        hd: true,
+        isNativeVideo: true,
+        isSandboxedIframe: false,
+        language: 'Server DSZ2 (1080p Edge 04)',
+      },
+      {
+        embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/vfq7vktpaj/out/v1/e5454d69a91c478db2e1b3e56cf9bf47/cenc.mpd&keyid=ba4284442c87f52ddeaa95c65d236805&key=56f0808d1f1fbfc0703b384081f1d340',
         hd: true,
         isNativeVideo: false,
         isSandboxedIframe: true,
-        language: 'Server DSZ2',
+        language: 'Server DSZ3 (Action Sports HD DRM)',
+      },
+      {
+        embedUrl: 'https://yonotv.pages.dev/fc',
+        hd: true,
+        isNativeVideo: false,
+        isSandboxedIframe: true,
+        language: 'Server DSZ4 (Action Sports Web Mirror)',
       }
     );
   }
