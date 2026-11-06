@@ -60,38 +60,30 @@ const apiJsonLd = {
 
   <SiteHeader activeCategory="api-docs" />
 
-  <main class="site-shell min-h-screen text-slate-100">
-    <article class="mx-auto max-w-3xl px-6 pb-20 pt-12">
-      <nav aria-label="Breadcrumb" class="text-xs text-slate-500">
-        <a href="/" class="hover:text-[#c9f36b] transition">Sportivo</a>
-        <span class="mx-2">/</span>
-        <span class="text-slate-300">Developer documentation</span>
+  <main class="site-shell min-h-screen">
+    <article class="mx-auto max-w-3xl px-4 pb-24 pt-8 sm:px-6 lg:px-8">
+      <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-sm text-fg-3">
+        <a href="/" class="transition-colors duration-fast ease-out hover:text-fg">Home</a>
+        <span aria-hidden="true">/</span>
+        <span class="text-fg-2" aria-current="page">Developer API</span>
       </nav>
 
-      <div class="mt-8 flex items-center gap-3">
-        <span class="rounded-full border border-[#c9f36b]/40 bg-[#c9f36b]/10 px-3 py-1 text-xs font-bold text-[#c9f36b]">
-          REST API · v1.0
-        </span>
-        <span class="text-xs text-slate-400">Maintained by <a href="/about-dipesh-sapkota/" class="text-white hover:text-[#c9f36b] underline">Developer Profile</a></span>
-      </div>
-
-      <h1 class="mt-4 text-4xl font-black text-white sm:text-6xl">Sportivo Public Fixture API</h1>
-      <p class="mt-6 leading-8 text-slate-300">
-        Sportivo provides public read-only fixture endpoints for developers building sports dashboards, widgets, and schedule trackers. Fixture data is refreshed dynamically from upstream providers.
+      <p class="eyebrow clock mt-10">REST, v1.0</p>
+      <h1 class="mt-3 text-4xl font-medium tracking-[-0.02em] text-fg sm:text-5xl">Fixture API</h1>
+      <p class="mt-6 text-base leading-7 text-fg-2">
+        Read-only JSON endpoints for the fixtures shown on Sportivo, for dashboards, widgets and schedule trackers. Data is refreshed from upstream providers on each request.
       </p>
 
-      <h2 class="mt-12 text-2xl font-black text-white">Available Endpoints</h2>
-      <ul class="mt-4 list-disc space-y-3 pl-6 text-slate-300">
-        <li><code>GET /api/matches/football</code> — Returns real-time and scheduled football matches.</li>
-        <li><code>GET /api/matches/cricket</code> — Returns cricket fixtures, tournament matches, and statuses.</li>
-        <li><code>GET /api/matches/basketball</code> — Returns basketball and league fixtures.</li>
+      <h2 class="mt-16 text-2xl font-medium text-fg">Endpoints</h2>
+      <ul class="mt-4 divide-y divide-line text-sm">
+        <li class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-6"><code class="clock shrink-0 text-fg">GET /api/matches/football</code><span class="text-fg-2">Live and scheduled football matches</span></li>
+        <li class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-6"><code class="clock shrink-0 text-fg">GET /api/matches/cricket</code><span class="text-fg-2">Cricket fixtures and statuses</span></li>
+        <li class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:gap-6"><code class="clock shrink-0 text-fg">GET /api/matches/basketball</code><span class="text-fg-2">Basketball fixtures</span></li>
       </ul>
 
-      <h2 class="mt-12 text-2xl font-black text-white">Response Structure</h2>
-      <p class="mt-4 leading-8 text-slate-300">
-        Successful responses are JSON arrays. Each fixture object may include:
-      </p>
-      <pre class="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-[#111a19] p-4 text-xs text-slate-300"><code>{`[
+      <h2 class="mt-16 text-2xl font-medium text-fg">Response</h2>
+      <p class="mt-4 text-base leading-7 text-fg-2">A JSON array. Each fixture may include:</p>
+      <pre class="clock mt-4 overflow-x-auto rounded-xl border border-line bg-ink-800 p-4 text-xs leading-5 text-fg-2"><code>{`[
   {
     "id": "match-uuid",
     "title": "Arsenal vs Chelsea",
@@ -103,10 +95,10 @@ const apiJsonLd = {
   }
 ]`}</code></pre>
 
-      <div class="mt-12 rounded-2xl border border-white/10 bg-[#111a19] p-6">
-        <h3 class="text-lg font-bold text-white">Attribution &amp; Source</h3>
-        <p class="mt-2 text-sm leading-relaxed text-slate-300">
-          This API is open for sports developers. You can inspect project code on <a href="https://github.com/dszae" target="_blank" rel="noopener noreferrer" class="text-white underline">GitHub (@dszae)</a> or view the <a href="/about-dipesh-sapkota/" class="font-bold text-[#c9f36b] hover:underline">creator profile</a>.
+      <div class="mt-16 border-t border-line pt-8">
+        <h3 class="text-base font-medium text-fg">Source</h3>
+        <p class="mt-2 text-sm leading-6 text-fg-2">
+          The project is open on <a href="https://github.com/dszae" target="_blank" rel="noopener noreferrer" class="text-fg underline underline-offset-4">GitHub</a>, by <a href="/about-dipesh-sapkota/" class="text-fg underline underline-offset-4">Dipesh Sapkota</a>.
         </p>
       </div>
     </article>

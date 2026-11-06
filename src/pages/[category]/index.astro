@@ -1,4 +1,4 @@
----
+﻿---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
@@ -160,88 +160,65 @@ const categoryJsonLd = validCategory
 
   <SiteHeader activeCategory={validCategory ? category : undefined} />
 
-  <main class="site-shell min-h-screen text-slate-100">
-    <section class="mx-auto max-w-7xl px-6 pb-20 pt-12 sm:pt-16">
+  <main class="site-shell min-h-screen">
+    <section class="mx-auto max-w-7xl px-4 pb-24 pt-8 sm:px-6 lg:px-8">
       {validCategory ? (
         <>
-          <nav aria-label="Breadcrumb" class="mb-8 text-xs text-slate-500">
-            <a href="/" class="hover:text-[#c9f36b] transition">Sportivo</a>
-            <span class="mx-2">/</span>
-            <span class="text-slate-300">{label}</span>
+          <nav aria-label="Breadcrumb" class="mb-8 flex items-center gap-2 text-sm text-fg-3">
+            <a href="/" class="transition-colors duration-fast ease-out hover:text-fg">Home</a>
+            <span aria-hidden="true">/</span>
+            <span class="text-fg-2" aria-current="page">{label}</span>
           </nav>
 
-          <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-              <p class="text-xs font-bold uppercase tracking-widest text-[#e5b94f]">Sportivo Sports Desk</p>
-              <h1 class="text-4xl font-black tracking-tight text-white sm:text-6xl mt-1">
-                {label} Fixtures &amp; Streams
-              </h1>
-              <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
-                Live coverage, upcoming matches, scores, and kickoff times with verified multi-source streams.
-              </p>
-            </div>
-            <a
-              href="/about-dipesh-sapkota/"
-              class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-slate-300 hover:border-[#c9f36b]/40 hover:text-[#c9f36b] transition shrink-0"
-            >
-              <span>About the Creator</span>
-              <span>&rarr;</span>
-            </a>
-          </div>
-
-          <div class="mb-8 rounded-2xl border border-white/10 bg-[#111a19] p-6 shadow-sm">
-            <h2 class="text-base font-bold text-white mb-2">{label} Schedule &amp; Broadcast Desk (NST)</h2>
-            <p class="text-xs leading-relaxed text-slate-300">
-              {category === 'basketball' && 'Sportivo tracks NBA regular season games, playoffs, EuroLeague, and FIBA tournaments. All game tip-offs are synchronized directly to Nepal Standard Time (UTC+5:45), helping fans across Nepal follow early morning games with verified multi-source stream fallbacks.'}
-              {category === 'football' && 'Sportivo aggregates match fixtures across the Premier League, UEFA Champions League, La Liga, Serie A, and Bundesliga. Kickoffs are calibrated to Nepal Standard Time (UTC+5:45) with multi-provider broadcast signals.'}
-              {category === 'cricket' && 'Sportivo provides comprehensive cricket schedules for ICC tournaments, the Indian Premier League (IPL), bilateral international series, and Nepal national team matches in Nepal Standard Time (UTC+5:45).'}
+          <div class="mb-10 max-w-2xl">
+            <p class="eyebrow">Fixtures and streams</p>
+            <h1 class="mt-3 text-4xl font-medium tracking-[-0.02em] text-fg sm:text-5xl">{label}</h1>
+            <p class="mt-4 text-base leading-7 text-fg-2">
+              {category === 'basketball' && 'NBA, EuroLeague and FIBA games with tip-off times in Nepal Standard Time, live scores and the stream servers available for each one.'}
+              {category === 'football' && 'Premier League, Champions League, La Liga, Serie A, Bundesliga and MLS fixtures with kickoffs in Nepal Standard Time, live scores and stream servers.'}
+              {category === 'cricket' && 'ICC tournaments, the IPL, bilateral series and Nepal national team matches in Nepal Standard Time, with live scores and stream servers.'}
             </p>
           </div>
 
           {unavailable && (
-            <p class="mt-6 rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-200" role="status">
+            <p class="mb-8 rounded-xl border border-line bg-ink-800 px-4 py-3 text-sm text-fg-2" role="status">
               Fixtures are temporarily unavailable. The upstream provider did not return a usable response.
             </p>
           )}
 
           {category === 'cricket' && (
-            <div class="mt-8 mb-12 rounded-3xl border border-white/[0.08] bg-[#0a0f0e]/60 p-6 sm:p-8 backdrop-blur-sm shadow-xl">
+            <div class="mb-20">
               <NplSchedule client:load />
             </div>
           )}
 
-          <div class="mt-10">
-            <MatchExplorer client:load category={category} matches={matches} />
-          </div>
+          <MatchExplorer client:load category={category} matches={matches} />
 
-          <!-- Category Specific FAQs for SEO Rich Snippets -->
-          <section class="mt-20 border-t border-white/5 pt-16" aria-labelledby="category-faq-heading">
-            <div class="max-w-3xl">
-              <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#e5b94f]">Information &amp; Guidance</p>
-              <h2 id="category-faq-heading" class="mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl">
-                {label} Fixtures FAQ
-              </h2>
-              <p class="mt-2 text-sm text-slate-300">
-                Common questions about {label} kickoff times in Nepal Standard Time (NST) and live stream coverage on Sportivo.
-              </p>
-            </div>
-
-            <div class="mt-8 space-y-4">
-              {faqs.map((faq) => (
-                <div class="rounded-2xl border border-white/10 bg-[#111a19] p-6 shadow-sm">
-                  <h3 class="text-base font-bold text-white">{faq.question}</h3>
-                  <p class="mt-2 text-sm leading-relaxed text-slate-300">{faq.answer}</p>
-                </div>
-              ))}
+          <section class="mt-24 border-t border-line pt-16" aria-labelledby="category-faq-heading">
+            <div class="grid grid-cols-1 gap-12 lg:grid-cols-12">
+              <div class="lg:col-span-4">
+                <p class="eyebrow">Questions</p>
+                <h2 id="category-faq-heading" class="mt-3 text-3xl font-medium tracking-[-0.01em] text-fg">
+                  {label} in Nepal time
+                </h2>
+              </div>
+              <dl class="divide-y divide-line lg:col-span-8">
+                {faqs.map((faq) => (
+                  <div class="py-6 first:pt-0 last:pb-0">
+                    <dt class="text-base font-medium text-fg">{faq.question}</dt>
+                    <dd class="mt-2 text-sm leading-6 text-fg-2">{faq.answer}</dd>
+                  </div>
+                ))}
+              </dl>
             </div>
           </section>
         </>
       ) : (
-        <div class="py-16">
-          <p class="text-xs font-bold uppercase tracking-widest text-[#e5b94f]">404</p>
-          <h1 class="mt-4 text-4xl font-black text-white">Page not found</h1>
-          <p class="mt-4 text-slate-400">The requested Sportivo category does not exist.</p>
-          <a href="/" class="mt-8 inline-block font-bold text-[#c9f36b]">Return to Sportivo Home</a>
+        <div class="py-24">
+          <p class="eyebrow clock">404</p>
+          <h1 class="mt-3 text-4xl font-medium tracking-[-0.02em] text-fg">Page not found</h1>
+          <p class="mt-4 text-base text-fg-2">There is no sport at this address.</p>
+          <a href="/" class="btn btn-primary mt-8">Fixtures</a>
         </div>
       )}
     </section>

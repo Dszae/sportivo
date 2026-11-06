@@ -137,70 +137,58 @@ const nplJsonLd = {
 
   <SiteHeader activeCategory="npl" />
 
-  <main class="site-shell min-h-screen text-slate-100">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8 pb-24">
-      {/* Breadcrumb Navigation */}
-      <nav aria-label="Breadcrumb" class="mb-6 flex items-center gap-2 text-xs text-slate-400">
-        <a href="/" class="hover:text-white transition">Home</a>
+  <main class="site-shell min-h-screen">
+    <div class="mx-auto max-w-7xl px-4 pb-24 pt-8 sm:px-6 lg:px-8">
+      <nav aria-label="Breadcrumb" class="mb-8 flex items-center gap-2 text-sm text-fg-3">
+        <a href="/" class="transition-colors duration-fast ease-out hover:text-fg">Home</a>
         <span aria-hidden="true">/</span>
-        <a href="/cricket/" class="hover:text-white transition">Cricket</a>
+        <a href="/cricket/" class="transition-colors duration-fast ease-out hover:text-fg">Cricket</a>
         <span aria-hidden="true">/</span>
-        <span class="text-[#c9f36b] font-semibold" aria-current="page">NPL 2026</span>
+        <span class="text-fg-2" aria-current="page">NPL 2026</span>
       </nav>
 
-      {/* Main NPL Schedule Desk Component (Includes real-time reactive Live Match on Air banner) */}
-      <section class="rounded-3xl border border-white/[0.08] bg-[#0a0f0e]/60 p-6 sm:p-8 lg:p-10 backdrop-blur-sm shadow-2xl shadow-black/40">
-        <NplSchedule client:load />
+      <NplSchedule client:load />
+
+      <section class="mt-24 border-t border-line pt-16">
+        <dl class="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-3">
+          <div>
+            <dt class="eyebrow">Venue</dt>
+            <dd class="mt-2 text-base text-fg">TU International Cricket Ground</dd>
+            <dd class="mt-2 text-sm leading-6 text-fg-2">
+              All <span class="clock">32</span> matches are played at the ground in Kirtipur, Kathmandu.
+            </dd>
+          </div>
+          <div>
+            <dt class="eyebrow">Match times</dt>
+            <dd class="clock mt-2 text-base text-fg">12:30 PM and 5:00 PM NST</dd>
+            <dd class="mt-2 text-sm leading-6 text-fg-2">
+              Double-header days have an afternoon game followed by one under lights.
+            </dd>
+          </div>
+          <div>
+            <dt class="eyebrow">Where to watch</dt>
+            <dd class="mt-2 text-base text-fg">Action Sports HD, NetTV, DishHome</dd>
+            <dd class="mt-2 text-sm leading-6 text-fg-2">
+              Official broadcasts in Nepal. Sportivo links the authorised streams for each match.
+            </dd>
+          </div>
+        </dl>
       </section>
 
-      {/* NPL Tournament Overview & Info */}
-      <section class="mt-16 border-t border-white/5 pt-12">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div class="rounded-2xl border border-white/10 bg-[#111a19] p-6 shadow-sm">
-            <span class="text-xs font-bold uppercase tracking-wider text-[#e5b94f]">Venue Information</span>
-            <h3 class="mt-2 text-base font-bold text-white">TU International Cricket Ground</h3>
-            <p class="mt-2 text-xs leading-relaxed text-slate-400">
-              Situated in Kirtipur, Kathmandu, the TU Cricket Ground is Nepal's premier international cricket facility hosting all 32 matches of NPL 2026.
-            </p>
+      <section class="mt-24 border-t border-line pt-16" aria-labelledby="npl-faq-heading">
+        <div class="grid grid-cols-1 gap-12 lg:grid-cols-12">
+          <div class="lg:col-span-4">
+            <p class="eyebrow">Questions</p>
+            <h2 id="npl-faq-heading" class="mt-3 text-3xl font-medium tracking-[-0.01em] text-fg">About NPL 2026</h2>
           </div>
-
-          <div class="rounded-2xl border border-white/10 bg-[#111a19] p-6 shadow-sm">
-            <span class="text-xs font-bold uppercase tracking-wider text-[#e5b94f]">Match Times (NST)</span>
-            <h3 class="mt-2 text-base font-bold text-white">12:30 PM &amp; 5:00 PM Kickoffs</h3>
-            <p class="mt-2 text-xs leading-relaxed text-slate-400">
-              Doubleheader matchdays feature an afternoon game at 12:30 PM NST followed by a twilight match under lights at 5:00 PM NST.
-            </p>
-          </div>
-
-          <div class="rounded-2xl border border-white/10 bg-[#111a19] p-6 shadow-sm">
-            <span class="text-xs font-bold uppercase tracking-wider text-[#e5b94f]">Broadcasting Rights</span>
-            <h3 class="mt-2 text-base font-bold text-white">Action Sports HD &amp; NetTV</h3>
-            <p class="mt-2 text-xs leading-relaxed text-slate-400">
-              Authorized broadcast signals in Nepal are distributed via Action Sports HD, NetTV, and DishHome with verified streaming embed integration.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQs for NPL */}
-      <section class="mt-16 border-t border-white/5 pt-12" aria-labelledby="npl-faq-heading">
-        <div class="max-w-3xl">
-          <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#e5b94f]">Information &amp; Guidance</p>
-          <h2 id="npl-faq-heading" class="mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl">
-            Nepal Premier League FAQ
-          </h2>
-          <p class="mt-2 text-sm text-slate-300">
-            Everything you need to know about NPL 2026 fixtures, timings, and streaming coverage.
-          </p>
-        </div>
-
-        <div class="mt-8 space-y-4">
-          {nplFaqs.map((faq) => (
-            <div class="rounded-2xl border border-white/10 bg-[#111a19] p-6 shadow-sm">
-              <h3 class="text-base font-bold text-white">{faq.question}</h3>
-              <p class="mt-2 text-sm leading-relaxed text-slate-300">{faq.answer}</p>
-            </div>
-          ))}
+          <dl class="divide-y divide-line lg:col-span-8">
+            {nplFaqs.map((faq) => (
+              <div class="py-6 first:pt-0 last:pb-0">
+                <dt class="text-base font-medium text-fg">{faq.question}</dt>
+                <dd class="mt-2 text-sm leading-6 text-fg-2">{faq.answer}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
     </div>
@@ -208,4 +196,3 @@ const nplJsonLd = {
 
   <SiteFooter />
 </BaseLayout>
-

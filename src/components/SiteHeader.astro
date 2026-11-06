@@ -9,108 +9,50 @@ interface Props {
 }
 
 const { activeCategory } = Astro.props;
+
+const links: { href: string; label: string; key: string; live?: boolean }[] = [
+  { href: '/football/', label: 'Football', key: 'football' },
+  { href: '/cricket/', label: 'Cricket', key: 'cricket' },
+  { href: '/basketball/', label: 'Basketball', key: 'basketball' },
+  { href: '/npl/', label: 'NPL 2026', key: 'npl', live: true },
+];
 ---
-<header class="site-header sticky top-0 z-50 border-b border-white/10 bg-[#0c1413]/98 backdrop-blur-md" itemscope itemtype="https://schema.org/WPHeader">
-  <div class="mx-auto max-w-7xl flex items-center justify-between gap-3 px-4 sm:px-6 py-3">
-    <!-- Brand / Logo -->
-    <a href="/" class="group flex items-center gap-2.5 focus:outline-none shrink-0" aria-label="Sportivo Home - Live Sports Fixtures Desk">
-      <span class="relative flex h-3 w-3">
-        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#c9f36b] opacity-75"></span>
-        <span class="site-logo-dot relative inline-flex h-3 w-3 rounded-full bg-[#c9f36b]"></span>
-      </span>
-      <div class="flex flex-col">
-        <span class="text-xl sm:text-2xl font-black leading-none tracking-tight text-white">
-          Sportivo<span class="text-[#c9f36b]">.</span>
-        </span>
-        <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-[#c9f36b] transition-colors">
-          Live Sports Desk · Nepal
-        </span>
-      </div>
+<header class="site-header sticky top-0 z-50 border-b border-line" itemscope itemtype="https://schema.org/WPHeader">
+  <div class="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    <a href="/" class="flex shrink-0 items-center gap-2" aria-label="Sportivo home">
+      <span class="h-2 w-2 rounded-full bg-lime" aria-hidden="true"></span>
+      <span class="text-[17px] font-semibold leading-none text-fg">Sportivo</span>
     </a>
 
-    <!-- Desktop Navigation Quick Links (Visible on Tablet/Desktop md+) -->
-    <nav aria-label="Quick Category Navigation" class="hidden md:flex items-center gap-1.5" itemscope itemtype="https://schema.org/SiteNavigationElement">
-      <a
-        href="/football/"
-        itemprop="url"
-        aria-current={activeCategory === 'football' ? 'page' : undefined}
-        class:list={[
-          "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all border",
-          activeCategory === 'football'
-            ? 'border-[#c9f36b] bg-[#c9f36b] text-[#070b0a] font-black shadow-sm'
-            : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white'
-        ]}
-      >
-        <span itemprop="name">Football</span>
-      </a>
-
-      <a
-        href="/npl/"
-        itemprop="url"
-        aria-current={activeCategory === 'npl' ? 'page' : undefined}
-        class:list={[
-          "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-black transition-all border",
-          activeCategory === 'npl'
-            ? 'bg-red-600 text-white border-red-500 shadow-sm'
-            : 'border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-white'
-        ]}
-      >
-        <span class="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" aria-hidden="true"></span>
-        <span itemprop="name">NPL 2026</span>
-      </a>
-
-      <a
-        href="/cricket/"
-        itemprop="url"
-        aria-current={activeCategory === 'cricket' ? 'page' : undefined}
-        class:list={[
-          "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all border",
-          activeCategory === 'cricket'
-            ? 'border-[#c9f36b] bg-[#c9f36b] text-[#070b0a] font-black shadow-sm'
-            : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white'
-        ]}
-      >
-        <span itemprop="name">Cricket</span>
-      </a>
-
-      <a
-        href="/basketball/"
-        itemprop="url"
-        aria-current={activeCategory === 'basketball' ? 'page' : undefined}
-        class:list={[
-          "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all border",
-          activeCategory === 'basketball'
-            ? 'border-[#c9f36b] bg-[#c9f36b] text-[#070b0a] font-black shadow-sm'
-            : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white'
-        ]}
-      >
-        <span itemprop="name">Basketball</span>
-      </a>
+    <nav aria-label="Sports" class="hidden md:flex items-center gap-1" itemscope itemtype="https://schema.org/SiteNavigationElement">
+      {links.map((link) => (
+        <a
+          href={link.href}
+          itemprop="url"
+          aria-current={activeCategory === link.key ? 'page' : undefined}
+          class:list={['chip', activeCategory === link.key && 'chip-active']}
+        >
+          {link.live && <span class="h-1.5 w-1.5 rounded-full bg-live" aria-hidden="true"></span>}
+          <span itemprop="name">{link.label}</span>
+        </a>
+      ))}
     </nav>
 
-    <!-- Right Controls: Watchlist + Notification Bell (Desktop) & Mobile Drawer + APK (Mobile Only) -->
-    <div class="flex items-center gap-2 shrink-0">
+    <div class="flex shrink-0 items-center gap-2">
       <a
         href="/dashboard/"
-        aria-label="My Watchlist"
-        class:list={[
-          "inline-flex items-center gap-1.5 rounded-xl border p-2 text-xs font-bold transition-all shadow-sm",
-          activeCategory === 'dashboard'
-            ? 'border-amber-400 bg-amber-400/20 text-amber-300'
-            : 'border-white/15 bg-[#141f1d] text-amber-400 hover:border-amber-400/50 hover:bg-[#1a2927]'
-        ]}
-        title="My Saved Watchlist"
+        aria-label="Watchlist"
+        title="Watchlist"
+        class:list={['chip', activeCategory === 'dashboard' && 'chip-active']}
       >
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.8 6.2 20.9l1.1-6.5L2.6 9.8l6.5-.9z"/>
         </svg>
-        <span class="hidden sm:inline text-xs font-bold text-slate-200">Watchlist</span>
+        <span class="hidden sm:inline">Watchlist</span>
       </a>
 
-      <!-- Notification Center Bell -->
       <NotificationCenter client:load />
 
-      <!-- Mobile-Only APK Download Button -->
       <div class="md:hidden flex items-center">
         <DownloadApkButton client:load />
       </div>
@@ -118,5 +60,4 @@ const { activeCategory } = Astro.props;
   </div>
 </header>
 
-{/* Mobile Floating Bottom Navigation Dock */}
 <MobileNav activeCategory={activeCategory} />

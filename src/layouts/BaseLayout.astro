@@ -37,7 +37,10 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#080a0b" />
+    <meta name="theme-color" content="#101312" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
     
     <!-- Google Search Console Verification -->
     <meta name="google-site-verification" content="wtQe5iJTyPSo0Nrj7GN4IteUky0stRBG7tIB1Lu92P8" />
@@ -136,18 +139,17 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     
     <slot name="head" />
   </head>
-  <body class="pb-20 sm:pb-0 min-h-screen flex flex-col bg-[#080a0b] text-slate-100 antialiased selection:bg-[#c9f36b] selection:text-[#080a0b]">
+  <body class="pb-20 sm:pb-0 min-h-screen flex flex-col bg-ink-900 text-fg antialiased">
     <slot />
 
-    <!-- Floating Back to Top Button -->
     <button
       id="back-to-top"
       type="button"
       aria-label="Back to top"
       title="Back to top"
-      class="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-40 hidden h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-[#101716]/95 text-slate-300 shadow-2xl backdrop-blur transition-all duration-200 hover:border-[#c9f36b]/60 hover:bg-[#c9f36b] hover:text-[#080a0b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c9f36b]"
+      class="icon-btn fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-40 hidden h-10 w-10 shadow-float"
     >
-      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M18 15l-6-6-6 6"/>
       </svg>
     </button>

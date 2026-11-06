@@ -22,6 +22,13 @@ function teamParts(title: string) {
   return { first: parts[0]?.trim() || title, second: parts[1]?.trim() || '' };
 }
 
+// "Nov 6, 11:45 PM" -> { date: "Nov 6", time: "11:45 PM" }; strings without a date pass through as time.
+function splitKickoff(formatted: string) {
+  const i = formatted.lastIndexOf(', ');
+  if (i === -1) return { date: '', time: formatted };
+  return { date: formatted.slice(0, i), time: formatted.slice(i + 2) };
+}
+
 export default function MatchExplorer({ category, matches, exploreUrl }: Props) {
   const [query, setQuery] = useState('');
   const [selectedLeague, setSelectedLeague] = useState<FootballLeague>('All');
@@ -217,7 +224,28 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
     return Array.from(map.entries());
   }, [displayedUpcoming, category, categoryLabel]);
 
-  const sportIcon = category === 'football' ? '⚽' : category === 'cricket' ? '🏏' : '🏀';
+  const StarIcon = ({ filled }: { filled: boolean }) => (
+    <svg
+      className="icon"
+      viewBox="0 0 24 24"
+      fill={filled ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.8 6.2 20.9l1.1-6.5L2.6 9.8l6.5-.9z" />
+    </svg>
+  );
+
+  const Crest = ({ src, name }: { src: string | null | undefined; name: string }) =>
+    src ? (
+      <img src={src} alt="" width="24" height="24" className="h-6 w-6 shrink-0 object-contain" />
+    ) : (
+      <span className="clock flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink-600 text-xs text-fg-2">
+        {name.slice(0, 2).toUpperCase()}
+      </span>
+    );
 
   const renderFotMobRow = (match: Match, index: number) => {
     const title = titleOf(match);
@@ -233,89 +261,58 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
     const homeScore = match.teams?.home?.score;
     const awayScore = match.teams?.away?.score;
     const formattedTime = timeOf(match, timeZone);
+    const kickoff = splitKickoff(formattedTime);
 
     return (
       <a
         key={`${slug}-${index}`}
         href={`/${category}/match/${encodeURIComponent(slug)}/`}
-        className={`group relative flex items-center justify-between p-3.5 sm:p-4 hover:bg-[#14201e] transition-all border-b border-white/5 last:border-b-0 focus:outline-none focus:bg-[#14201e] ${
-          isLive ? 'bg-red-950/15' : ''
-        }`}
+        className="group flex items-center gap-4 border-b border-line px-4 py-3 transition-colors duration-fast ease-out last:border-b-0 hover:bg-ink-700/60 focus:bg-ink-700/60 focus:outline-none"
       >
-        {/* Status / Kickoff Column */}
-        <div className="w-16 sm:w-20 shrink-0 flex flex-col items-start pr-2 sm:pr-3 border-r border-white/10">
+        <div className="flex w-[104px] shrink-0 flex-col gap-0.5 border-r border-line pr-4">
           {isLive ? (
-            <span className="inline-flex items-center gap-1 rounded bg-red-600 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-black uppercase text-white shadow-sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-              LIVE
+            <span className="live-tag">
+              <span className="live-dot" />
+              Live
             </span>
           ) : (
-            <span className="text-xs sm:text-sm font-black text-[#c9f36b] tabular-nums">
-              {formattedTime}
-            </span>
+            <span className="clock whitespace-nowrap text-[13px] text-fg">{kickoff.time}</span>
           )}
-          <span className="text-[9px] font-bold text-slate-400 mt-0.5">
-            {isLive ? 'Playing' : 'NST'}
-          </span>
+          <span className="meta clock whitespace-nowrap">{isLive ? 'In play' : kickoff.date || 'NST'}</span>
         </div>
 
-        {/* Center: Teams, Logos, Scores */}
-        <div className="flex-1 px-3 sm:px-4 space-y-2 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5 min-w-0">
-              {homeBadge ? (
-                <img src={homeBadge} alt="" className="h-5 w-5 object-contain shrink-0 drop-shadow" />
-              ) : (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/10 text-[9px] font-black text-[#c9f36b] shrink-0">
-                  {homeName.slice(0, 2).toUpperCase()}
-                </span>
-              )}
-              <span className="text-xs sm:text-sm font-bold text-white truncate group-hover:text-[#c9f36b] transition-colors">
-                {homeName}
-              </span>
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <Crest src={homeBadge} name={homeName} />
+              <span className="truncate text-sm text-fg">{homeName}</span>
             </div>
-            <span className="text-xs sm:text-sm font-black tabular-nums text-white shrink-0">
-              {homeScore !== undefined ? homeScore : '-'}
-            </span>
+            <span className="clock shrink-0 text-sm text-fg">{homeScore !== undefined ? homeScore : ''}</span>
           </div>
-
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5 min-w-0">
-              {awayBadge ? (
-                <img src={awayBadge} alt="" className="h-5 w-5 object-contain shrink-0 drop-shadow" />
-              ) : (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/10 text-[9px] font-black text-[#c9f36b] shrink-0">
-                  {awayName.slice(0, 2).toUpperCase()}
-                </span>
-              )}
-              <span className="text-xs sm:text-sm font-bold text-white truncate group-hover:text-[#c9f36b] transition-colors">
-                {awayName}
-              </span>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <Crest src={awayBadge} name={awayName} />
+              <span className="truncate text-sm text-fg">{awayName}</span>
             </div>
-            <span className="text-xs sm:text-sm font-black tabular-nums text-white shrink-0">
-              {awayScore !== undefined ? awayScore : '-'}
-            </span>
+            <span className="clock shrink-0 text-sm text-fg">{awayScore !== undefined ? awayScore : ''}</span>
           </div>
         </div>
 
-        {/* Right: Actions */}
-        <div className="flex items-center gap-2 shrink-0 pl-2 sm:pl-3 border-l border-white/5">
-          {isLive && (
-            <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-red-600/20 border border-red-500/40 px-2 py-0.5 text-[10px] font-bold text-red-400">
-              <span>Watch</span>
-            </span>
-          )}
+        <div className="flex shrink-0 items-center gap-1 pl-2">
+          {isLive && <span className="btn btn-live btn-sm hidden sm:inline-flex">Watch</span>}
           <button
             type="button"
             onClick={(e) => toggleFavorite(slug, e)}
             aria-label={isFav ? `Remove ${title} from watchlist` : `Add ${title} to watchlist`}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/5 border border-white/10 hover:border-amber-400/50 hover:bg-amber-400/10 transition active:scale-90"
+            className={`inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors duration-fast ease-out hover:bg-ink-600 ${
+              isFav ? 'text-lime' : 'text-fg-3 hover:text-fg'
+            }`}
           >
-            <span className={`text-xs ${isFav ? 'text-amber-400 font-bold' : 'text-slate-500 hover:text-white'}`}>
-              {isFav ? '★' : '☆'}
-            </span>
+            <StarIcon filled={isFav} />
           </button>
-          <span className="text-slate-500 text-sm font-bold">›</span>
+          <svg className="icon text-fg-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="m9 6 6 6-6 6" />
+          </svg>
         </div>
       </a>
     );
@@ -340,29 +337,26 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
     const poster = getSafeThumbnailUrl(publicUrl(rawPoster) || rawPoster) || defaultThumbnail;
     const matchLeague = category === 'football' ? detectFootballLeague(match) : null;
     const formattedTime = timeOf(match, timeZone);
+    const hasTeams = match.teams && typeof match.teams === 'object' && (match.teams.home || match.teams.away);
 
     return (
       <a
         key={`${slug}-${index}`}
         href={`/${category}/match/${encodeURIComponent(slug)}/`}
-        className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border bg-[#0b100f] shadow-lg shadow-black/30 transition-all duration-300 hover:-translate-y-1 hover:border-[#c9f36b]/40 hover:shadow-xl hover:shadow-[#c9f36b]/10 focus:outline-none focus:ring-2 focus:ring-[#c9f36b] ${
-          isLive ? 'border-red-500/50 ring-1 ring-red-500/30' : 'border-white/10'
-        }`}
+        className="card group relative flex flex-col overflow-hidden transition-colors duration-fast ease-out hover:border-line-strong focus:outline-none"
       >
-        {/* Watchlist Star Toggle */}
         <button
           type="button"
           onClick={(e) => toggleFavorite(slug, e)}
           aria-label={isFav ? `Remove ${title} from watchlist` : `Add ${title} to watchlist`}
-          className="absolute right-2.5 top-2.5 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-black/75 border border-white/10 text-white backdrop-blur-sm transition-transform hover:scale-110 focus:outline-none"
+          className={`absolute right-2 top-2 z-20 inline-flex h-8 w-8 items-center justify-center rounded-md bg-ink-950/80 transition-colors duration-fast ease-out hover:bg-ink-950 ${
+            isFav ? 'text-lime' : 'text-fg-2 hover:text-fg'
+          }`}
         >
-          <span aria-hidden="true" className={`text-xs ${isFav ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-white'}`}>
-            {isFav ? '★' : '☆'}
-          </span>
+          <StarIcon filled={isFav} />
         </button>
 
-        {/* Thumbnail Stage */}
-        <div className="relative flex h-36 w-full items-center justify-center overflow-hidden bg-[#070c0b]">
+        <div className="relative h-36 w-full overflow-hidden bg-ink-950">
           <img
             src={poster}
             alt={title}
@@ -378,34 +372,33 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
                 el.src = '/sportivo-video-thumbnail.png';
               }
             }}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="h-full w-full object-cover"
+            style={{ filter: 'saturate(0.85)' }}
           />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-800 via-ink-950/20 to-ink-950/30" />
 
-          {/* Vignette */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0b100f] via-black/20 to-black/30 pointer-events-none" />
-
-          {/* Status Badge */}
-          <span
-            className={`absolute left-2.5 top-2.5 z-20 flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-bold shadow-md ${
-              isLive ? 'bg-red-600 font-black tracking-wider text-white' : 'bg-[#060a09]/90 border border-white/10 text-slate-200 backdrop-blur-sm'
-            }`}
-          >
-            {isLive && <span className="inline-block h-1.5 w-1.5 animate-ping rounded-full bg-white" aria-hidden="true" />}
-            {isLive ? 'LIVE' : `${formattedTime} NST`}
+          <span className="absolute left-2 top-2 z-20 inline-flex h-6 items-center gap-1.5 rounded-md bg-ink-950/85 px-2 text-xs text-fg">
+            {isLive ? (
+              <>
+                <span className="live-dot" aria-hidden="true" />
+                Live
+              </>
+            ) : (
+              <span className="clock">{formattedTime}</span>
+            )}
           </span>
 
-          {/* Team Crests Overlay */}
-          {match.teams && typeof match.teams === 'object' && (match.teams.home || match.teams.away) && (
-            <div className="absolute inset-x-2 bottom-2 z-10 flex items-center justify-between gap-2 rounded-xl bg-black/70 px-2.5 py-1 backdrop-blur-md border border-white/10">
-              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+          {hasTeams && (
+            <div className="absolute inset-x-2 bottom-2 z-10 flex items-center justify-between gap-2 rounded-lg bg-ink-950/85 px-2.5 py-1.5">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
                 <div className="relative flex h-5 w-5 shrink-0 items-center justify-center">
-                  {match.teams.home?.badge && (
+                  {match.teams!.home?.badge && (
                     <img
-                      src={getSafeThumbnailUrl(match.teams.home.badge)}
+                      src={getSafeThumbnailUrl(match.teams!.home.badge)}
                       alt=""
                       width="20"
                       height="20"
-                      className="h-5 w-5 shrink-0 object-contain drop-shadow"
+                      className="h-5 w-5 shrink-0 object-contain"
                       onError={(e) => {
                         const el = e.currentTarget as HTMLElement;
                         el.style.display = 'none';
@@ -415,31 +408,27 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
                     />
                   )}
                   <span
-                    className="team-badge-fallback h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/15 text-[9px] font-black text-[#c9f36b]"
-                    style={{ display: match.teams.home?.badge ? 'none' : 'flex' }}
+                    className="team-badge-fallback clock h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink-600 text-xs text-fg-2"
+                    style={{ display: match.teams!.home?.badge ? 'none' : 'flex' }}
                   >
-                    {(match.teams.home?.name || first || 'H').slice(0, 2).toUpperCase()}
+                    {(match.teams!.home?.name || first || 'H').slice(0, 2).toUpperCase()}
                   </span>
                 </div>
-                <span className="truncate text-[11px] font-bold text-white">
-                  {match.teams.home?.name || first}
-                </span>
+                <span className="truncate text-xs text-fg">{match.teams!.home?.name || first}</span>
               </div>
 
-              <span className="text-[10px] font-black text-[#c9f36b] shrink-0 px-1">VS</span>
+              <span className="meta shrink-0">v</span>
 
-              <div className="flex items-center justify-end gap-1.5 flex-1 min-w-0">
-                <span className="truncate text-[11px] font-bold text-white text-right">
-                  {match.teams.away?.name || second}
-                </span>
+              <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+                <span className="truncate text-right text-xs text-fg">{match.teams!.away?.name || second}</span>
                 <div className="relative flex h-5 w-5 shrink-0 items-center justify-center">
-                  {match.teams.away?.badge && (
+                  {match.teams!.away?.badge && (
                     <img
-                      src={getSafeThumbnailUrl(match.teams.away.badge)}
+                      src={getSafeThumbnailUrl(match.teams!.away.badge)}
                       alt=""
                       width="20"
                       height="20"
-                      className="h-5 w-5 shrink-0 object-contain drop-shadow"
+                      className="h-5 w-5 shrink-0 object-contain"
                       onError={(e) => {
                         const el = e.currentTarget as HTMLElement;
                         el.style.display = 'none';
@@ -449,10 +438,10 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
                     />
                   )}
                   <span
-                    className="team-badge-fallback h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/15 text-[9px] font-black text-[#c9f36b]"
-                    style={{ display: match.teams.away?.badge ? 'none' : 'flex' }}
+                    className="team-badge-fallback clock h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ink-600 text-xs text-fg-2"
+                    style={{ display: match.teams!.away?.badge ? 'none' : 'flex' }}
                   >
-                    {(match.teams.away?.name || second || 'A').slice(0, 2).toUpperCase()}
+                    {(match.teams!.away?.name || second || 'A').slice(0, 2).toUpperCase()}
                   </span>
                 </div>
               </div>
@@ -460,28 +449,18 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
           )}
         </div>
 
-        {/* Metadata Footer */}
-        <div className="p-3.5 bg-[#070b0a] border-t border-white/5">
-          <h3 className="truncate text-sm font-black text-slate-100 group-hover:text-[#c9f36b] transition-colors">
-            {title}
-          </h3>
-          <p className="mt-0.5 truncate text-xs text-slate-400 font-medium">
-            {match.competition || matchLeague || `${categoryLabel} Broadcast`}
-          </p>
-
-          <div className="mt-2.5 flex items-center justify-between text-[10px] font-bold">
-            <span className="rounded bg-white/5 px-2 py-0.5 uppercase tracking-wider text-slate-300 border border-white/5">
-              {matchLeague || category}
-            </span>
+        <div className="flex flex-1 flex-col p-4">
+          <h3 className="truncate text-sm font-medium text-fg">{title}</h3>
+          <p className="mt-1 truncate text-xs text-fg-2">{match.competition || matchLeague || categoryLabel}</p>
+          <div className="mt-3 flex items-center justify-between">
+            <span className="meta capitalize">{matchLeague || category}</span>
             {isLive ? (
-              <span className="flex items-center gap-1 font-black text-red-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-                <span>Broadcasting Live</span>
+              <span className="live-tag">
+                <span className="live-dot" />
+                Live
               </span>
             ) : (
-              <span className="font-mono text-[11px] font-bold text-[#c9f36b]">
-                {formattedTime} NST
-              </span>
+              <span className="clock text-xs text-fg-2">{formattedTime} NST</span>
             )}
           </div>
         </div>
@@ -489,139 +468,123 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
     );
   };
 
+  const sportIcon =
+    category === 'football' ? (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 3a14 14 0 0 1 3.5 9 14 14 0 0 1-3.5 9 14 14 0 0 1-3.5-9A14 14 0 0 1 12 3zM3 12h18" />
+      </>
+    ) : category === 'cricket' ? (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="m5.6 5.6 3.8 3.8M14.6 9.4l3.8-3.8M14.6 14.6l3.8 3.8M9.4 14.6l-3.8 3.8" />
+      </>
+    ) : (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3.5 10a9 9 0 0 1 6.5-6.5M20.5 14a9 9 0 0 1-6.5 6.5M3 12h18M12 3v18" />
+      </>
+    );
+
+  const anyFilterActive = selectedLeague !== 'All' || showWatchlistOnly || dateFilter !== 'all' || Boolean(query);
+
   return (
     <div aria-labelledby={`section-title-${category}`} className="w-full">
-      {/* Clean Minimal Broadcast Header */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/[0.08] pb-5">
+      <div className="mb-6 flex flex-col gap-4 border-b border-line pb-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#c9f36b]/10 border border-[#c9f36b]/30 text-[#c9f36b] shrink-0">
-            {category === 'football' && (
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                <path d="M2 12h20" />
-              </svg>
-            )}
-            {category === 'cricket' && (
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <path d="m4.93 4.93 4.24 4.24" />
-                <path d="m14.83 9.17 4.24-4.24" />
-                <path d="m14.83 14.83 4.24 4.24" />
-                <path d="m9.17 14.83-4.24 4.24" />
-              </svg>
-            )}
-            {category === 'basketball' && (
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M2.1 10.5A10 10 0 0 1 10.5 2.1" />
-                <path d="M21.9 13.5a10 10 0 0 1-8.4 8.4" />
-                <path d="M2 12h20" />
-                <path d="M12 2v20" />
-              </svg>
-            )}
-          </div>
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h2 id={`section-title-${category}`} className="text-xl sm:text-2xl font-black tracking-tight text-white">
-                {showWatchlistOnly ? 'Saved Watchlist Fixtures' : selectedLeague === 'All' ? `${categoryLabel}` : selectedLeague}
-              </h2>
-              {liveMatches.length > 0 ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/15 border border-red-500/30 px-2.5 py-0.5 text-[11px] font-black text-red-400">
-                  <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-                  <span>{liveMatches.length} LIVE</span>
-                </span>
-              ) : (
-                <span className="rounded-full bg-white/5 border border-white/10 px-2.5 py-0.5 text-[11px] font-bold text-slate-400">
-                  {filtered.length} Scheduled
-                </span>
-              )}
-            </div>
-          </div>
+          <span className="icon-btn pointer-events-none text-fg-2" aria-hidden="true">
+            <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+              {sportIcon}
+            </svg>
+          </span>
+          <h2 id={`section-title-${category}`} className="text-2xl font-medium tracking-[-0.01em] text-fg">
+            {showWatchlistOnly ? 'Watchlist' : selectedLeague === 'All' ? categoryLabel : selectedLeague}
+          </h2>
+          {liveMatches.length > 0 ? (
+            <span className="live-tag">
+              <span className="live-dot" />
+              <span className="clock">{liveMatches.length}</span> live
+            </span>
+          ) : (
+            <span className="meta">
+              <span className="clock">{filtered.length}</span> scheduled
+            </span>
+          )}
         </div>
 
-        {/* Clean Controls (Search + View Switcher + Explore Link) */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* FotMob vs Grid Switcher */}
-          <div className="flex items-center rounded-xl bg-white/5 border border-white/10 p-0.5 shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-0.5 rounded-lg border border-line bg-ink-900 p-0.5" role="group" aria-label="View">
             <button
               type="button"
               onClick={() => setViewMode('fotmob')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition ${
-                viewMode === 'fotmob' ? 'bg-[#c9f36b] text-[#080a0b] font-black shadow-sm' : 'text-slate-400 hover:text-white'
-              }`}
-              title="FotMob Matchday List View"
+              aria-pressed={viewMode === 'fotmob'}
+              className={`btn btn-sm gap-1.5 rounded-md ${viewMode === 'fotmob' ? 'bg-ink-700 text-fg shadow-lift' : 'text-fg-3 hover:text-fg'}`}
+              title="Matchday list"
             >
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                <line x1="16" y1="2" x2="16" y2="6" />
-                <line x1="8" y1="2" x2="8" y2="6" />
-                <line x1="3" y1="10" x2="21" y2="10" />
+              <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 6h16M4 12h16M4 18h16" />
               </svg>
-              <span>Matchday</span>
+              <span className="hidden sm:inline">List</span>
             </button>
             <button
               type="button"
               onClick={() => setViewMode('grid')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition ${
-                viewMode === 'grid' ? 'bg-[#c9f36b] text-[#080a0b] font-black shadow-sm' : 'text-slate-400 hover:text-white'
-              }`}
-              title="Poster Grid View"
+              aria-pressed={viewMode === 'grid'}
+              className={`btn btn-sm gap-1.5 rounded-md ${viewMode === 'grid' ? 'bg-ink-700 text-fg shadow-lift' : 'text-fg-3 hover:text-fg'}`}
+              title="Grid"
             >
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="3" width="7" height="7" />
-                <rect x="14" y="3" width="7" height="7" />
-                <rect x="14" y="14" width="7" height="7" />
-                <rect x="3" y="14" width="7" height="7" />
+              <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="4" y="4" width="6" height="6" rx="1" />
+                <rect x="14" y="4" width="6" height="6" rx="1" />
+                <rect x="14" y="14" width="6" height="6" rx="1" />
+                <rect x="4" y="14" width="6" height="6" rx="1" />
               </svg>
-              <span>Grid</span>
+              <span className="hidden sm:inline">Grid</span>
             </button>
           </div>
 
           <div className="relative w-full sm:w-56">
-            <span className="absolute left-3 top-2.5 text-slate-500" aria-hidden="true">
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-            </span>
+            <svg className="icon pointer-events-none absolute left-3 top-2.5 text-fg-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
             <input
               id={`search-${category}`}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={`Search ${category}...`}
-              className="w-full rounded-full border border-white/10 bg-[#101716] pl-8 pr-7 py-1.5 text-xs text-white placeholder-slate-500 focus:border-[#c9f36b] focus:outline-none transition"
+              placeholder="Search"
+              aria-label={`Search ${category}`}
+              className="input pl-9 pr-8"
             />
             {query && (
               <button
                 type="button"
                 onClick={() => setQuery('')}
-                className="absolute right-2.5 top-1.5 text-xs text-slate-400 hover:text-white"
+                className="absolute right-1.5 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded text-fg-3 hover:text-fg"
                 aria-label="Clear search"
               >
-                ✕
+                <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6 6 18" />
+                </svg>
               </button>
             )}
           </div>
 
           {exploreUrl && (
-            <a
-              href={exploreUrl}
-              className="hidden sm:inline-flex items-center gap-1 text-xs font-bold text-[#c9f36b] hover:underline shrink-0"
-            >
-              <span>Explore</span>
-              <span aria-hidden="true">&rarr;</span>
+            <a href={exploreUrl} className="btn btn-ghost btn-sm hidden shrink-0 sm:inline-flex">
+              All {category}
+              <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M5 12h14m-6-6 6 6-6 6" />
+              </svg>
             </a>
           )}
         </div>
       </div>
 
-      {/* Streamlined Filter Pills (Smooth thumb-scrollable on mobile) */}
       {(availableLeagues.length > 2 || availableDateFilters.length > 2 || watchlistCount > 0 || showWatchlistOnly) && (
-        <div className="mb-6 flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-between">
-          {/* Active League Pills (Only leagues that actually have active matches) */}
-          <div className="flex items-center gap-1.5 shrink-0 sm:flex-wrap">
-            {category === 'football' && availableLeagues.length > 2 && !showWatchlistOnly && (
+        <div className="no-scrollbar -mx-4 mb-6 flex items-center gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:justify-between sm:px-0">
+          <div className="flex shrink-0 items-center gap-1 sm:flex-wrap">
+            {category === 'football' && availableLeagues.length > 2 && !showWatchlistOnly &&
               availableLeagues.map((league) => {
                 const count = leagueCounts[league] || 0;
                 const isSelected = selectedLeague === league;
@@ -630,39 +593,31 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
                     key={league}
                     type="button"
                     onClick={() => setSelectedLeague(league)}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all shrink-0 ${
-                      isSelected
-                        ? 'bg-[#c9f36b] text-[#080c0b] shadow-sm font-black'
-                        : 'border border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:text-white'
-                    }`}
+                    aria-pressed={isSelected}
+                    className={`chip ${isSelected ? 'chip-active' : ''}`}
                   >
-                    <span>{league === 'All' ? 'All Leagues' : league}</span>
-                    <span className={`text-[10px] ${isSelected ? 'opacity-80' : 'text-slate-400'}`}>
-                      {count}
-                    </span>
+                    <span>{league === 'All' ? 'All leagues' : league}</span>
+                    <span className="chip-count">{count}</span>
                   </button>
                 );
-              })
-            )}
+              })}
 
-            {/* Date Filters: Only shown if fixtures span across multiple dates */}
             {availableDateFilters.length > 2 && (
-              <div className="flex items-center gap-1 bg-white/5 p-0.5 rounded-full border border-white/10 shrink-0">
+              <div className="ml-1 flex shrink-0 items-center gap-0.5 rounded-lg border border-line bg-ink-900 p-0.5" role="group" aria-label="Date">
                 {availableDateFilters.map((filter) => {
                   const isSelected = dateFilter === filter && !showWatchlistOnly;
                   return (
                     <button
                       key={filter}
                       type="button"
+                      aria-pressed={isSelected}
                       onClick={() => {
                         setDateFilter(filter);
                         setShowWatchlistOnly(false);
                       }}
-                      className={`rounded-full px-3 py-1 text-xs font-bold transition-all shrink-0 ${
-                        isSelected ? 'bg-white/20 text-white shadow-sm' : 'text-slate-400 hover:text-white'
-                      }`}
+                      className={`chip h-7 rounded-md px-2.5 ${isSelected ? 'bg-ink-700 text-fg shadow-lift' : ''}`}
                     >
-                      {filter === 'all' ? 'All' : filter === 'today' ? 'Today' : filter === 'tomorrow' ? 'Tomorrow' : '7 Days'}
+                      {filter === 'all' ? 'All' : filter === 'today' ? 'Today' : filter === 'tomorrow' ? 'Tomorrow' : '7 days'}
                     </button>
                   );
                 })}
@@ -670,10 +625,10 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
             )}
           </div>
 
-          {/* Watchlist Filter Pill: Accurately reflects active matches in this section */}
           {(watchlistCount > 0 || showWatchlistOnly) && (
             <button
               type="button"
+              aria-pressed={showWatchlistOnly}
               onClick={() => {
                 if (!showWatchlistOnly) {
                   setSelectedLeague('All');
@@ -684,44 +639,33 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
                   setShowWatchlistOnly(false);
                 }
               }}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all shrink-0 ${
-                showWatchlistOnly
-                  ? 'border border-amber-400/50 bg-amber-400/20 text-amber-300 shadow-sm font-black'
-                  : 'border border-white/10 bg-white/5 text-slate-400 hover:text-amber-300'
-              }`}
+              className={`chip ${showWatchlistOnly ? 'chip-active text-lime' : ''}`}
             >
-              <span>★ Watchlist</span>
-              <span className="rounded-full bg-amber-400/20 px-1.5 py-0.2 text-[10px] font-black text-amber-300">
-                {watchlistCount}
-              </span>
+              <StarIcon filled={showWatchlistOnly} />
+              <span>Watchlist</span>
+              <span className="chip-count">{watchlistCount}</span>
             </button>
           )}
         </div>
       )}
 
-      {/* Main Grid Content */}
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-white/5 bg-[#090d0c] py-12 px-6 text-center">
+        <div className="card px-6 py-12 text-center">
           {showWatchlistOnly ? (
             <>
-              <p className="font-bold text-slate-300">No active {categoryLabel} fixtures in your watchlist.</p>
-              <p className="mt-1.5 text-xs text-slate-400 max-w-sm mx-auto">
-                Tap the ☆ star on any fixture card or follow teams in{' '}
-                <a href="/dashboard/" className="text-[#c9f36b] hover:underline font-bold">
-                  My Watchlist
-                </a>{' '}
-                to monitor them here.
+              <p className="text-sm text-fg">No {category} fixtures in your watchlist</p>
+              <p className="mx-auto mt-1.5 max-w-sm text-sm text-fg-2">
+                Star any fixture, or follow teams from your{' '}
+                <a href="/dashboard/" className="text-fg underline underline-offset-4">watchlist</a>
               </p>
             </>
           ) : (
             <>
-              <p className="font-bold text-slate-300">No active fixtures found for this selection.</p>
-              <p className="mt-1.5 text-xs text-slate-500">
-                Try selecting "All Leagues" or resetting the date filter.
-              </p>
+              <p className="text-sm text-fg">No fixtures for this selection</p>
+              <p className="mt-1.5 text-sm text-fg-2">Try all leagues or another date</p>
             </>
           )}
-          {(selectedLeague !== 'All' || showWatchlistOnly || dateFilter !== 'all' || query) && (
+          {anyFilterActive && (
             <button
               type="button"
               onClick={() => {
@@ -730,31 +674,27 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
                 setDateFilter('all');
                 setQuery('');
               }}
-              className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-bold text-[#c9f36b] hover:bg-white/10 transition"
+              className="btn btn-secondary btn-sm mt-5"
             >
-              <span>Reset filters</span>
+              Reset filters
             </button>
           )}
         </div>
       ) : (
-        <div className="space-y-8">
-          {/* Live Matches Section — Top priority */}
+        <div className="space-y-10">
           {liveMatches.length > 0 ? (
             <div>
               <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="h-4 w-1.5 rounded-full bg-red-500 shadow-sm shadow-red-500/50" aria-hidden="true" />
-                  <h3 className="text-xs font-black uppercase tracking-wider text-red-400 flex items-center gap-2">
-                    <span>LIVE BROADCASTS NOW</span>
-                    <span className="inline-block h-2 w-2 rounded-full bg-red-500 animate-ping" aria-hidden="true" />
-                  </h3>
-                </div>
-                <span className="rounded-full bg-red-500/15 border border-red-500/30 px-2.5 py-0.5 text-[11px] font-black text-red-400">
-                  {liveMatches.length} Playing Live
+                <h3 className="live-tag text-sm">
+                  <span className="live-dot" />
+                  Live now
+                </h3>
+                <span className="meta">
+                  <span className="clock">{liveMatches.length}</span> in play
                 </span>
               </div>
               {viewMode === 'fotmob' ? (
-                <div className="rounded-2xl border border-red-500/30 bg-[#0c1413] shadow-xl overflow-hidden ring-1 ring-red-500/20 divide-y divide-white/5">
+                <div className="card overflow-hidden border-line-strong">
                   {liveMatches.map((match, index) => renderFotMobRow(match, index))}
                 </div>
               ) : (
@@ -764,62 +704,37 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
               )}
             </div>
           ) : (
-            /* User Requirement: When no live match is happening, show clear message at top of desk */
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#070d0c]/80 px-4 py-3 text-xs text-slate-300 shadow-inner">
-              <div className="flex items-center gap-2.5">
-                <span className="h-2 w-2 rounded-full bg-slate-500 shrink-0" aria-hidden="true" />
-                <span className="font-semibold text-slate-200">
-                  {selectedLeague !== 'All'
-                    ? `No matches currently playing live in ${selectedLeague}.`
-                    : `No matches broadcasting live right now in ${categoryLabel}.`}
-                  {upcomingMatches.length > 0 && (
-                    <span className="block sm:inline sm:ml-2 font-normal text-slate-400">
-                      Next kickoff: <strong className="text-white font-medium">{titleOf(upcomingMatches[0])}</strong> at {timeOf(upcomingMatches[0], timeZone)}
-                    </span>
-                  )}
-                </span>
-              </div>
-              <span className="text-[11px] text-[#c9f36b] font-medium flex items-center gap-1 shrink-0">
-                <span>Kickoff fixtures below (NST)</span>
-                <span aria-hidden="true">&darr;</span>
+            <div className="flex flex-col gap-1 rounded-xl border border-line bg-ink-800 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-fg-2">
+                {selectedLeague !== 'All' ? `Nothing live in ${selectedLeague} right now` : `Nothing live in ${category} right now`}
               </span>
+              {upcomingMatches.length > 0 && (
+                <span className="text-fg-2">
+                  Next: <span className="text-fg">{titleOf(upcomingMatches[0])}</span>,{' '}
+                  <span className="clock text-fg">{timeOf(upcomingMatches[0], timeZone)} NST</span>
+                </span>
+              )}
             </div>
           )}
 
-          {/* Upcoming Fixtures Section */}
           {upcomingMatches.length > 0 && (
             <div>
-              <div className="mb-3 flex items-center justify-between pt-1">
-                <div className="flex items-center gap-2">
-                  <span className="h-4 w-1.5 rounded-full bg-[#c9f36b] shadow-sm shadow-[#c9f36b]/50" aria-hidden="true" />
-                  <h3 className="text-xs font-black uppercase tracking-wider text-[#c9f36b]">
-                    Scheduled Kickoffs (NST)
-                  </h3>
-                </div>
-                <span className="text-[11px] font-bold text-slate-400">{upcomingMatches.length} Fixtures</span>
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm font-medium text-fg">Scheduled kickoffs</h3>
+                <span className="meta">
+                  <span className="clock">{upcomingMatches.length}</span> fixtures, NST
+                </span>
               </div>
 
               {viewMode === 'fotmob' ? (
-                <div className="space-y-5">
+                <div className="space-y-4">
                   {groupedUpcoming.map(([leagueName, leagueMatches]) => (
-                    <div
-                      key={leagueName}
-                      className="rounded-2xl border border-white/10 bg-[#0c1413] shadow-lg overflow-hidden"
-                    >
-                      <div className="flex items-center justify-between px-4 py-2.5 bg-[#121c1a] border-b border-white/10">
-                        <div className="flex items-center gap-2">
-                          <span className="h-1.5 w-1.5 rounded-full bg-[#c9f36b]" aria-hidden="true" />
-                          <span className="text-xs font-black uppercase tracking-wider text-white">
-                            {leagueName}
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-bold text-slate-400">
-                          {leagueMatches.length} {leagueMatches.length === 1 ? 'match' : 'matches'}
-                        </span>
+                    <div key={leagueName} className="card overflow-hidden">
+                      <div className="flex h-10 items-center justify-between border-b border-line bg-ink-900/60 px-4">
+                        <span className="text-[13px] font-medium text-fg-2">{leagueName}</span>
+                        <span className="meta clock">{leagueMatches.length}</span>
                       </div>
-                      <div className="divide-y divide-white/5">
-                        {leagueMatches.map((match, index) => renderFotMobRow(match, index))}
-                      </div>
+                      <div>{leagueMatches.map((match, index) => renderFotMobRow(match, index))}</div>
                     </div>
                   ))}
                 </div>
@@ -829,18 +744,10 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
                 </div>
               )}
 
-              {/* Single Minimal Pagination Control */}
               {remainingUpcoming > 0 && (
                 <div className="mt-6 flex justify-center">
-                  <button
-                    type="button"
-                    onClick={() => setVisibleCount((prev) => prev + 16)}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-6 py-2 text-xs font-bold text-slate-300 hover:border-[#c9f36b]/40 hover:bg-[#c9f36b]/10 hover:text-[#c9f36b] transition-all"
-                  >
-                    <span>Show more fixtures</span>
-                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-[#c9f36b]">
-                      +{Math.min(remainingUpcoming, 16)}
-                    </span>
+                  <button type="button" onClick={() => setVisibleCount((prev) => prev + 16)} className="btn btn-secondary">
+                    Show <span className="clock">{Math.min(remainingUpcoming, 16)}</span> more
                   </button>
                 </div>
               )}

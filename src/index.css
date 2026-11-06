@@ -4,11 +4,12 @@
 
 @layer base {
 	:root {
-		font-family: "Manrope", "Trebuchet MS", "Segoe UI", sans-serif;
-		color: #f6f7f9;
-		background: #080a0b;
+		font-family: "Manrope", "Segoe UI", system-ui, sans-serif;
+		color: #edf0ee;
+		background: #101312;
 		font-synthesis: none;
 		text-rendering: optimizeLegibility;
+		font-feature-settings: "tnum" 1, "cv11" 1;
 	}
 
 	html,
@@ -16,75 +17,160 @@
 		min-width: 320px;
 		width: 100%;
 		max-width: 100vw;
-		overflow-x: hidden;
+		overflow-x: clip;
 		margin: 0;
-		background: #080a0b;
-		background-image: linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
-		background-size: 42px 42px;
+		background: #101312;
 	}
 
 	button,
-	input {
+	input,
+	select {
 		font: inherit;
 	}
 
 	::selection {
 		background: #c9f36b;
-		color: #10130f;
+		color: #0f130c;
+	}
+
+	h1, h2, h3, h4 {
+		font-weight: 500;
+		text-wrap: balance;
 	}
 }
 
 @layer components {
 	.site-shell {
-		background-color: #080a0b;
-		background: linear-gradient(180deg, rgba(8, 10, 11, 0.96), rgba(8, 10, 11, 0.78));
+		background: #101312;
 	}
 
 	.site-header {
-		border-color: rgba(255, 255, 255, 0.1);
-		background-color: #080a0b;
-		background: rgba(8, 10, 11, 0.88);
-		backdrop-filter: blur(18px);
-	}
-
-	.site-logo-dot {
-		background: #c9f36b;
-		box-shadow: 0 0 0 5px rgba(201, 243, 107, 0.08), 0 0 24px rgba(201, 243, 107, 0.35);
+		background: rgba(11, 14, 13, 0.92);
+		backdrop-filter: blur(12px);
 	}
 
 	.site-accent {
 		color: #c9f36b;
 	}
 
-	.site-button-active {
-		background: #c9f36b;
-		color: #11150d;
-		box-shadow: 0 10px 30px rgba(201, 243, 107, 0.12);
-	}
-
-	.site-focus:focus-visible,
+	/* The one allowed focus style. */
 	button:focus-visible,
 	a:focus-visible,
-	input:focus-visible {
+	input:focus-visible,
+	select:focus-visible,
+	[tabindex]:focus-visible {
 		outline: 2px solid #c9f36b;
-		outline-offset: 3px;
+		outline-offset: 2px;
+		border-radius: 6px;
 	}
 
-	@keyframes shimmer {
-		0% { transform: translateX(-100%); }
-		100% { transform: translateX(100%); }
+	/* Surfaces */
+	.card {
+		@apply rounded-2xl border border-line bg-ink-800;
+	}
+	.panel {
+		@apply rounded-[20px] border border-line bg-ink-800;
+	}
+	.hairline {
+		@apply border-line;
 	}
 
-	@keyframes fadeIn {
-		from { opacity: 0; transform: translateY(4px); }
+	/* Text roles */
+	.eyebrow {
+		@apply text-sm text-fg-3;
+	}
+	.meta {
+		@apply text-xs text-fg-3;
+	}
+
+	/* Signature: the stadium clock. Every kickoff time, score and count is set like this. */
+	.clock {
+		@apply font-mono tabular-nums tracking-normal;
+	}
+
+	/* Buttons */
+	.btn {
+		@apply inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors duration-fast ease-out select-none whitespace-nowrap;
+	}
+	.btn-lg {
+		@apply h-11 px-5 text-[15px] rounded-[10px];
+	}
+	.btn-sm {
+		@apply h-8 px-3 text-[13px] rounded-md;
+	}
+	.btn-primary {
+		@apply bg-lime text-lime-ink hover:bg-[#d6f78a] active:bg-[#bfe85f];
+	}
+	.btn-secondary {
+		@apply border border-line-strong bg-ink-700 text-fg shadow-lift hover:bg-ink-600;
+	}
+	.btn-ghost {
+		@apply text-fg-2 hover:bg-ink-700 hover:text-fg;
+	}
+	.btn-live {
+		@apply bg-fg text-ink-900 hover:bg-white;
+	}
+	.btn:active {
+		transform: scale(0.98);
+	}
+
+	/* Filter chips and segmented controls */
+	.chip {
+		@apply inline-flex h-8 shrink-0 items-center gap-2 rounded-md px-3 text-[13px] font-medium text-fg-2 transition-colors duration-fast ease-out whitespace-nowrap hover:bg-ink-700 hover:text-fg;
+	}
+	.chip-active {
+		@apply bg-ink-700 text-fg shadow-lift;
+	}
+	.chip-count {
+		@apply clock text-xs text-fg-3;
+	}
+	.chip-active .chip-count {
+		@apply text-fg-2;
+	}
+
+	/* Icon button */
+	.icon-btn {
+		@apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line bg-ink-800 text-fg-2 transition-colors duration-fast ease-out hover:bg-ink-700 hover:text-fg;
+	}
+
+	/* Live state. The only element on the site allowed to pulse, because it really is live. */
+	.live-dot {
+		@apply inline-block h-2 w-2 shrink-0 rounded-full bg-live;
+		animation: live-breathe 2s ease-in-out infinite;
+	}
+	.live-tag {
+		@apply inline-flex items-center gap-1.5 text-xs font-medium text-live;
+	}
+
+	/* Inputs */
+	.input {
+		@apply h-9 w-full rounded-lg border border-line bg-ink-900 px-3 text-sm text-fg placeholder:text-fg-3 transition-colors duration-fast ease-out focus:border-line-strong focus:outline-none;
+	}
+
+	/* Rows in a list */
+	.row {
+		@apply flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0 transition-colors duration-fast ease-out hover:bg-ink-700/60;
+	}
+
+	.icon {
+		@apply h-4 w-4 shrink-0;
+		stroke-width: 1.5;
+	}
+
+	@keyframes live-breathe {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0.45; }
+	}
+
+	@keyframes rise-in {
+		from { opacity: 0; transform: translateY(8px); }
 		to { opacity: 1; transform: translateY(0); }
 	}
 
 	.animate-fade-in {
-		animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+		animation: rise-in 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
 	}
 
-	/* Hide scrollbar for clean touch-swiping on mobile */
 	.no-scrollbar::-webkit-scrollbar {
 		display: none;
 	}
@@ -102,13 +188,10 @@
 		}
 	}
 
-	/* Fullscreen player optimizations: completely eliminate top header bar and server bars in fullscreen */
+	/* Fullscreen player: hide chrome and fill the screen. */
 	:fullscreen .player-top-bar,
 	:-webkit-full-screen .player-top-bar,
-	:-moz-full-screen .player-top-bar {
-		display: none !important;
-	}
-
+	:-moz-full-screen .player-top-bar,
 	:fullscreen .player-server-bar,
 	:-webkit-full-screen .player-server-bar,
 	:-moz-full-screen .player-server-bar {

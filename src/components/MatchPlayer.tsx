@@ -183,7 +183,7 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
       }
       video.playbackRate = 1.0;
       video.play().catch(() => {});
-      setShortcutToast('⚡ Synced to Live Edge');
+      setShortcutToast('Synced to live edge');
       setTimeout(() => setShortcutToast(null), 2000);
     }
   };
@@ -202,17 +202,17 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
         if (videoRef.current) {
           if (videoRef.current.paused) {
             videoRef.current.play().catch(() => {});
-            setShortcutToast('▶ Playing');
+            setShortcutToast('Playing');
           } else {
             videoRef.current.pause();
-            setShortcutToast('⏸ Paused');
+            setShortcutToast('Paused');
           }
           setTimeout(() => setShortcutToast(null), 1500);
         }
       } else if (e.code === 'KeyM') {
         if (videoRef.current) {
           videoRef.current.muted = !videoRef.current.muted;
-          setShortcutToast(videoRef.current.muted ? '🔇 Muted' : '🔊 Unmuted');
+          setShortcutToast(videoRef.current.muted ? 'Muted' : 'Unmuted');
           setTimeout(() => setShortcutToast(null), 1500);
         }
       } else if (e.code === 'KeyF') {
@@ -224,7 +224,7 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
         const nextEnabled = !prefs.notifications.enabled;
         const updated = { ...prefs, notifications: { ...prefs.notifications, enabled: nextEnabled } };
         saveUserPreferences(updated);
-        setShortcutToast(nextEnabled ? '🔔 Notifications ON' : '🔕 Notifications OFF');
+        setShortcutToast(nextEnabled ? 'Notifications on' : 'Notifications off');
         setTimeout(() => setShortcutToast(null), 1500);
       }
     };
@@ -295,7 +295,7 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
           shakaInstanceRef.current = null;
         }
         setActiveStream(nextStream);
-        setFailoverToast(`⚡ Auto-failover: Switched to Server DSZ${currentIdx + 2}`);
+        setFailoverToast(`Switched to server ${currentIdx + 2}`);
         setTimeout(() => setFailoverToast(null), 3500);
       } else {
         setPlayerState('failed');
@@ -431,7 +431,7 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
                 hls.destroy();
                 hlsInstanceRef.current = null;
                 setActiveStream(nextStream);
-                setFailoverToast(`⚡ Auto-failover: Switched to Server DSZ${currentIdx + 2}`);
+                setFailoverToast(`Switched to server ${currentIdx + 2}`);
                 setTimeout(() => setFailoverToast(null), 3500);
               } else {
                 hls.destroy();
@@ -603,7 +603,7 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${title} — Live on Sportivo`,
+          title: `${title} â€” Live on Sportivo`,
           text: `Watch ${title} live stream and match fixtures on Sportivo`,
           url,
         });
@@ -650,18 +650,19 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
     return NPL_FIXTURES_2026.filter((m) => m.timestamp > now).slice(0, 5);
   }, []);
 
+  const categoryLabel = match.category || 'Sports';
+
   return (
     <div className="space-y-6">
       {/* Toast notifications for hotkeys and auto-failover */}
       {failoverToast && (
-        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-xl border border-[#c9f36b]/40 bg-[#0b100f]/95 px-4 py-3 text-xs font-bold text-[#c9f36b] shadow-2xl backdrop-blur-md animate-bounce">
-          <span className="h-2 w-2 rounded-full bg-[#c9f36b] animate-ping"></span>
+        <div className="animate-fade-in fixed top-20 right-6 z-50 flex items-center gap-2 rounded-lg border border-line bg-ink-800 px-4 py-2 text-sm text-fg shadow-float">
           <span>{failoverToast}</span>
         </div>
       )}
 
       {shortcutToast && (
-        <div className="fixed bottom-6 right-6 z-50 rounded-xl border border-white/20 bg-black/90 px-4 py-2 text-xs font-bold text-white shadow-2xl backdrop-blur-md">
+        <div className="fixed bottom-6 right-6 z-50 rounded-lg border border-line bg-ink-800 px-4 py-2 text-sm text-fg shadow-float">
           {shortcutToast}
         </div>
       )}
@@ -669,43 +670,39 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
       {/* Main Player Frame Container - compact default web size (can be fullscreened anytime) */}
       <div
         ref={playerContainerRef}
-        className={`sportivo-player-container mx-auto w-full overflow-hidden transition-all ${
+        className={`sportivo-player-container mx-auto w-full overflow-hidden ${
           isFullscreen
             ? 'fixed inset-0 z-50 h-screen w-screen max-w-none rounded-none border-0 bg-black flex flex-col justify-center'
-            : 'max-w-2xl lg:max-w-3xl rounded-2xl border border-white/10 bg-[#111a19] shadow-2xl shadow-black/80'
+            : 'max-w-2xl lg:max-w-3xl rounded-2xl border border-line bg-ink-800'
         }`}
       >
         {/* Player Top Navigation & Live Telemetry Bar - completely hidden in fullscreen mode */}
         {!isFullscreen && (
-          <div className="player-top-bar flex flex-wrap items-center justify-between gap-3 border-b border-white/5 bg-[#0b100f] p-4">
+          <div className="player-top-bar flex flex-wrap items-center justify-between gap-3 border-b border-line bg-ink-950 p-4">
             <div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`flex items-center gap-1.5 rounded px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white ${
-                    isLive ? 'bg-red-600' : 'border border-amber-400/40 bg-amber-400/10 text-amber-300'
-                  }`}
-                >
-                  {isLive && <span className="h-1.5 w-1.5 animate-ping rounded-full bg-white"></span>}
-                  {isLive ? 'LIVE' : status === 'Final' ? 'FINAL' : 'SCHEDULED'}
-                </span>
-                <h2 className="text-base font-bold text-slate-100">{title}</h2>
+              <div className="flex items-center gap-3">
+                {isLive ? (
+                  <span className="live-tag">
+                    <span className="live-dot"></span>
+                    Live
+                  </span>
+                ) : (
+                  <span className="meta">{status === 'Final' ? 'Final' : 'Scheduled'}</span>
+                )}
+                <h2 className="text-base font-medium text-fg">{title}</h2>
               </div>
 
               {sources.length > 1 && (
-                <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Servers:</span>
+                <div className="mt-2 flex flex-wrap items-center gap-1">
+                  <span className="meta mr-1">Servers</span>
                   {sources.map((_s, idx) => (
                     <button
                       key={idx}
                       type="button"
                       onClick={() => handleSourceChange(idx)}
-                      className={`rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition ${
-                        selectedSourceIndex === idx
-                          ? 'bg-[#c9f36b] text-[#0a1110] shadow-sm font-black'
-                          : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
-                      }`}
+                      className={`chip ${selectedSourceIndex === idx ? 'chip-active' : ''}`}
                     >
-                      Server DSZ{idx + 1}
+                      Server <span className="clock">{idx + 1}</span>
                     </button>
                   ))}
                 </div>
@@ -717,30 +714,41 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
               <button
                 type="button"
                 onClick={jumpToLiveEdge}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/50 bg-red-500/10 px-3 py-1.5 text-xs font-black text-red-400 hover:bg-red-500 hover:text-white transition shadow-sm active:scale-95"
+                className="btn btn-secondary"
                 title="Press 'L' key to jump directly to live broadcast edge"
               >
-                <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
-                <span>LIVE</span>
+                {isLive && <span className="live-dot"></span>}
+                <span>Live edge</span>
               </button>
 
               {/* Keyboard Shortcuts Guide Pill */}
-              <div className="hidden sm:flex items-center gap-1 text-[10px] text-slate-400 border border-white/10 bg-white/5 px-2 py-1.5 rounded-lg" title="Hotkeys: Space (Play/Pause), M (Mute), F (Fullscreen), L (Live Edge), N (Alerts)">
-                <span className="font-mono bg-white/10 px-1 rounded text-slate-200">Space</span>
-                <span className="font-mono bg-white/10 px-1 rounded text-slate-200">M</span>
-                <span className="font-mono bg-white/10 px-1 rounded text-slate-200">F</span>
-                <span className="font-mono bg-white/10 px-1 rounded text-[#c9f36b]">L</span>
+              <div
+                className="hidden h-9 items-center gap-1 rounded-lg border border-line bg-ink-800 px-2 sm:flex"
+                title="Hotkeys: Space (Play/Pause), M (Mute), F (Fullscreen), L (Live Edge), N (Alerts)"
+              >
+                <span className="clock rounded-md bg-ink-700 px-1 text-xs text-fg-2">Space</span>
+                <span className="clock rounded-md bg-ink-700 px-1 text-xs text-fg-2">M</span>
+                <span className="clock rounded-md bg-ink-700 px-1 text-xs text-fg-2">F</span>
+                <span className="clock rounded-md bg-ink-700 px-1 text-xs text-fg-2">L</span>
+                <span className="clock rounded-md bg-ink-700 px-1 text-xs text-fg-2">N</span>
               </div>
 
               {/* Fullscreen Button */}
               <button
                 type="button"
                 onClick={toggleFullscreen}
-                className="rounded-lg border border-white/10 bg-white/5 p-2 text-slate-300 hover:border-white/20 hover:text-white transition"
-                title={isFullscreen ? 'Exit Fullscreen (F)' : 'Enter Fullscreen (F)'}
+                className="icon-btn"
+                title={isFullscreen ? 'Exit fullscreen (F)' : 'Enter fullscreen (F)'}
                 aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
               >
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  className="icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   {isFullscreen ? (
                     <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
                   ) : (
@@ -749,11 +757,19 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
                 </svg>
               </button>
 
-              <a
-                href="../"
-                className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-slate-300 hover:border-white/20 hover:text-white transition"
-              >
-                &larr; Fixtures
+              <a href="../" className="btn btn-ghost">
+                <svg
+                  className="icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M19 12H5"></path>
+                  <path d="M12 19l-7-7 7-7"></path>
+                </svg>
+                <span>Fixtures</span>
               </a>
             </div>
           </div>
@@ -769,100 +785,127 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
             <button
               type="button"
               onClick={toggleFullscreen}
-              className="absolute top-4 right-4 z-50 rounded-xl bg-black/70 p-2.5 text-white/80 hover:bg-black hover:text-white backdrop-blur border border-white/10 transition opacity-0 group-hover:opacity-100 focus:opacity-100 shadow-xl"
-              title="Exit Fullscreen (F or Esc)"
+              className="icon-btn absolute top-4 right-4 z-50 border-line-strong bg-ink-950/80 text-fg opacity-0 backdrop-blur-sm transition-opacity duration-fast ease-out group-hover:opacity-100 focus:opacity-100"
+              title="Exit fullscreen (F or Esc)"
               aria-label="Exit Fullscreen"
             >
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                className="icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
               </svg>
             </button>
           )}
           {/* STATE 1: IDLE */}
           {playerState === 'idle' && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden bg-[#0a100f] px-6 text-center">
+            <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden bg-ink-950 px-6 text-center">
               {match.poster && (
-                <img
-                  src={getSafeThumbnailUrl(match.poster)}
-                  alt=""
-                  width="800"
-                  height="450"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  className="opacity-25 absolute inset-0 h-full w-full object-cover blur-[1px] pointer-events-none transition-opacity duration-500"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLElement).style.display = 'none';
-                  }}
-                />
+                <>
+                  <img
+                    src={getSafeThumbnailUrl(match.poster)}
+                    alt=""
+                    width="800"
+                    height="450"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-25"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/80 to-ink-950/50"></div>
+                </>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#050807] via-[#050807]/80 to-[#050807]/60 pointer-events-none"></div>
 
               <div className="relative z-10 mb-6 max-w-lg">
-                <span className="text-[11px] font-bold uppercase tracking-widest text-[#e5b94f]">
-                  {league || match.category?.toUpperCase() || 'SPORTS'} · NEPAL STANDARD TIME
-                </span>
+                <span className="eyebrow capitalize">{league || categoryLabel}</span>
 
-                <h3 className="mt-2 text-xl sm:text-2xl font-black text-white">{title}</h3>
-                <p className="mt-2 text-xs font-semibold text-slate-300">
-                  {status === 'Final'
-                    ? 'Match Concluded — Broadcast Offline'
-                    : isLive
-                    ? 'Broadcasting live now'
-                    : `Kickoff: ${timeOf(match, 'Asia/Kathmandu')} (Nepal Standard Time)`}
+                <h3 className="mt-2 text-xl font-medium text-fg sm:text-2xl">{title}</h3>
+                <p className="mt-2 text-sm text-fg-2">
+                  {status === 'Final' ? (
+                    'Full time'
+                  ) : isLive ? (
+                    'Live now'
+                  ) : (
+                    <>
+                      Kickoff <span className="clock">{timeOf(match, 'Asia/Kathmandu')} NST</span>
+                    </>
+                  )}
                 </p>
               </div>
 
               {status === 'Final' ? (
-                <div className="relative z-10 flex flex-col items-center max-w-md rounded-2xl border border-white/10 bg-black/75 p-5 backdrop-blur-md shadow-2xl">
-                  <div className="flex items-center gap-2 rounded-full border border-slate-500/30 bg-slate-500/10 px-3.5 py-1 text-xs font-bold text-slate-300">
-                    <span className="h-2 w-2 rounded-full bg-slate-400"></span>
-                    <span>MATCH CONCLUDED</span>
-                  </div>
-                  <p className="mt-3 text-base sm:text-lg font-black text-white">Full-Time / Final Result</p>
-                  <p className="text-xs text-slate-400 mt-1">This broadcast has ended. Check the scorecards and upcoming fixtures below.</p>
+                <div className="relative z-10 flex max-w-md flex-col items-center rounded-2xl border border-line bg-ink-950/80 p-5 backdrop-blur-sm">
+                  <span className="meta">Full time</span>
+                  <p className="mt-2 text-base font-medium text-fg">Final result</p>
+                  <p className="mt-1 text-sm text-fg-2">This broadcast has ended. Scorecards and upcoming fixtures are below.</p>
                 </div>
               ) : isLive || sources.length > 0 ? (
                 <button
                   type="button"
                   onClick={() => resolvePlayback(true)}
                   aria-label={`Start broadcast stream for ${title}`}
-                  className="relative z-10 group inline-flex items-center gap-3 rounded-2xl bg-[#c9f36b] px-6 py-3.5 text-sm font-black text-[#0a1110] shadow-lg shadow-[#c9f36b]/20 hover:bg-[#b8e25d] focus:outline-none focus:ring-4 focus:ring-[#c9f36b]/40 transition-all hover:scale-105 active:scale-95"
+                  className={`btn btn-lg relative z-10 ${isLive ? 'btn-live' : 'btn-primary'}`}
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0a1110] text-[#c9f36b] transition-transform group-hover:scale-110">
-                    <svg className="h-4 w-4 ml-0.5" viewBox="0 0 24 24" fill="currentColor">
-                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                    </svg>
-                  </span>
-                  <span>{isLive ? 'Play Live Broadcast Stream (0.0s Delay)' : 'Watch Stream Feed'}</span>
+                  <svg
+                    className="icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polygon points="6 4 20 12 6 20 6 4"></polygon>
+                  </svg>
+                  <span>{isLive ? 'Watch live' : 'Watch stream'}</span>
                 </button>
               ) : (
-                <div className="relative z-10 flex flex-col items-center max-w-md rounded-2xl border border-white/10 bg-black/75 p-5 backdrop-blur-md shadow-2xl">
-                  <div className="flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3.5 py-1 text-xs font-bold text-amber-300">
-                    <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse"></span>
-                    <span>UPCOMING FIXTURE</span>
-                  </div>
+                <div className="relative z-10 flex max-w-md flex-col items-center rounded-2xl border border-line bg-ink-950/80 p-5 backdrop-blur-sm">
+                  <span className="meta">Upcoming</span>
 
-                  <p className="mt-3 text-base sm:text-lg font-black text-white">
-                    Kickoff: {timeOf(match, 'Asia/Kathmandu')}
+                  <p className="clock mt-2 text-lg text-fg">
+                    {timeOf(match, 'Asia/Kathmandu')} NST
                   </p>
-                  <p className="text-xs font-bold text-[#c9f36b] mt-0.5">
-                    Nepal Standard Time (NST) {ts && `· ${formatCountdown(ts)}`}
-                  </p>
+                  {ts && <p className="clock mt-1 text-sm text-fg-2">{formatCountdown(ts)}</p>}
 
                   <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                    <button
-                      type="button"
-                      onClick={toggleFavorite}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3.5 py-2 text-xs font-bold text-white hover:bg-white/20 transition"
-                    >
-                      <span>{isFavorite ? '★ In Watchlist' : '☆ Add to Watchlist'}</span>
+                    <button type="button" onClick={toggleFavorite} className="btn btn-sm btn-secondary">
+                      <svg
+                        className={`icon ${isFavorite ? 'text-lime' : ''}`}
+                        viewBox="0 0 24 24"
+                        fill={isFavorite ? 'currentColor' : 'none'}
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                      </svg>
+                      <span>{isFavorite ? 'In watchlist' : 'Add to watchlist'}</span>
                     </button>
                     <a
                       href={generateGoogleCalendarUrl(match, title, league)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3.5 py-2 text-xs font-bold text-white hover:bg-white/20 transition"
+                      className="btn btn-sm btn-secondary"
                     >
-                      <span>📅 Google Calendar</span>
+                      <svg
+                        className="icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                      </svg>
+                      <span>Google Calendar</span>
                     </a>
                   </div>
                 </div>
@@ -873,13 +916,10 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
           {/* STATE 2: RESOLVING */}
           {playerState === 'resolving' && (
             <div className="flex flex-col items-center gap-4 px-6 text-center" aria-live="polite">
-              <div className="relative flex h-16 w-16 items-center justify-center">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#c9f36b]/30"></span>
-                <span className="h-10 w-10 animate-spin rounded-full border-2 border-[#c9f36b] border-t-transparent shadow-[0_0_15px_rgba(201,243,107,0.3)]"></span>
-              </div>
+              <span className="h-10 w-10 animate-spin rounded-full border-2 border-lime border-t-transparent"></span>
               <div>
-                <p className="text-sm font-bold text-white">Resolving Verified Direct HLS Feed</p>
-                <p className="mt-1 font-mono text-xs text-slate-400">Connecting directly to edge broadcast encoder...</p>
+                <p className="text-sm font-medium text-fg">Connecting to the stream</p>
+                <p className="mt-1 text-sm text-fg-3">Finding the direct broadcast feed</p>
               </div>
             </div>
           )}
@@ -887,21 +927,24 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
           {/* STATE 3: ERROR / RETRY */}
           {(playerState === 'failed' || playerState === 'unavailable' || playerState === 'unsupported') && (
             <div className="max-w-md px-6 text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10 text-amber-400 shadow-lg">
-                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-line bg-ink-800 text-fg-2">
+                <svg
+                  className="icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <circle cx="12" cy="12" r="10"></circle>
                   <line x1="12" y1="8" x2="12" y2="12"></line>
                   <line x1="12" y1="16" x2="12.01" y2="16"></line>
                 </svg>
               </div>
-              <p className="text-sm font-bold text-amber-300">{errorMessage}</p>
+              <p className="text-sm text-fg">{errorMessage}</p>
               <div className="mt-4 flex flex-wrap justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={resolvePlayback}
-                  className="rounded-lg bg-[#c9f36b] px-4 py-2 text-xs font-black text-[#0a1110] hover:bg-[#b8e25d] transition shadow-md"
-                >
-                  Reconnect Signal
+                <button type="button" onClick={resolvePlayback} className="btn btn-primary">
+                  Reconnect
                 </button>
               </div>
             </div>
@@ -938,31 +981,28 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
 
         {/* Server Selection & Latency Toolbar - hidden in fullscreen mode */}
         {streams.length > 0 && !isFullscreen && (
-          <div className="player-server-bar flex flex-wrap items-center gap-2 border-t border-white/5 bg-[#0b100f] p-3 text-xs">
-            <span className="mr-1 font-bold text-slate-500">Servers:</span>
+          <div className="player-server-bar flex flex-wrap items-center gap-1 border-t border-line bg-ink-950 p-3">
+            <span className="meta mr-1">Servers</span>
             {streams.map((stream, index) => (
               <button
                 key={index}
                 type="button"
                 onClick={() => handleServerSelect(stream)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                  activeStream === stream
-                    ? 'bg-[#c9f36b] text-[#0a1110] font-black shadow-sm'
-                    : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
-                }`}
+                className={`chip ${activeStream === stream ? 'chip-active' : ''}`}
               >
-                Server DSZ{index + 1} {stream.hd ? 'HD' : ''}
+                Server <span className="clock">{index + 1}</span>
+                {stream.hd && <span className="chip-count">HD</span>}
               </button>
             ))}
 
             <button
               type="button"
               onClick={jumpToLiveEdge}
-              className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-[#c9f36b]/40 bg-[#c9f36b]/10 px-3 py-1.5 text-xs font-black text-[#c9f36b] hover:bg-[#c9f36b] hover:text-[#080a0b] transition shadow-sm active:scale-95"
+              className="btn btn-sm btn-secondary ml-auto"
               title="Sync playback directly to live broadcast edge"
             >
-              <span className="h-2 w-2 rounded-full bg-[#c9f36b] animate-ping"></span>
-              <span>⚡ Live Edge</span>
+              {isLive && <span className="live-dot"></span>}
+              <span>Live edge</span>
             </button>
           </div>
         )}
@@ -971,27 +1011,31 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
       {/* Real-time Match Telemetry Bar & Commentary Hub - strictly displayed in NPL Live section only */}
       {showNplHub && isNplMatch && (
         <>
-          <div className="rounded-2xl border border-white/10 bg-[#0d1413] p-4 shadow-xl">
+          <div className="card p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5">
-                  <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
-                  <span className="text-xs font-black text-red-400 uppercase tracking-wider">Ground Feed</span>
-                </div>
+              <div className="flex items-center gap-4">
+                {isLive ? (
+                  <span className="live-tag">
+                    <span className="live-dot"></span>
+                    Ground feed
+                  </span>
+                ) : (
+                  <span className="meta">Ground feed</span>
+                )}
 
                 {liveScore && (
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-black text-white">{liveScore}</span>
-                    {liveOvers && <span className="text-xs font-bold text-slate-400">({liveOvers} ov)</span>}
-                    {liveCrr && <span className="text-xs font-bold text-[#e5b94f]">CRR: {liveCrr}</span>}
+                    <span className="clock text-2xl font-medium text-fg">{liveScore}</span>
+                    {liveOvers && <span className="clock text-xs text-fg-3">({liveOvers} ov)</span>}
+                    {liveCrr && <span className="clock text-xs text-fg-2">CRR {liveCrr}</span>}
                   </div>
                 )}
               </div>
 
               {/* Recent Balls Strip */}
               {recentBalls.length > 0 && (
-                <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mr-1">Overs:</span>
+                <div className="flex items-center gap-1 overflow-x-auto py-1">
+                  <span className="meta mr-1">Overs</span>
                   {recentBalls.slice(-12).map((b, idx) => {
                     const code = (b.code || '').toLowerCase();
                     const isFour = code === '4';
@@ -1002,20 +1046,20 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
                     return (
                       <span
                         key={idx}
-                        className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-black transition shadow-sm ${
+                        className={`clock flex h-7 w-7 items-center justify-center rounded-full text-xs ${
                           isSix
-                            ? 'bg-purple-600 text-white ring-2 ring-purple-400'
+                            ? 'bg-lime text-lime-ink'
                             : isFour
-                            ? 'bg-emerald-500 text-black ring-2 ring-emerald-300'
+                            ? 'border border-line-strong bg-ink-600 text-fg'
                             : isWkt
-                            ? 'bg-red-600 text-white ring-2 ring-red-400 animate-pulse'
+                            ? 'bg-fg text-ink-900'
                             : isDot
-                            ? 'bg-slate-800 text-slate-400 border border-white/5'
-                            : 'bg-white/10 text-white border border-white/10'
+                            ? 'bg-ink-700 text-fg-3'
+                            : 'bg-ink-700 text-fg'
                         }`}
                         title={`Over ${b.over}.${b.delivery}: ${b.code}`}
                       >
-                        {isWkt ? 'W' : isDot ? '•' : b.code}
+                        {isWkt ? 'W' : isDot ? 'â€¢' : b.code}
                       </span>
                     );
                   })}
@@ -1025,77 +1069,60 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
           </div>
 
           {/* Interactive Match Hub: Tabs for Commentary, Upcoming Fixtures & Points Table */}
-          <div className="rounded-2xl border border-white/10 bg-[#111a19] shadow-xl overflow-hidden">
+          <div className="card overflow-hidden">
             {/* Hub Tabs Header */}
-            <div className="flex items-center gap-2 border-b border-white/10 bg-[#0a100f] px-4 pt-3">
+            <div className="flex items-center gap-1 border-b border-line bg-ink-950 p-2">
               <button
                 type="button"
                 onClick={() => setActiveHubTab('commentary')}
-                className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
-                  activeHubTab === 'commentary'
-                    ? 'border-[#c9f36b] text-[#c9f36b]'
-                    : 'border-transparent text-slate-400 hover:text-white'
-                }`}
+                className={`chip ${activeHubTab === 'commentary' ? 'chip-active' : ''}`}
               >
-                <span className="h-2 w-2 rounded-full bg-[#c9f36b]"></span>
-                <span>Live Ball-by-Ball Commentary</span>
-                {commentaryList.length > 0 && (
-                  <span className="rounded-full bg-white/10 px-1.5 py-0.2 text-[10px] text-slate-300">
-                    {commentaryList.length}
-                  </span>
-                )}
+                <span>Commentary</span>
+                {commentaryList.length > 0 && <span className="chip-count">{commentaryList.length}</span>}
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveHubTab('upcoming')}
-                className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
-                  activeHubTab === 'upcoming'
-                    ? 'border-[#c9f36b] text-[#c9f36b]'
-                    : 'border-transparent text-slate-400 hover:text-white'
-                }`}
+                className={`chip ${activeHubTab === 'upcoming' ? 'chip-active' : ''}`}
               >
-                <span>Upcoming NPL Matches</span>
+                <span>Upcoming</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveHubTab('standings')}
-                className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition ${
-                  activeHubTab === 'standings'
-                    ? 'border-[#c9f36b] text-[#c9f36b]'
-                    : 'border-transparent text-slate-400 hover:text-white'
-                }`}
+                className={`chip ${activeHubTab === 'standings' ? 'chip-active' : ''}`}
               >
-                <span>NPL Points Table</span>
+                <span>Points table</span>
               </button>
             </div>
 
             {/* Tab 1: Live Ball-by-Ball Commentary Drawer */}
             {activeHubTab === 'commentary' && (
-              <div className="p-5 max-h-96 overflow-y-auto divide-y divide-white/5">
+              <div className="max-h-96 overflow-y-auto">
                 {commentaryList.length === 0 ? (
-                  <div className="py-8 text-center text-slate-400 text-xs">
-                    <p>Waiting for live ball feeds from ground scorers...</p>
-                    <p className="mt-1 text-slate-500">Live commentary updates dynamically on every delivery.</p>
+                  <div className="py-8 text-center text-sm text-fg-3">
+                    <p>Waiting for the ground scorer</p>
+                    <p className="mt-1">Commentary updates on every delivery</p>
                   </div>
                 ) : (
                   commentaryList.map((comm, idx) => (
-                    <div key={idx} className="py-3 flex items-start gap-4 hover:bg-white/[0.02] px-2 rounded-xl transition">
-                      <div className="shrink-0 flex flex-col items-center">
-                        <span className="font-mono text-xs font-black text-[#c9f36b] bg-white/5 px-2 py-1 rounded-lg border border-white/5">
+                    <div key={idx} className="row items-start gap-4">
+                      <div className="flex w-12 shrink-0 flex-col items-center">
+                        <span className="clock w-full rounded-md bg-ink-700 px-2 py-1 text-center text-xs text-fg">
                           {comm.ball}
                         </span>
                         {comm.outcome && (
                           <span
-                            className={`mt-1 text-[10px] font-black px-1.5 py-0.5 rounded ${
+                            className={`clock mt-1 rounded-md px-2 py-1 text-xs ${
                               comm.outcome === '6'
-                                ? 'bg-purple-600 text-white'
+                                ? 'bg-lime text-lime-ink'
                                 : comm.outcome === '4'
-                                ? 'bg-emerald-500 text-black'
+                                ? 'bg-ink-600 text-fg'
                                 : comm.outcome === 'W'
-                                ? 'bg-red-600 text-white'
-                                : 'bg-white/10 text-white'
+                                ? 'bg-fg text-ink-900'
+                                : 'bg-ink-700 text-fg-2'
                             }`}
                           >
                             {comm.outcome}
@@ -1104,8 +1131,8 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
                       </div>
 
                       <div className="flex-1">
-                        <p className="text-xs font-bold text-[#e5b94f]">{comm.bowlerToBatsman}</p>
-                        <p className="mt-1 text-xs leading-relaxed text-slate-200">{comm.text}</p>
+                        <p className="text-sm text-fg-2">{comm.bowlerToBatsman}</p>
+                        <p className="mt-1 text-sm leading-relaxed text-fg">{comm.text}</p>
                       </div>
                     </div>
                   ))
@@ -1116,36 +1143,47 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
             {/* Tab 2: Upcoming NPL Matches with Countdown */}
             {activeHubTab === 'upcoming' && (
               <div className="p-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   {upcomingNplMatches.map((m) => (
                     <div
                       key={m.id}
-                      className="rounded-xl border border-white/5 bg-white/[0.02] p-4 flex flex-col justify-between hover:border-white/20 transition"
+                      className="flex flex-col justify-between rounded-lg border border-line bg-ink-900 p-4 transition-colors duration-fast ease-out hover:border-line-strong"
                     >
-                      <div className="flex items-center justify-between text-[11px] text-slate-400">
-                        <span className="font-bold text-[#e5b94f]">Match {m.matchNumber}</span>
-                        <span className="font-mono text-[#c9f36b] font-bold">{formatCountdown(m.timestamp)}</span>
+                      <div className="flex items-center justify-between">
+                        <span className="clock meta">Match {m.matchNumber}</span>
+                        <span className="clock text-xs text-fg-2">{formatCountdown(m.timestamp)}</span>
                       </div>
 
-                      <div className="my-3 flex items-center justify-between">
+                      <div className="my-3 flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <img src={m.homeTeamLogo} alt="" className="h-6 w-6 object-contain" />
-                          <span className="text-xs font-bold text-white">{m.homeTeam}</span>
+                          <span className="text-sm font-medium text-fg">{m.homeTeam}</span>
                         </div>
-                        <span className="text-[10px] font-black text-slate-500">VS</span>
+                        <span className="meta">v</span>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-white">{m.awayTeam}</span>
+                          <span className="text-sm font-medium text-fg">{m.awayTeam}</span>
                           <img src={m.awayTeamLogo} alt="" className="h-6 w-6 object-contain" />
                         </div>
                       </div>
 
-                      <div className="border-t border-white/5 pt-2 flex items-center justify-between text-[10px] text-slate-400">
-                        <span>{timeOf(match, 'Asia/Kathmandu')}</span>
+                      <div className="flex items-center justify-between border-t border-line pt-2">
+                        <span className="clock meta">{timeOf(match, 'Asia/Kathmandu')} NST</span>
                         <a
                           href={`/cricket/match/${slugify(`${m.homeTeam} vs ${m.awayTeam}`)}/`}
-                          className="text-[#c9f36b] font-bold hover:underline"
+                          className="inline-flex items-center gap-1 text-xs text-lime hover:underline"
                         >
-                          Match Center &rarr;
+                          <span>Match centre</span>
+                          <svg
+                            className="icon"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M5 12h14"></path>
+                            <path d="M12 5l7 7-7 7"></path>
+                          </svg>
                         </a>
                       </div>
                     </div>
@@ -1156,33 +1194,37 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
 
             {/* Tab 3: Points Table */}
             {activeHubTab === 'standings' && (
-              <div className="p-5 overflow-x-auto">
-                <table className="w-full text-left text-xs">
+              <div className="overflow-x-auto p-5">
+                <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-white/10 text-slate-400 text-[10px] uppercase tracking-wider">
-                      <th className="py-2 px-3">Team</th>
-                      <th className="py-2 px-3 text-center">P</th>
-                      <th className="py-2 px-3 text-center">W</th>
-                      <th className="py-2 px-3 text-center">L</th>
-                      <th className="py-2 px-3 text-center">PTS</th>
-                      <th className="py-2 px-3 text-right">NRR</th>
+                    <tr className="meta border-b border-line">
+                      <th className="h-9 px-3 font-normal">Team</th>
+                      <th className="h-9 px-3 text-right font-normal">P</th>
+                      <th className="h-9 px-3 text-right font-normal">W</th>
+                      <th className="h-9 px-3 text-right font-normal">L</th>
+                      <th className="h-9 px-3 text-right font-normal">Pts</th>
+                      <th className="h-9 px-3 text-right font-normal">NRR</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5">
+                  <tbody className="divide-y divide-line">
                     {nplStandings.map((team, idx) => (
-                      <tr key={team.name} className="hover:bg-white/[0.02] transition">
-                        <td className="py-2.5 px-3 flex items-center gap-2">
-                          <span className="font-mono text-slate-500 text-[10px] w-3">{idx + 1}</span>
-                          {NPL_TEAMS[team.name]?.logo && (
-                            <img src={NPL_TEAMS[team.name].logo} alt="" className="h-5 w-5 object-contain" />
-                          )}
-                          <span className="font-bold text-white">{team.name}</span>
+                      <tr key={team.name} className="transition-colors duration-fast ease-out hover:bg-ink-700/60">
+                        <td className="h-10 px-3">
+                          <div className="flex items-center gap-2">
+                            <span className="clock w-4 text-right text-xs text-fg-3">{idx + 1}</span>
+                            {NPL_TEAMS[team.name]?.logo && (
+                              <img src={NPL_TEAMS[team.name].logo} alt="" className="h-5 w-5 object-contain" />
+                            )}
+                            <span className="font-medium text-fg">{team.name}</span>
+                          </div>
                         </td>
-                        <td className="py-2.5 px-3 text-center font-mono text-slate-300">{team.p}</td>
-                        <td className="py-2.5 px-3 text-center font-mono text-emerald-400">{team.w}</td>
-                        <td className="py-2.5 px-3 text-center font-mono text-red-400">{team.l}</td>
-                        <td className="py-2.5 px-3 text-center font-mono font-black text-[#c9f36b]">{team.pts}</td>
-                        <td className="py-2.5 px-3 text-right font-mono text-slate-300">{team.nrr}</td>
+                        <td className="clock h-10 px-3 text-right text-fg-2">{team.p}</td>
+                        <td className="clock h-10 px-3 text-right text-fg-2">{team.w}</td>
+                        <td className="clock h-10 px-3 text-right text-fg-2">{team.l}</td>
+                        <td className="clock h-10 px-3 text-right font-medium text-fg">{team.pts}</td>
+                        <td className={`clock h-10 px-3 text-right ${team.nrr.startsWith('+') ? 'text-up' : 'text-fg-2'}`}>
+                          {team.nrr}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1195,62 +1237,62 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
 
       {/* Match Tools & Action Panel */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="rounded-2xl border border-white/10 bg-[#111a19] p-5 shadow-lg lg:col-span-2">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-4">
+        <div className="card p-5 lg:col-span-2">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
             <div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#e5b94f]">Match Companion</span>
-              <h3 className="text-lg font-black text-white mt-0.5">{title}</h3>
+              <span className="eyebrow">Match details</span>
+              <h3 className="mt-1 text-lg font-medium text-fg">{title}</h3>
             </div>
 
             {ts && (
-              <span suppressHydrationWarning className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-[#c9f36b]">
-                <span className="h-2 w-2 rounded-full bg-[#c9f36b]"></span>
+              <span suppressHydrationWarning className="clock text-sm text-fg-2">
                 {formatCountdown(ts)}
               </span>
             )}
           </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3 text-xs">
-            <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Kickoff Time</span>
-              <p className="mt-1 font-bold text-white">{timeOf(match, 'Asia/Kathmandu')}</p>
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-line bg-ink-900 p-3">
+              <span className="meta">Kickoff</span>
+              <p className="clock mt-1 text-sm text-fg">{timeOf(match, 'Asia/Kathmandu')} NST</p>
             </div>
 
-            <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Local Time</span>
-              <p className="mt-1 font-bold text-slate-200">{timeOf(match, localTz)}</p>
+            <div className="rounded-lg border border-line bg-ink-900 p-3">
+              <span className="meta">Local time</span>
+              <p className="clock mt-1 text-sm text-fg-2">{timeOf(match, localTz)}</p>
             </div>
 
-            <div className="rounded-xl border border-white/5 bg-white/5 p-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Competition</span>
-              <p className="mt-1 font-bold text-[#e5b94f]">
-                {league || match.category?.toUpperCase() || 'SPORTS'}
-              </p>
+            <div className="rounded-lg border border-line bg-ink-900 p-3">
+              <span className="meta">Competition</span>
+              <p className="mt-1 text-sm capitalize text-fg">{league || categoryLabel}</p>
             </div>
           </div>
 
-          <p className="mt-4 text-xs leading-relaxed text-slate-400">
-            Stream signals are optimized for ultra-low broadcast latency. If audio or video pauses, switch servers above or hit <kbd className="bg-white/10 px-1 py-0.5 rounded font-mono text-[#c9f36b]">L</kbd> to jump straight to the live edge.
+          <p className="mt-4 text-sm leading-relaxed text-fg-3">
+            If the picture pauses, switch servers above or press{' '}
+            <kbd className="clock rounded-md bg-ink-700 px-1 text-xs text-fg">L</kbd> to jump to the live edge.
           </p>
         </div>
 
         {/* Action Buttons & Calendar Integration */}
-        <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#111a19] p-5 shadow-lg">
+        <div className="card flex flex-col justify-between p-5">
           <div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#e5b94f]">Match Tools</span>
-            <h4 className="text-sm font-bold text-white mt-0.5">Save &amp; Remind</h4>
+            <span className="eyebrow">Match tools</span>
+            <h4 className="mt-1 text-sm font-medium text-fg">Save and remind</h4>
 
-            <div className="mt-4 space-y-2.5">
-              <button
-                type="button"
-                onClick={toggleFavorite}
-                className={`w-full inline-flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold transition ${
-                  isFavorite
-                    ? 'border border-amber-400/50 bg-amber-400/10 text-amber-300'
-                    : 'border border-white/10 bg-white/5 text-slate-300 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                <span>{isFavorite ? '★ Saved to Watchlist' : '☆ Add to Watchlist'}</span>
+            <div className="mt-4 space-y-2">
+              <button type="button" onClick={toggleFavorite} className="btn btn-secondary w-full">
+                <svg
+                  className={`icon ${isFavorite ? 'text-lime' : ''}`}
+                  viewBox="0 0 24 24"
+                  fill={isFavorite ? 'currentColor' : 'none'}
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+                <span>{isFavorite ? 'In watchlist' : 'Add to watchlist'}</span>
               </button>
 
               {ts && (
@@ -1258,35 +1300,74 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
                   href={generateGoogleCalendarUrl(match)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-2.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition"
+                  className="btn btn-secondary w-full"
                 >
-                  <span>📅 Google Calendar</span>
+                  <svg
+                    className="icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  <span>Google Calendar</span>
                 </a>
               )}
 
               {ts && (
-                <button
-                  type="button"
-                  onClick={handleDownloadIcs}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-2.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition"
-                >
-                  <span>📥 Download .ics Calendar</span>
+                <button type="button" onClick={handleDownloadIcs} className="btn btn-secondary w-full">
+                  <svg
+                    className="icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  <span>Download .ics</span>
                 </button>
               )}
 
-              <button
-                type="button"
-                onClick={handleShare}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-2.5 text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition"
-              >
-                <span>{copiedToast ? '✓ Link Copied to Clipboard!' : '🔗 Share Match'}</span>
+              <button type="button" onClick={handleShare} className="btn btn-secondary w-full">
+                {copiedToast ? (
+                  <svg
+                    className="icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                ) : (
+                  <svg
+                    className="icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                  </svg>
+                )}
+                <span>{copiedToast ? 'Link copied' : 'Share match'}</span>
               </button>
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-white/5 text-[10px] text-slate-500">
-            Official edge broadcast streams. No proxy overhead.
-          </div>
+          <div className="meta mt-4 border-t border-line pt-3">Direct broadcast streams, no proxy</div>
         </div>
       </div>
     </div>

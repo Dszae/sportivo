@@ -111,12 +111,8 @@ export default function NotificationCenter() {
               const isSix = (b.code || '').toLowerCase() === '6';
               const type = isWkt ? 'wicket' : 'goal';
               const badgeText = isWkt ? 'WICKET' : isSix ? 'SIX' : 'FOUR';
-              const title = isWkt
-                ? '💥 WICKET FALLEN!'
-                : isSix
-                ? '🚀 MAXIMUM SIX! (6 Runs)'
-                : '🏏 FOUR BOUNDARY! (4 Runs)';
-              const message = `${isWkt ? 'Wicket is down' : 'Boundary hit'}! Score: ${b.teamScore || data.score} (${b.over}.${b.delivery} ov)`;
+              const title = isWkt ? 'Wicket' : isSix ? 'Six' : 'Four';
+              const message = `${isWkt ? 'Wicket down' : 'Boundary'}. ${b.teamScore || data.score} (${b.over}.${b.delivery} ov)`;
 
               dispatchNotification({
                 key: `moment:${b.over}.${b.delivery}:${b.code}`,
@@ -233,15 +229,15 @@ export default function NotificationCenter() {
       key: `test:${Date.now()}`,
       type: '5min_warning',
       filterCategory: 'matches',
-      title: '🔔 Kickoff in 5 Minutes!',
-      message: 'Real Madrid 🆚 Barcelona. Get ready! The match is about to begin.',
+      title: 'Kickoff in 5 minutes',
+      message: 'Real Madrid vs Barcelona is about to begin.',
       matchTitle: 'Real Madrid vs Barcelona',
       matchUrl: '/football/',
       category: 'football',
       competition: 'La Liga · El Clásico',
       venue: 'Santiago Bernabéu',
-      kickoffFormatted: 'Today · 8:45 PM Nepal Time',
-      badgeText: '5 MIN WARNING',
+      kickoffFormatted: 'Today · 8:45 PM NST',
+      badgeText: '5 min warning',
     });
 
     // Also trigger native closed-tab Web Push delivery via push service
@@ -254,26 +250,68 @@ export default function NotificationCenter() {
     return item.filterCategory === activeFilter;
   });
 
+  const formatTypeLabel = (item: NotificationAlert) => {
+    const raw = item.badgeText || item.type.replace('_', ' ');
+    return raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+  };
+
+  const formatTime = (timestamp: number | string) =>
+    new Date(timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+  const renderTypeIcon = (type: NotificationAlert['type']) => {
+    if (type === '5min_warning' || type === '30min_reminder') {
+      return (
+        <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5l3 2" />
+        </svg>
+      );
+    }
+    if (type === 'full_time') {
+      return (
+        <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M5 21V4" />
+          <path d="M5 4h13l-2.5 4L18 12H5" />
+        </svg>
+      );
+    }
+    return (
+      <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+    );
+  };
+
+  const preferenceRows: Array<{
+    key: keyof UserPreferences['notifications'];
+    label: string;
+    hint: string;
+  }> = [
+    { key: 'remind5Min', label: '5 minutes before kickoff', hint: 'Venue and kickoff time' },
+    { key: 'remind30Min', label: '30 minutes before kickoff', hint: 'Matchday heads-up' },
+    { key: 'notifyGoalsWickets', label: 'Goals and wickets', hint: 'Score changes and fall of wickets' },
+    { key: 'notifyFullTime', label: 'Full time', hint: 'Final scores and winners' },
+    { key: 'soundEnabled', label: 'Sound', hint: 'Short chime when an alert arrives' },
+  ];
+
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>
-      {/* Bell Trigger Button */}
+      {/* Bell trigger */}
       <button
         type="button"
         onClick={handleToggleDropdown}
-        aria-label="Match Notifications"
-        title="Sportivo Match Alerts & Live Moments"
-        className={`relative inline-flex items-center justify-center rounded-full p-2 text-xs font-bold transition-all border shadow-sm ${
-          isOpen || unreadCount > 0
-            ? 'border-[#c9f36b] bg-[#c9f36b]/20 text-[#c9f36b] shadow-[0_0_12px_rgba(201,243,107,0.3)]'
-            : 'border-white/15 bg-[#141f1d] text-slate-200 hover:border-[#c9f36b]/60 hover:text-[#c9f36b] hover:bg-[#1a2926]'
+        aria-label="Match notifications"
+        title="Match alerts and live moments"
+        className={`icon-btn gap-1.5 ${unreadCount > 0 ? 'w-auto px-2.5' : ''} ${
+          isOpen ? 'bg-ink-700 text-fg' : ''
         }`}
       >
         <svg
-          className="h-4 w-4"
+          className="icon"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2.2"
           strokeLinecap="round"
           strokeLinejoin="round"
         >
@@ -282,413 +320,281 @@ export default function NotificationCenter() {
         </svg>
 
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-black text-white shadow-md ring-2 ring-[#101716] animate-pulse">
+          <span className="clock inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-ink-600 px-1 text-xs leading-none text-fg">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
-      {/* Dropdown Modal: Notification Center */}
+      {/* Dropdown panel */}
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 z-[9990] bg-black/75 backdrop-blur-sm sm:hidden"
+            className="fixed inset-0 z-[9990] bg-ink-950/70 sm:hidden"
             onClick={() => setIsOpen(false)}
             aria-hidden="true"
           />
-          <div className="fixed inset-x-4 top-20 bottom-auto max-h-[80vh] sm:fixed sm:inset-auto sm:right-6 sm:top-16 sm:w-[400px] max-w-[420px] mx-auto sm:mx-0 rounded-2xl border border-white/20 bg-[#0c1413] shadow-[0_24px_60px_rgba(0,0,0,0.95)] z-[9995] overflow-hidden text-slate-100 flex flex-col ring-1 ring-[#c9f36b]/25">
-          {/* Header (100% Solid) */}
-          <div className="flex items-center justify-between border-b border-white/15 px-4 py-3 bg-[#131d1b]">
-            <div className="flex items-center gap-2.5">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#c9f36b] opacity-80"></span>
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#c9f36b]"></span>
-              </span>
-              <h3 className="text-sm font-black text-white tracking-wide">Match Alerts</h3>
-              {unreadCount > 0 && (
-                <span className="rounded-full bg-red-500/25 border border-red-500/40 px-2 py-0.5 text-[10px] font-black text-red-300">
-                  {unreadCount} new
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => setShowPreferences(!showPreferences)}
-                title="Notification Settings"
-                className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition border ${
-                  showPreferences
-                    ? 'border-[#c9f36b] bg-[#c9f36b] text-[#070b0a] shadow-sm'
-                    : 'border-white/15 bg-[#1b2725] text-slate-200 hover:border-[#c9f36b]/50 hover:text-white'
-                }`}
-              >
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-                <span>Preferences</span>
-              </button>
-              {history.length > 0 && (
-                <button
-                  type="button"
-                  onClick={markAllNotificationsAsRead}
-                  className="rounded-lg border border-white/10 bg-[#172321] px-2 py-1 text-[11px] font-medium text-slate-300 hover:text-[#c9f36b] hover:border-[#c9f36b]/40 transition"
-                  title="Mark all as read"
-                >
-                  Mark read
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setIsOpen(false)}
-                className="rounded-lg p-1 text-slate-400 hover:text-white hover:bg-white/10 transition border border-transparent hover:border-white/10"
-                aria-label="Close notification drawer"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Preferences Drawer / Modal */}
-          {showPreferences ? (
-            <div className="p-4 space-y-3.5 bg-[#0e1615] border-b border-white/10 text-xs">
-              <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-                <span className="font-black text-[#e5b94f] uppercase tracking-wider text-[11px]">
-                  Alert Preferences
-                </span>
-                <button
-                  type="button"
-                  onClick={handleSendTestAlert}
-                  className="rounded-lg bg-[#c9f36b] px-2.5 py-1 text-[11px] font-black text-[#080a0b] hover:bg-[#b5e05c] transition shadow-sm"
-                >
-                  🔔 Send Test Alert
-                </button>
-              </div>
-
-              {/* Browser Push Banner */}
-              <div className="rounded-xl border border-white/15 bg-[#14201e] p-3 flex items-center justify-between gap-3 shadow-sm">
-                <div>
-                  <span className="block font-bold text-white text-xs">Background Push (Closed Tab Alerts)</span>
-                  <span className="text-[11px] text-slate-300 leading-tight">
-                    {permission === 'granted'
-                      ? '✓ Active! You will receive match alerts even when Sportivo is closed.'
-                      : 'Get live kickoff & score alerts on your device even when website is closed.'}
+          <div className="panel shadow-float animate-fade-in fixed inset-x-4 top-20 bottom-auto z-[9995] mx-auto flex max-h-[80vh] max-w-[360px] flex-col gap-3 overflow-hidden p-4 text-fg sm:inset-auto sm:right-6 sm:top-16 sm:mx-0 sm:w-[360px]">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-medium text-fg">Match alerts</h3>
+                {unreadCount > 0 && (
+                  <span className="meta">
+                    <span className="clock">{unreadCount}</span> new
                   </span>
-                </div>
-                {permission !== 'granted' ? (
-                  <button
-                    type="button"
-                    onClick={handleRequestPush}
-                    className="rounded-lg bg-[#c9f36b] px-3 py-1.5 text-xs font-black text-[#080a0b] hover:bg-[#b0d859] transition shadow-md shrink-0"
-                  >
-                    Enable Push
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => subscribeToPushService(true)}
-                    className="rounded-lg border border-[#c9f36b]/40 bg-[#c9f36b]/10 px-2.5 py-1 text-[11px] font-bold text-[#c9f36b] hover:bg-[#c9f36b] hover:text-black transition shrink-0"
-                    title="Sends an instant push message through the push service"
-                  >
-                    Test Push
-                  </button>
                 )}
               </div>
 
-              {/* Toggles Grid */}
-              <div className="space-y-2">
-                <label className="flex items-center justify-between rounded-xl border border-white/10 bg-[#14201e] p-3 cursor-pointer hover:border-[#c9f36b]/40 hover:bg-[#182624] transition">
-                  <div className="pr-2">
-                    <span className="block font-bold text-white text-xs">5-Minute Kickoff Alert</span>
-                    <span className="text-[11px] text-slate-300">Warns 5 min before start with venue &amp; time</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={prefs.notifications.remind5Min}
-                    onChange={(e) =>
-                      updatePreferences((prev) => ({
-                        ...prev,
-                        notifications: { ...prev.notifications, remind5Min: e.target.checked },
-                      }))
-                    }
-                    className="h-4 w-4 rounded border-white/30 bg-[#0b1110] text-[#c9f36b] focus:ring-0 cursor-pointer accent-[#c9f36b]"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between rounded-xl border border-white/10 bg-[#14201e] p-3 cursor-pointer hover:border-[#c9f36b]/40 hover:bg-[#182624] transition">
-                  <div className="pr-2">
-                    <span className="block font-bold text-white text-xs">30-Minute Kickoff Reminder</span>
-                    <span className="text-[11px] text-slate-300">Matchday heads-up 30m before kickoff</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={prefs.notifications.remind30Min}
-                    onChange={(e) =>
-                      updatePreferences((prev) => ({
-                        ...prev,
-                        notifications: { ...prev.notifications, remind30Min: e.target.checked },
-                      }))
-                    }
-                    className="h-4 w-4 rounded border-white/30 bg-[#0b1110] text-[#c9f36b] focus:ring-0 cursor-pointer accent-[#c9f36b]"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between rounded-xl border border-white/10 bg-[#14201e] p-3 cursor-pointer hover:border-[#c9f36b]/40 hover:bg-[#182624] transition">
-                  <div className="pr-2">
-                    <span className="block font-bold text-white text-xs">Live Goals &amp; Wickets</span>
-                    <span className="text-[11px] text-slate-300">Score changes, equalizers &amp; fall of wickets</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={prefs.notifications.notifyGoalsWickets}
-                    onChange={(e) =>
-                      updatePreferences((prev) => ({
-                        ...prev,
-                        notifications: { ...prev.notifications, notifyGoalsWickets: e.target.checked },
-                      }))
-                    }
-                    className="h-4 w-4 rounded border-white/30 bg-[#0b1110] text-[#c9f36b] focus:ring-0 cursor-pointer accent-[#c9f36b]"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between rounded-xl border border-white/10 bg-[#14201e] p-3 cursor-pointer hover:border-[#c9f36b]/40 hover:bg-[#182624] transition">
-                  <div className="pr-2">
-                    <span className="block font-bold text-white text-xs">Full-Time &amp; Match Results</span>
-                    <span className="text-[11px] text-slate-300">Final scores, winning margins &amp; winners</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={prefs.notifications.notifyFullTime}
-                    onChange={(e) =>
-                      updatePreferences((prev) => ({
-                        ...prev,
-                        notifications: { ...prev.notifications, notifyFullTime: e.target.checked },
-                      }))
-                    }
-                    className="h-4 w-4 rounded border-white/30 bg-[#0b1110] text-[#c9f36b] focus:ring-0 cursor-pointer accent-[#c9f36b]"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between rounded-xl border border-white/10 bg-[#14201e] p-3 cursor-pointer hover:border-[#c9f36b]/40 hover:bg-[#182624] transition">
-                  <div className="pr-2">
-                    <span className="block font-bold text-white text-xs">Audio Chime</span>
-                    <span className="text-[11px] text-slate-300">Play subtle sound ping when alert arrives</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={prefs.notifications.soundEnabled}
-                    onChange={(e) =>
-                      updatePreferences((prev) => ({
-                        ...prev,
-                        notifications: { ...prev.notifications, soundEnabled: e.target.checked },
-                      }))
-                    }
-                    className="h-4 w-4 rounded border-white/30 bg-[#0b1110] text-[#c9f36b] focus:ring-0 cursor-pointer accent-[#c9f36b]"
-                  />
-                </label>
-              </div>
-
-              <div className="flex items-center justify-between border-t border-white/10 pt-3 text-xs">
-                <span className="text-slate-300 text-[11px]">Auto-monitors teams in your Watchlist.</span>
+              <div className="flex items-center gap-1">
+                {history.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={markAllNotificationsAsRead}
+                    className="btn btn-ghost btn-sm"
+                    title="Mark all as read"
+                  >
+                    Mark read
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={() => setShowPreferences(false)}
-                  className="rounded-lg bg-[#c9f36b] px-3 py-1 font-black text-[#080a0b] hover:bg-[#b0d859] transition shadow-sm"
+                  onClick={() => setShowPreferences(!showPreferences)}
+                  title="Notification settings"
+                  aria-label="Notification settings"
+                  className={`icon-btn h-8 w-8 ${showPreferences ? 'bg-ink-700 text-fg' : ''}`}
                 >
-                  Done
+                  <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="icon-btn h-8 w-8"
+                  aria-label="Close notification drawer"
+                >
+                  <svg className="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
             </div>
-          ) : (
-            <>
-              {/* Category Filter Pills (Solid Background) */}
-              <div className="flex items-center gap-1.5 border-b border-white/15 bg-[#0e1715] px-4 py-2.5 text-xs overflow-x-auto">
-                <button
-                  type="button"
-                  onClick={() => setActiveFilter('all')}
-                  className={`rounded-full px-3 py-1 text-xs font-bold transition shrink-0 ${
-                    activeFilter === 'all'
-                      ? 'bg-[#c9f36b] text-[#080a0b] shadow-sm font-black'
-                      : 'border border-white/10 bg-[#162321] text-slate-300 hover:text-white hover:border-white/20'
-                  }`}
-                >
-                  All ({history.length})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveFilter('matches')}
-                  className={`rounded-full px-3 py-1 text-xs font-bold transition shrink-0 ${
-                    activeFilter === 'matches'
-                      ? 'bg-[#c9f36b] text-[#080a0b] shadow-sm font-black'
-                      : 'border border-white/10 bg-[#162321] text-slate-300 hover:text-white hover:border-white/20'
-                  }`}
-                >
-                  Matches
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveFilter('moments')}
-                  className={`rounded-full px-3 py-1 text-xs font-bold transition shrink-0 ${
-                    activeFilter === 'moments'
-                      ? 'bg-[#c9f36b] text-[#080a0b] shadow-sm font-black'
-                      : 'border border-white/10 bg-[#162321] text-slate-300 hover:text-white hover:border-white/20'
-                  }`}
-                >
-                  Goals &amp; Wickets
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveFilter('results')}
-                  className={`rounded-full px-3 py-1 text-xs font-bold transition shrink-0 ${
-                    activeFilter === 'results'
-                      ? 'bg-[#c9f36b] text-[#080a0b] shadow-sm font-black'
-                      : 'border border-white/10 bg-[#162321] text-slate-300 hover:text-white hover:border-white/20'
-                  }`}
-                >
-                  Results
-                </button>
-              </div>
 
-              {/* Notification List (Solid Cards) */}
-              <div className="max-h-[420px] overflow-y-auto p-3 space-y-2.5 bg-[#0b1110] custom-scrollbar">
-                {filteredHistory.length === 0 ? (
-                  <div className="rounded-xl border border-white/10 bg-[#121c1a] p-6 text-center text-xs text-slate-300 my-1">
-                    <svg className="w-8 h-8 mx-auto text-slate-500 mb-2 stroke-[1.5]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                      <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                    </svg>
-                    <p className="font-black text-white text-sm">No match alerts in this tab</p>
-                    <p className="mt-1.5 text-xs text-slate-300 max-w-xs mx-auto leading-relaxed">
-                      Follow your favorite teams in{' '}
-                      <a href="/dashboard/" className="text-[#c9f36b] hover:underline font-bold">
-                        My Watchlist
-                      </a>{' '}
-                      or star matches in{' '}
-                      <a href="/npl/" className="text-red-400 hover:underline font-bold">
-                        NPL 2026
-                      </a>
-                      . Sportivo will alert you 5 minutes before kickoff and during live moments!
-                    </p>
-                  </div>
-                ) : (
-                  filteredHistory.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`relative rounded-xl border p-3.5 transition group shadow-sm ${
-                        !item.read
-                          ? 'border-l-4 border-l-[#c9f36b] border-white/15 bg-[#162522]'
-                          : 'border-white/10 bg-[#131d1b] hover:border-[#c9f36b]/40 hover:bg-[#182623]'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2.5">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span
-                            className={`rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-sm ${
-                              item.type === '5min_warning'
-                                ? 'bg-amber-400 text-black'
-                                : item.type === '30min_reminder'
-                                ? 'bg-sky-400 text-black'
-                                : item.type === 'goal' || item.type === 'equalizer'
-                                ? 'bg-[#c9f36b] text-black'
-                                : item.type === 'wicket'
-                                ? 'bg-red-500 text-white'
-                                : item.type === 'full_time'
-                                ? 'bg-emerald-400 text-black'
-                                : 'bg-white/20 text-white'
-                            }`}
-                          >
-                            {item.badgeText || item.type.replace('_', ' ')}
-                          </span>
+            {/* Preferences */}
+            {showPreferences ? (
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="eyebrow">Alert preferences</span>
+                  <button type="button" onClick={handleSendTestAlert} className="btn btn-ghost btn-sm">
+                    Send test alert
+                  </button>
+                </div>
 
-                          {item.competition && (
-                            <span className="rounded bg-[#1e2c2a] border border-white/10 px-1.5 py-0.5 text-[10px] text-slate-300 font-semibold">
-                              {item.competition}
-                            </span>
-                          )}
-                        </div>
-
-                        <span className="text-[10px] text-slate-400 font-mono shrink-0">
-                          {new Date(item.timestamp).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </span>
-                      </div>
-
-                      <a
-                        href={item.matchUrl}
-                        onClick={() => {
-                          markNotificationAsRead(item.id);
-                          setIsOpen(false);
-                        }}
-                        className="block mt-2 focus:outline-none"
-                      >
-                        <h4 className="text-[13px] font-bold text-white group-hover:text-[#c9f36b] transition-colors leading-snug">
-                          {item.title}
-                        </h4>
-                        <p className="mt-1 text-xs text-slate-200 leading-relaxed font-normal">
-                          {item.message}
-                        </p>
-
-                        {(item.venue || item.kickoffFormatted) && (
-                          <div className="mt-2.5 rounded-lg border border-white/10 bg-[#0d1514] px-2.5 py-1.5 flex flex-wrap items-center gap-3 text-[11px] text-slate-300">
-                            {item.kickoffFormatted && (
-                              <span className="text-[#e5b94f] font-bold">⏰ {item.kickoffFormatted}</span>
-                            )}
-                            {item.venue && <span className="text-slate-300">📍 {item.venue}</span>}
-                          </div>
-                        )}
-                      </a>
-
-                      <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-2 text-xs">
-                        <a
-                          href={item.matchUrl}
-                          onClick={() => {
-                            markNotificationAsRead(item.id);
-                            setIsOpen(false);
-                          }}
-                          className="font-black text-[#c9f36b] hover:text-[#dcf88a] inline-flex items-center gap-1.5 text-xs"
-                        >
-                          <span>View Match &amp; Live Stream</span>
-                          <span aria-hidden="true">&rarr;</span>
-                        </a>
-
-                        {!item.read && (
-                          <button
-                            type="button"
-                            onClick={() => markNotificationAsRead(item.id)}
-                            className="rounded bg-white/5 border border-white/10 px-2 py-0.5 text-[10px] text-slate-300 hover:text-white hover:bg-white/10 transition"
-                          >
-                            Mark read
-                          </button>
-                        )}
-                      </div>
+                {/* Browser push */}
+                <div className="-mx-4 border-y border-line">
+                  <div className="row min-h-[44px] justify-between gap-3 py-1 hover:bg-transparent">
+                    <div className="min-w-0">
+                      <span className="block text-sm text-fg">Background push</span>
+                      <span className="meta block truncate">
+                        {permission === 'granted'
+                          ? 'Active even when Sportivo is closed'
+                          : 'Alerts even when Sportivo is closed'}
+                      </span>
                     </div>
-                  ))
-                )}
-              </div>
+                    {permission !== 'granted' ? (
+                      <button type="button" onClick={handleRequestPush} className="btn btn-primary btn-sm">
+                        Enable notifications
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => subscribeToPushService(true)}
+                        className="btn btn-ghost btn-sm"
+                        title="Sends an instant push message through the push service"
+                      >
+                        Test push
+                      </button>
+                    )}
+                  </div>
+                </div>
 
-              {/* Footer (100% Solid) */}
-              {history.length > 0 && (
-                <div className="flex items-center justify-between border-t border-white/15 px-4 py-3 bg-[#131d1b] text-xs">
-                  <span className="text-slate-300 text-xs font-medium">
-                    {unreadCount === 0 ? '✓ All caught up' : `${unreadCount} unread alert${unreadCount > 1 ? 's' : ''}`}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={clearNotificationHistory}
-                    className="rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-xs font-bold text-red-300 hover:bg-red-500/20 hover:text-white transition"
-                  >
-                    Clear history
+                {/* Toggles */}
+                <div className="-mx-4">
+                  {preferenceRows.map((rowDef) => (
+                    <label key={rowDef.key} className="row min-h-[44px] cursor-pointer justify-between gap-3 py-1">
+                      <div className="min-w-0">
+                        <span className="block text-sm text-fg">{rowDef.label}</span>
+                        <span className="meta block">{rowDef.hint}</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={prefs.notifications[rowDef.key]}
+                        onChange={(e) =>
+                          updatePreferences((prev) => ({
+                            ...prev,
+                            notifications: { ...prev.notifications, [rowDef.key]: e.target.checked },
+                          }))
+                        }
+                        className="h-4 w-4 shrink-0 cursor-pointer rounded border-line-strong bg-ink-900 accent-lime focus:ring-0"
+                      />
+                    </label>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between gap-2 border-t border-line pt-3">
+                  <span className="meta">Monitors teams in your watchlist</span>
+                  <button type="button" onClick={() => setShowPreferences(false)} className="btn btn-primary btn-sm">
+                    Done
                   </button>
                 </div>
-              )}
-            </>
-          )}
-        </div>
+              </div>
+            ) : (
+              <>
+                {/* Filters */}
+                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                  <button
+                    type="button"
+                    onClick={() => setActiveFilter('all')}
+                    className={`chip ${activeFilter === 'all' ? 'chip-active' : ''}`}
+                  >
+                    All <span className="chip-count">{history.length}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveFilter('matches')}
+                    className={`chip ${activeFilter === 'matches' ? 'chip-active' : ''}`}
+                  >
+                    Matches
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveFilter('moments')}
+                    className={`chip ${activeFilter === 'moments' ? 'chip-active' : ''}`}
+                  >
+                    Goals and wickets
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveFilter('results')}
+                    className={`chip ${activeFilter === 'results' ? 'chip-active' : ''}`}
+                  >
+                    Results
+                  </button>
+                </div>
+
+                {/* Notification list */}
+                <div className="-mx-4 max-h-[420px] overflow-y-auto border-t border-line custom-scrollbar">
+                  {filteredHistory.length === 0 ? (
+                    <div className="flex flex-col items-center px-4 py-8 text-center">
+                      <svg className="icon text-fg-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                      </svg>
+                      <p className="mt-3 text-sm text-fg">No alerts here</p>
+                      <p className="meta mt-1 max-w-xs leading-relaxed">
+                        Follow teams in your{' '}
+                        <a href="/dashboard/" className="text-fg-2 hover:text-fg hover:underline">
+                          watchlist
+                        </a>{' '}
+                        or star matches in{' '}
+                        <a href="/npl/" className="text-fg-2 hover:text-fg hover:underline">
+                          NPL 2026
+                        </a>
+                        . Alerts arrive 5 minutes before kickoff and during live moments.
+                      </p>
+                    </div>
+                  ) : (
+                    filteredHistory.map((item) => (
+                      <div
+                        key={item.id}
+                        className={`row group min-h-[44px] items-start py-2 ${!item.read ? 'bg-ink-700/40' : ''}`}
+                      >
+                        <span className="mt-0.5 flex w-4 shrink-0 justify-center text-fg-3">
+                          {renderTypeIcon(item.type)}
+                        </span>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <a
+                              href={item.matchUrl}
+                              onClick={() => {
+                                markNotificationAsRead(item.id);
+                                setIsOpen(false);
+                              }}
+                              className="min-w-0 focus:outline-none"
+                            >
+                              <h4 className={`truncate text-sm leading-snug ${!item.read ? 'font-medium text-fg' : 'text-fg-2'} group-hover:text-fg transition-colors duration-fast ease-out`}>
+                                {item.title}
+                              </h4>
+                            </a>
+                            <span className="flex shrink-0 items-center gap-1.5">
+                              <span className="clock meta">{formatTime(item.timestamp)}</span>
+                              {!item.read && <span className="h-1.5 w-1.5 rounded-full bg-lime" aria-hidden="true" />}
+                            </span>
+                          </div>
+
+                          <p className="meta mt-0.5 line-clamp-1 text-fg-2">{item.message}</p>
+
+                          <div className="mt-1 flex items-center justify-between gap-2">
+                            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+                              <span className="rounded-md bg-ink-700 px-1.5 py-0.5 text-xs text-fg-2">{formatTypeLabel(item)}</span>
+                              {item.competition && <span className="meta truncate">{item.competition}</span>}
+                              {item.kickoffFormatted && <span className="clock meta">{item.kickoffFormatted}</span>}
+                              {item.venue && <span className="meta truncate">{item.venue}</span>}
+                            </div>
+
+                            <div className="flex shrink-0 items-center gap-3">
+                              <a
+                                href={item.matchUrl}
+                                onClick={() => {
+                                  markNotificationAsRead(item.id);
+                                  setIsOpen(false);
+                                }}
+                                className="inline-flex items-center gap-1 text-xs text-fg-2 hover:text-fg transition-colors duration-fast ease-out"
+                              >
+                                <span>View match</span>
+                                <span aria-hidden="true">&rarr;</span>
+                              </a>
+
+                              {!item.read && (
+                                <button
+                                  type="button"
+                                  onClick={() => markNotificationAsRead(item.id)}
+                                  className="text-xs text-fg-3 hover:text-fg transition-colors duration-fast ease-out"
+                                >
+                                  Mark read
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Footer */}
+                {history.length > 0 && (
+                  <div className="flex items-center justify-between gap-2 border-t border-line pt-3">
+                    <span className="meta">
+                      {unreadCount === 0 ? (
+                        'All caught up'
+                      ) : (
+                        <>
+                          <span className="clock">{unreadCount}</span> unread
+                        </>
+                      )}
+                    </span>
+                    <button type="button" onClick={clearNotificationHistory} className="btn btn-ghost btn-sm">
+                      Clear history
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </>
       )}
     </div>
