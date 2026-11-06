@@ -111,50 +111,44 @@ export class StreamService {
       priority: 1,
     });
 
-    // 2. High-Availability Direct Web Players (Immediate Zero-Failure Failover)
+    // 2. Direct HLS Broadcast Feed (TU International Cricket Ground Live Feed)
     feeds.push({
-      id: 'NEPALCRIC-DIRECT',
-      name: 'Action Sports HD (TU Ground Feed)',
-      url: 'https://my.finalspot.top/hembedplayer/NEPALCRIC/4/500/400',
-      type: 'embed',
-      isEmbed: true,
+      id: 'NEP5-HLS-DIRECT',
+      name: 'Action Sports HD (Direct HLS Feed)',
+      url: 'https://hugh.cdn.rumble.cloud/live/hd37fm8g/live-hls/yjkj-u9ug/chunklist_i1_DVR.m3u8',
+      type: 'hls',
+      isEmbed: false,
       priority: 2,
     });
 
+    // 3. NetTV Edge MTDC03 Direct DASH
     feeds.push({
-      id: 'ACTIONSPORTS-WEB-PLAYER',
-      name: 'Action Sports HD (Web Player Mirror)',
-      url: 'https://yonotv.pages.dev/fc',
-      type: 'embed',
-      isEmbed: true,
+      id: 'NETTV-DASH-EDGE',
+      name: 'NetTV Edge MTDC03 (Direct DASH)',
+      url: 'https://ott-edge-mtdc03.nettv.com.np/npl/live_match/index.mpd',
+      type: 'dash',
+      isEmbed: false,
       priority: 3,
     });
 
+    // 4. Action Sports HD Akamai Master Player
     feeds.push({
-      id: 'TRUCKREFUSE-DIRECT',
-      name: 'Nepal Cricket Digital Feed',
-      url: 'https://truckrefuse.net/e/66ci9zl8uuao6',
+      id: 'ACTIONSPORTS-AKAMAI-NEP',
+      name: 'Action Sports HD (Akamai Master)',
+      url: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/pdx-nitro/live/clients/dash/enc/3qvpw810gz/out/v1/e4b320f9ef924fe59188752dcf9c7fbf/cenc.mpd&keyid=5d52529b6ff19eca2315013244513b68&key=ba5c7dfad287aab538463d9da6811a8c',
       type: 'embed',
       isEmbed: true,
       priority: 4,
     });
 
+    // 5. Action Sports HD Akamai Backup Player
     feeds.push({
-      id: 'ACTIONSPORTS-DRM-DASH',
-      name: 'Action Sports HD (Master DRM Feed)',
-      url: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/vfq7vktpaj/out/v1/e5454d69a91c478db2e1b3e56cf9bf47/cenc.mpd&keyid=ba4284442c87f52ddeaa95c65d236805&key=56f0808d1f1fbfc0703b384081f1d340',
+      id: 'ACTIONSPORTS-AKAMAI-NEP4',
+      name: 'Action Sports HD (Akamai Backup)',
+      url: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/q4skycp0em/out/v1/ff0967ee82ad427abee362dc40a4f60f/cenc.mpd&keyid=5d52529b6ff19eca2315013244513b68&key=ba5c7dfad287aab538463d9da6811a8c',
       type: 'embed',
       isEmbed: true,
       priority: 5,
-    });
-
-    feeds.push({
-      id: 'NETTV-DASH-EDGE',
-      name: 'NetTV Edge 03 (Direct)',
-      url: 'https://ott-edge-mtdc03.nettv.com.np/npl/live_match/index.mpd',
-      type: 'dash',
-      isEmbed: false,
-      priority: 6,
     });
 
     try {
@@ -172,20 +166,20 @@ export class StreamService {
             const key = m[1].toUpperCase();
             const rawUrl = m[2];
 
-            // Exclude foreign non-NPL cricket feeds
-            if (/^(AUS|IND|ENG|PAK|WPL|FC2|FC3|ACC|SAFF)/i.test(key)) continue;
+            // Exclude foreign non-NPL cricket feeds (FanCode, Australia, India, England, Pakistan, etc.)
+            if (/^(AUS|IND|ENG|PAK|WPL|FC|ACC|SAFF|NP4|NP2|NP3|NP$)/i.test(key)) continue;
 
-            if (key === 'NP4' || key === 'NEP1' || key === 'NPL' || key === 'NP' || key === 'NP2' || key === 'NP3') {
+            if (/^(NEP[0-9]*|NPL)$/i.test(key)) {
               const streamUrl = this.normalizeUrl(rawUrl);
               const isDirectMedia = streamUrl.includes('.m3u8') || streamUrl.includes('.mpd');
 
               feeds.push({
                 id: `FEED-${key}`,
-                name: key.includes('NP') ? 'Action Sports HD / Nepal Cricket' : `Channel ${key}`,
+                name: `Action Sports HD (${key})`,
                 url: isDirectMedia ? streamUrl : rawUrl,
                 type: streamUrl.includes('.mpd') ? 'dash' : isDirectMedia ? 'hls' : 'embed',
                 isEmbed: !isDirectMedia || rawUrl.includes('plyrr') || rawUrl.includes('pages.dev'),
-                priority: key === 'NP4' ? 10 : 20,
+                priority: key === 'NEP5' ? 2 : key === 'NEP' ? 4 : 10,
               });
             }
           }

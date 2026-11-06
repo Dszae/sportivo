@@ -136,11 +136,11 @@ async function discoverAndProbeNplStreams(signal?: AbortSignal) {
         const key = m[1];
         let streamUrl = m[2].trim();
 
-        // Strictly match genuine NPL and Nepal cricket feeds (never match BBL, WBBL, AUS, or generic feeds)
-        const isExcluded = /^(aus|ind|eng|pak|wpl|fc2|fc3|acc|saff|np4)/i.test(key);
+        // Strictly match genuine NPL and Nepal cricket feeds (never match FanCode, BBL, WBBL, AUS, or generic feeds)
+        const isExcluded = /^(aus|ind|eng|pak|wpl|fc|acc|saff|np4|np2|np3|np$)/i.test(key);
         if (isExcluded) continue;
 
-        const isNplKey = /^(npl|nep[0-9]*|npp)$/i.test(key) || key.toLowerCase().includes('nepal') || key.toUpperCase() === 'NP';
+        const isNplKey = /^(npl|nep[0-9]*)$/i.test(key);
         if (!isNplKey) continue;
 
         // Extract nested raw media URLs if wrapped in player queries (?src=...)
@@ -455,42 +455,35 @@ export const nplAdapter: ProviderAdapter = {
           hd: true,
           isNativeVideo: true,
           isSandboxedIframe: false,
-          language: 'Server DSZ1 (1080p Master)',
+          language: 'Server DSZ1 (1080p Master DASH)',
         },
         {
-          embedUrl: 'https://my.finalspot.top/hembedplayer/NEPALCRIC/4/500/400',
+          embedUrl: 'https://hugh.cdn.rumble.cloud/live/hd37fm8g/live-hls/yjkj-u9ug/chunklist_i1_DVR.m3u8',
           hd: true,
-          isNativeVideo: false,
-          isSandboxedIframe: true,
-          language: 'Server DSZ2 (TU Ground Live Feed)',
-        },
-        {
-          embedUrl: 'https://yonotv.pages.dev/fc',
-          hd: true,
-          isNativeVideo: false,
-          isSandboxedIframe: true,
-          language: 'Server DSZ3 (Action Sports Web Mirror)',
-        },
-        {
-          embedUrl: 'https://truckrefuse.net/e/66ci9zl8uuao6',
-          hd: true,
-          isNativeVideo: false,
-          isSandboxedIframe: true,
-          language: 'Server DSZ4 (Nepal Cricket Digital)',
-        },
-        {
-          embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/vfq7vktpaj/out/v1/e5454d69a91c478db2e1b3e56cf9bf47/cenc.mpd&keyid=ba4284442c87f52ddeaa95c65d236805&key=56f0808d1f1fbfc0703b384081f1d340',
-          hd: true,
-          isNativeVideo: false,
-          isSandboxedIframe: true,
-          language: 'Server DSZ5 (Action Sports HD DRM)',
+          isNativeVideo: true,
+          isSandboxedIframe: false,
+          language: 'Server DSZ2 (TU Ground Direct HLS)',
         },
         {
           embedUrl: 'https://ott-edge-mtdc03.nettv.com.np/npl/live_match/index.mpd',
           hd: true,
           isNativeVideo: true,
           isSandboxedIframe: false,
-          language: 'Server DSZ6 (1080p Edge 03)',
+          language: 'Server DSZ3 (NetTV Edge MTDC03 DASH)',
+        },
+        {
+          embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/pdx-nitro/live/clients/dash/enc/3qvpw810gz/out/v1/e4b320f9ef924fe59188752dcf9c7fbf/cenc.mpd&keyid=5d52529b6ff19eca2315013244513b68&key=ba5c7dfad287aab538463d9da6811a8c',
+          hd: true,
+          isNativeVideo: false,
+          isSandboxedIframe: true,
+          language: 'Server DSZ4 (Action Sports Akamai Master)',
+        },
+        {
+          embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/q4skycp0em/out/v1/ff0967ee82ad427abee362dc40a4f60f/cenc.mpd&keyid=5d52529b6ff19eca2315013244513b68&key=ba5c7dfad287aab538463d9da6811a8c',
+          hd: true,
+          isNativeVideo: false,
+          isSandboxedIframe: true,
+          language: 'Server DSZ5 (Action Sports Akamai Backup)',
         },
       ],
     };
