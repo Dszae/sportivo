@@ -20,6 +20,17 @@ export function GridIcon({ size = 20, color = colors.fg2 }: IconProps) {
   );
 }
 
+export function SearchIcon({ size = 18, color = colors.fg2, style }: IconProps) {
+  return (
+    <ViewWrapper style={style}>
+      <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+        <Circle cx="11" cy="11" r="7.5" stroke={color} strokeWidth="1.5" />
+        <Path d="M21 21l-4.35-4.35" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </Svg>
+    </ViewWrapper>
+  );
+}
+
 export function FootballIcon({ size = 20, color = colors.fg2, style }: IconProps) {
   return (
     <ViewWrapper style={style}>

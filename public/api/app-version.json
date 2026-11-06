@@ -1,7 +1,7 @@
 {
-  "version": "1.1.0",
-  "versionCode": 11,
+  "version": "1.1.1",
+  "versionCode": 12,
   "downloadUrl": "https://sportivo.dipeshsapkota7.com.np/download/sportivo.apk",
-  "releaseNotes": "Nepal Premier League (NPL 2026) zero-delay DASH 1080p live streams, Action Sports HD verified feeds, real-time match lifecycle sync, and live ball-by-ball scorecards.",
+  "releaseNotes": "Major UI overhaul matching the updated web version: Live on Air hero banner with auto-dismiss on match conclusion, team crest logos, search filtering, updated category pills with live counts, and locked genuine NPL streams.",
   "publishedAt": "2026-11-06"
 }

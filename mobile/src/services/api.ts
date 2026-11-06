@@ -134,30 +134,38 @@ export async function resolveMatchStreams(match: Match): Promise<StreamSource[]>
   if (allResolved.length === 0 && isNpl) {
     allResolved.push(
       {
-        id: 'npl-yonotv-primary',
+        id: 'npl-nettv-lb',
         source: 'npl',
         label: 'Server DSZ1',
-        embedUrl: 'https://yonotv.pages.dev/fc',
-        streamUrl: 'https://yonotv.pages.dev/fc',
-        isDirectStream: false,
+        embedUrl: 'https://ott-lb.nettv.com.np/npl/live_match/index.mpd',
+        streamUrl: 'https://ott-lb.nettv.com.np/npl/live_match/index.mpd',
+        isDirectStream: true,
         hd: true,
       },
       {
-        id: 'npl-nettv-direct',
+        id: 'npl-nettv-edge3',
         source: 'npl',
         label: 'Server DSZ2',
-        embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
-        streamUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_match_3/tracks-v1a1/mono.m3u8',
+        embedUrl: 'https://ott-edge-mtdc03.nettv.com.np/npl/live_match/index.mpd',
+        streamUrl: 'https://ott-edge-mtdc03.nettv.com.np/npl/live_match/index.mpd',
         isDirectStream: true,
         hd: true,
       },
       {
-        id: 'npl-nettv-server2',
+        id: 'npl-nettv-hls',
         source: 'npl',
         label: 'Server DSZ3',
-        embedUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_live/tracks-v1a1/mono.m3u8',
-        streamUrl: 'https://ottnlive-fstream.nettvstreamz.com/live_hls/npl_live/tracks-v1a1/mono.m3u8',
+        embedUrl: 'https://lb-ottnp.nettvstreamz.com/npl/live_match6/playlist.m3u8',
+        streamUrl: 'https://lb-ottnp.nettvstreamz.com/npl/live_match6/playlist.m3u8',
         isDirectStream: true,
+        hd: true,
+      },
+      {
+        id: 'npl-actionsports-akamai',
+        source: 'npl',
+        label: 'Server DSZ4',
+        embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/pdx-nitro/live/clients/dash/enc/3qvpw810gz/out/v1/e4b320f9ef924fe59188752dcf9c7fbf/cenc.mpd&keyid=5d52529b6ff19eca2315013244513b68&key=ba5c7dfad287aab538463d9da6811a8c',
+        isDirectStream: false,
         hd: true,
       }
     );

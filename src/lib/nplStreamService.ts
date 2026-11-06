@@ -113,9 +113,9 @@ export class StreamService {
 
     // 2. Direct HLS Broadcast Feed (TU International Cricket Ground Live Feed)
     feeds.push({
-      id: 'NEP5-HLS-DIRECT',
+      id: 'NETTV-HLS-DIRECT',
       name: 'Action Sports HD (Direct HLS Feed)',
-      url: 'https://hugh.cdn.rumble.cloud/live/hd37fm8g/live-hls/yjkj-u9ug/chunklist_i1_DVR.m3u8',
+      url: 'https://lb-ottnp.nettvstreamz.com/npl/live_match6/playlist.m3u8',
       type: 'hls',
       isEmbed: false,
       priority: 2,
@@ -167,7 +167,7 @@ export class StreamService {
             const rawUrl = m[2];
 
             // Exclude foreign non-NPL cricket feeds (FanCode, Australia, India, England, Pakistan, etc.)
-            if (/^(AUS|IND|ENG|PAK|WPL|FC|ACC|SAFF|NP4|NP2|NP3|NP$)/i.test(key)) continue;
+            if (/^(AUS|IND|ENG|PAK|WPL|FC|ACC|SAFF|NP4|NP2|NP3|NP$|NEP5)/i.test(key)) continue;
 
             if (/^(NEP[0-9]*|NPL)$/i.test(key)) {
               const streamUrl = this.normalizeUrl(rawUrl);

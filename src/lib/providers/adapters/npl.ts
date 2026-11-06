@@ -137,7 +137,7 @@ async function discoverAndProbeNplStreams(signal?: AbortSignal) {
         let streamUrl = m[2].trim();
 
         // Strictly match genuine NPL and Nepal cricket feeds (never match FanCode, BBL, WBBL, AUS, or generic feeds)
-        const isExcluded = /^(aus|ind|eng|pak|wpl|fc|acc|saff|np4|np2|np3|np$)/i.test(key);
+        const isExcluded = /^(aus|ind|eng|pak|wpl|fc|acc|saff|np4|np2|np3|np$|nep5)/i.test(key);
         if (isExcluded) continue;
 
         const isNplKey = /^(npl|nep[0-9]*)$/i.test(key);
@@ -458,7 +458,7 @@ export const nplAdapter: ProviderAdapter = {
           language: 'Server DSZ1 (1080p Master DASH)',
         },
         {
-          embedUrl: 'https://hugh.cdn.rumble.cloud/live/hd37fm8g/live-hls/yjkj-u9ug/chunklist_i1_DVR.m3u8',
+          embedUrl: 'https://lb-ottnp.nettvstreamz.com/npl/live_match6/playlist.m3u8',
           hd: true,
           isNativeVideo: true,
           isSandboxedIframe: false,

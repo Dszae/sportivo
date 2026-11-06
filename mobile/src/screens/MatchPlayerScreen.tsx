@@ -208,9 +208,9 @@ export default function MatchPlayerScreen() {
   const fallbackStream: StreamSource = {
     id: 'server-1',
     source: 'npl',
-    label: 'Action Sports HD (TU Ground Live)',
-    embedUrl: 'https://hugh.cdn.rumble.cloud/live/hd37fm8g/live-hls/yjkj-u9ug/chunklist_i1_DVR.m3u8',
-    streamUrl: 'https://hugh.cdn.rumble.cloud/live/hd37fm8g/live-hls/yjkj-u9ug/chunklist_i1_DVR.m3u8',
+    label: 'NetTV Action Sports HD (1080p Master)',
+    embedUrl: 'https://ott-lb.nettv.com.np/npl/live_match/index.mpd',
+    streamUrl: 'https://ott-lb.nettv.com.np/npl/live_match/index.mpd',
     isDirectStream: true,
     hd: true,
   };
