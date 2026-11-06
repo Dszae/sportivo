@@ -1,7 +1,7 @@
 {
-  "version": "1.1.1",
-  "versionCode": 12,
+  "version": "1.1.2",
+  "versionCode": 13,
   "downloadUrl": "https://sportivo.dipeshsapkota7.com.np/download/sportivo.apk",
-  "releaseNotes": "Major UI overhaul matching the updated web version: Live on Air hero banner with auto-dismiss on match conclusion, team crest logos, search filtering, updated category pills with live counts, and locked genuine NPL streams.",
+  "releaseNotes": "Exact mobile web UI alignment: floodlit stadium hero showcase, Up Next live fixture desk, unslop token system, NPL schedule with Live Now panel, segmented chips, team crests, and zero-delay streaming.",
   "publishedAt": "2026-11-06"
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,24 +14,61 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { FootballIcon, TrophyIcon, CricketIcon, BookmarkIcon, BellIcon, ArrowForwardIcon, InfoIcon } from '../components/Icons';
-import { RootStackParamList } from '../types';
+import {
+  BookmarkIcon,
+  BellIcon,
+  FootballIcon,
+  CricketIcon,
+  TrophyIcon,
+  ChevronForwardIcon,
+} from '../components/Icons';
+import { Match, NplMatch, RootStackParamList } from '../types';
+import { fetchMatches, fetchNplFixtures, formatKathmanduTime, formatKathmanduDate } from '../services/api';
 import { loadPreferences } from '../services/storage';
 import { triggerButtonHaptic } from '../services/notifications';
 import { checkForAppUpdate, downloadAndInstallUpdate, AppVersionInfo } from '../services/updateService';
+import { LiveDot } from '../components/Live';
+import { colors, fonts, radius } from '../theme';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+const HERO_IMAGE =
+  'https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=2000&auto=format&fit=crop';
+
+function nstClock() {
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Kathmandu',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).format(new Date()) + ' NST';
+  } catch {
+    return 'NST';
+  }
+}
 
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
+  const topPadding = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0) + 8;
+
   const [refreshing, setRefreshing] = useState(false);
   const [watchlistCount, setWatchlistCount] = useState(0);
   const [updateInfo, setUpdateInfo] = useState<AppVersionInfo | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
 
-  const topPadding = Platform.OS === 'android' ? 24 : insets.top + 8;
+  const [currentTime, setCurrentTime] = useState(nstClock());
+  const [footballMatches, setFootballMatches] = useState<Match[]>([]);
+  const [cricketMatches, setCricketMatches] = useState<Match[]>([]);
+  const [nplFixtures, setNplFixtures] = useState<NplMatch[]>([]);
+
+  // Update clock every 15s
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(nstClock()), 15000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleStartUpdate = async () => {
     if (!updateInfo) return;
@@ -46,18 +83,27 @@ export default function HomeScreen() {
     }
   };
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
-      const prefs = await loadPreferences();
+      const [fb, cr, npl, prefs, update] = await Promise.all([
+        fetchMatches('football').catch(() => []),
+        fetchMatches('cricket').catch(() => []),
+        fetchNplFixtures().catch(() => []),
+        loadPreferences().catch(() => ({ starredMatches: [], favoriteTeams: [] })),
+        checkForAppUpdate().catch(() => null),
+      ]);
+
+      setFootballMatches(fb);
+      setCricketMatches(cr);
+      setNplFixtures(npl);
       setWatchlistCount(prefs.starredMatches.length + prefs.favoriteTeams.length);
-      const update = await checkForAppUpdate();
       if (update && update.hasUpdate) {
         setUpdateInfo(update);
       }
     } finally {
       setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -65,82 +111,98 @@ export default function HomeScreen() {
       loadData();
     });
     return unsubscribe;
-  }, [navigation]);
+  }, [loadData, navigation]);
 
   const onRefresh = () => {
     setRefreshing(true);
     loadData();
   };
 
-  const arenas = [
-    {
-      title: 'Football Desk',
-      category: 'FootballTab',
-      renderIcon: () => <FootballIcon size={24} color="#c9f36b" />,
-      subtitle: 'Premier League, UCL, La Liga, Serie A',
-      badge: 'Live Feeds',
-      badgeColor: '#c9f36b',
-      badgeBg: 'rgba(201, 243, 107, 0.15)',
-      description: 'Real-time scores, lineups, and verified multi-server streaming links.',
-    },
-    {
-      title: 'Nepal Premier League',
-      category: 'NplTab',
-      renderIcon: () => <TrophyIcon size={24} color="#ef4444" />,
-      subtitle: 'Official Season 2026 Schedule',
-      badge: '32 Matches',
-      badgeColor: '#ef4444',
-      badgeBg: 'rgba(239, 68, 68, 0.2)',
-      description: 'All 8 franchises, TU Cricket Ground Kirtipur fixtures, and ball-by-ball updates.',
-    },
-    {
-      title: 'Cricket Desk',
-      category: 'CricketTab',
-      renderIcon: () => <CricketIcon size={24} color="#c9f36b" />,
-      subtitle: 'ICC World Cups, IPL, Bilateral Series',
-      badge: 'NST Scores',
-      badgeColor: '#c9f36b',
-      badgeBg: 'rgba(201, 243, 107, 0.15)',
-      description: 'Comprehensive cricket schedules and live ball-by-ball match tracking in NST.',
-    },
-    {
-      title: 'My Watchlist',
-      category: 'WatchlistTab',
-      renderIcon: () => <BookmarkIcon size={24} color="#fbbf24" fill="#fbbf24" />,
-      subtitle: 'Followed Teams & Kickoff Alerts',
-      badge: `${watchlistCount} Saved`,
-      badgeColor: '#fbbf24',
-      badgeBg: 'rgba(251, 191, 36, 0.18)',
-      description: 'Your personalized matchday schedule with 5-minute pre-match vibration alerts.',
-    },
-  ];
+  // Up Next match preview: Live matches first, then upcoming
+  const heroMatches = useMemo(() => {
+    const combined: Array<{ match: Match; category: string; isLive: boolean; time: string }> = [];
+
+    // Add NPL matches
+    for (const m of nplFixtures) {
+      if (m.status === 'COMPLETED') continue;
+      const isLive = m.status === 'LIVE';
+      combined.push({
+        match: {
+          id: m.id,
+          title: `${m.homeTeam} vs ${m.awayTeam}`,
+          category: 'cricket',
+          status: isLive ? 'Live' : 'Upcoming',
+          timestamp: m.timestamp,
+          venue: m.venue,
+        },
+        category: 'NPL',
+        isLive,
+        time: formatKathmanduTime(m.timestamp),
+      });
+    }
+
+    // Add Football matches
+    for (const m of footballMatches) {
+      if (m.status === 'Final') continue;
+      const isLive = m.status === 'Live';
+      combined.push({
+        match: m,
+        category: 'Football',
+        isLive,
+        time: formatKathmanduTime(m.timestamp || m.startTime || Date.now()),
+      });
+    }
+
+    // Add Cricket matches
+    for (const m of cricketMatches) {
+      if (m.status === 'Final') continue;
+      const isLive = m.status === 'Live';
+      combined.push({
+        match: m,
+        category: 'Cricket',
+        isLive,
+        time: formatKathmanduTime(m.timestamp || m.startTime || Date.now()),
+      });
+    }
+
+    // Sort: live first, then chronological
+    combined.sort((a, b) => {
+      if (a.isLive !== b.isLive) return b.isLive ? 1 : -1;
+      return (a.match.timestamp || 0) - (b.match.timestamp || 0);
+    });
+
+    return combined.slice(0, 5);
+  }, [cricketMatches, footballMatches, nplFixtures]);
 
   return (
     <View style={[styles.container, { paddingTop: topPadding }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#080a0b" translucent={false} />
+      <StatusBar barStyle="light-content" backgroundColor={colors.ink950} translucent={false} />
 
-      {/* Top Header with Safe Area Clearance */}
-      <View style={styles.header}>
+      {/* Top Header (Matches web SiteHeader) */}
+      <View style={styles.siteHeader}>
         <View style={styles.brandRow}>
-          <View style={styles.logoDotContainer}>
-            <View style={styles.logoDotPing} />
-            <View style={styles.logoDot} />
-          </View>
-          <View>
-            <Text style={styles.logoText}>
-              Sportivo<Text style={styles.logoAccent}>.</Text>
-            </Text>
-            <Text style={styles.logoSubtext}>LIVE SPORTS DESK · NEPAL</Text>
-          </View>
+          <View style={styles.brandDot} />
+          <Text style={styles.brandText}>Sportivo</Text>
         </View>
 
-        <View style={styles.headerRightActions}>
+        <View style={styles.headerRight}>
           <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={() => navigation.navigate('NotificationSettings')}
-            accessibilityLabel="Notification Settings"
+            style={styles.headerChip}
+            onPress={() => navigation.navigate('WatchlistTab' as any)}
           >
-            <BellIcon size={20} color="#cbd5e1" />
+            <BookmarkIcon size={16} color={colors.fg2} />
+            <Text style={styles.headerChipText}>Watchlist</Text>
+            {watchlistCount > 0 && (
+              <Text style={styles.headerChipCount}>{watchlistCount}</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={() => navigation.navigate('NotificationSettings')}
+            accessibilityLabel="Notifications"
+          >
+            <BellIcon size={16} color={colors.fg2} />
           </TouchableOpacity>
         </View>
       </View>
@@ -151,19 +213,19 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#c9f36b"
-            colors={['#c9f36b']}
+            tintColor={colors.lime}
+            colors={[colors.lime]}
           />
         }
       >
-        {/* In-App Direct Update Banner */}
+        {/* In-App Update Banner */}
         {updateInfo?.hasUpdate && (
           <View style={styles.updateCard}>
-            <View style={styles.updateHeaderRow}>
+            <View style={styles.updateTop}>
               <View style={styles.updateBadge}>
                 <Text style={styles.updateBadgeText}>UPDATE AVAILABLE · v{updateInfo.version}</Text>
               </View>
-              <TouchableOpacity onPress={() => setUpdateInfo(null)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <TouchableOpacity onPress={() => setUpdateInfo(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                 <Text style={styles.dismissBtn}>✕</Text>
               </TouchableOpacity>
             </View>
@@ -175,92 +237,195 @@ export default function HomeScreen() {
                   <View style={[styles.progressBarFill, { width: `${downloadProgress}%` }]} />
                 </View>
                 <Text style={styles.progressText}>
-                  Downloading update directly in background... {downloadProgress}%
+                  Downloading update in background... {downloadProgress}%
                 </Text>
               </View>
             ) : (
-              <TouchableOpacity
-                style={styles.updateActionBtn}
-                onPress={handleStartUpdate}
-              >
-                <Text style={styles.updateActionText}>Download &amp; Install v{updateInfo.version} &rarr;</Text>
+              <TouchableOpacity style={styles.updateActionBtn} onPress={handleStartUpdate}>
+                <Text style={styles.updateActionText}>Download &amp; Install v{updateInfo.version} →</Text>
               </TouchableOpacity>
             )}
           </View>
         )}
 
-        {/* Hero Welcome Card */}
-        <View style={styles.heroCard}>
-          <View style={styles.heroBadgeRow}>
-            <View style={styles.liveBadge}>
-              <View style={styles.liveBadgeDot} />
-              <Text style={styles.liveBadgeText}>NST SYNCHRONIZED</Text>
-            </View>
-            <Text style={styles.timezoneText}>Asia/Kathmandu (UTC+5:45)</Text>
+        {/* Hero Showcase (Matches web HeroShowcase.tsx) */}
+        <View style={styles.heroSection}>
+          <View style={styles.heroImageContainer}>
+            <Image source={{ uri: HERO_IMAGE }} style={styles.heroImage} />
+            <View style={styles.heroImageOverlay} />
           </View>
 
-          <Text style={styles.heroTitle}>Sports Hub &amp; Live Fixture Desks</Text>
-          <Text style={styles.heroDescription}>
-            Select your sport arena below to explore today's live kickoff times, score tracking, and streaming links without clutter.
-          </Text>
+          <View style={styles.heroContent}>
+            <Text style={styles.eyebrow}>Live sports desk, Nepal</Text>
+            <Text style={styles.heroHeadline}>Every kickoff, in Nepal time</Text>
+            <Text style={styles.heroSubtitle}>
+              Football, cricket and basketball fixtures with live scores and streams, converted to Nepal Standard Time so you never do the maths.
+            </Text>
+
+            <View style={styles.heroButtonsRow}>
+              <TouchableOpacity
+                style={styles.btnPrimary}
+                onPress={() => {
+                  triggerButtonHaptic();
+                  navigation.navigate('NplTab' as any);
+                }}
+              >
+                <Text style={styles.btnPrimaryText}>Watch NPL 2026</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.btnSecondary}
+                onPress={() => {
+                  triggerButtonHaptic();
+                  navigation.navigate('FootballTab' as any);
+                }}
+              >
+                <Text style={styles.btnSecondaryText}>Today's fixtures</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Up Next Panel (Matches web Up Next panel) */}
+            <View style={styles.upNextPanel}>
+              <View style={styles.upNextHeader}>
+                <Text style={styles.upNextTitle}>Up next</Text>
+                <Text style={styles.clockText}>{currentTime}</Text>
+              </View>
+
+              {heroMatches.length === 0 ? (
+                <Text style={styles.upNextEmpty}>No fixtures scheduled yet</Text>
+              ) : (
+                heroMatches.map((item, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    style={styles.upNextRow}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      triggerButtonHaptic();
+                      navigation.navigate('MatchPlayer', { match: item.match });
+                    }}
+                  >
+                    <View style={styles.upNextTimeCol}>
+                      {item.isLive ? (
+                        <View style={styles.liveTag}>
+                          <LiveDot size={8} />
+                          <Text style={styles.liveTagText}>Live</Text>
+                        </View>
+                      ) : (
+                        <Text style={styles.upNextTimeText}>{item.time}</Text>
+                      )}
+                    </View>
+
+                    <Text style={styles.upNextMatchTitle} numberOfLines={1}>
+                      {item.match.title}
+                    </Text>
+
+                    <Text style={styles.upNextCategoryBadge}>{item.category}</Text>
+                  </TouchableOpacity>
+                ))
+              )}
+            </View>
+          </View>
         </View>
 
-        {/* Arenas Grid */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionBadge}>CHOOSE YOUR ARENA</Text>
-          <Text style={styles.sectionTitle}>Live Sports Portals</Text>
-        </View>
+        {/* Quick Portals by Sport */}
+        <View style={styles.desksSection}>
+          <View style={styles.deskHeader}>
+            <Text style={styles.eyebrow}>Fixtures by sport</Text>
+            <Text style={styles.sectionTitle}>Live Desks</Text>
+          </View>
 
-        {arenas.map((item, index) => (
           <TouchableOpacity
-            key={index}
-            style={styles.arenaCard}
-            activeOpacity={0.8}
-            onPress={async () => {
-              await triggerButtonHaptic();
-              navigation.navigate(item.category as any);
-            }}
+            style={styles.deskRow}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('NplTab' as any)}
           >
-            <View style={styles.arenaTopRow}>
-              <View style={styles.iconCircle}>
-                {item.renderIcon()}
-              </View>
-              <View style={[styles.arenaBadge, { backgroundColor: item.badgeBg }]}>
-                <Text style={[styles.arenaBadgeText, { color: item.badgeColor }]}>
-                  {item.badge}
-                </Text>
-              </View>
+            <View style={styles.deskIconCircle}>
+              <TrophyIcon size={20} color={colors.live} />
             </View>
-
-            <Text style={styles.arenaTitle}>{item.title}</Text>
-            <Text style={styles.arenaSubtitle}>{item.subtitle}</Text>
-            <Text style={styles.arenaDescription}>{item.description}</Text>
-
-            <View style={styles.arenaFooter}>
-              <Text style={styles.arenaActionText}>Enter Desk</Text>
-              <ArrowForwardIcon size={14} color="#c9f36b" />
+            <View style={styles.deskInfo}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.deskTitle}>Nepal Premier League (NPL)</Text>
+                <View style={styles.deskLiveBadge}>
+                  <LiveDot size={6} />
+                  <Text style={styles.deskLiveText}>LIVE</Text>
+                </View>
+              </View>
+              <Text style={styles.deskSubtitle}>Official 2026 Season Fixtures &amp; Scores</Text>
             </View>
+            <ChevronForwardIcon size={16} color={colors.fg3} />
           </TouchableOpacity>
-        ))}
 
-        {/* About Creator Footer Card */}
-        <TouchableOpacity
-          style={styles.creatorCard}
-          onPress={() => navigation.navigate('AboutCreator')}
-          activeOpacity={0.8}
-        >
-          <View style={styles.creatorHeaderRow}>
-            <InfoIcon size={20} color="#c9f36b" />
-            <Text style={styles.creatorHeading}>About the Creator</Text>
-          </View>
-          <Text style={styles.creatorDescription}>
-            Sportivo was created and engineered by Dipesh Sapkota, an engineering student from Nepal. Designed to bring clean sports schedules and verified streaming to fans across Nepal.
+          <TouchableOpacity
+            style={styles.deskRow}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('FootballTab' as any)}
+          >
+            <View style={styles.deskIconCircle}>
+              <FootballIcon size={20} color={colors.lime} />
+            </View>
+            <View style={styles.deskInfo}>
+              <Text style={styles.deskTitle}>Football Desk</Text>
+              <Text style={styles.deskSubtitle}>Premier League, Champions League, La Liga, Serie A</Text>
+            </View>
+            <ChevronForwardIcon size={16} color={colors.fg3} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.deskRow}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('CricketTab' as any)}
+          >
+            <View style={styles.deskIconCircle}>
+              <CricketIcon size={20} color={colors.lime} />
+            </View>
+            <View style={styles.deskInfo}>
+              <Text style={styles.deskTitle}>Cricket Desk</Text>
+              <Text style={styles.deskSubtitle}>ICC Tournaments, IPL, Bilateral Series</Text>
+            </View>
+            <ChevronForwardIcon size={16} color={colors.fg3} />
+          </TouchableOpacity>
+        </View>
+
+        {/* What Sportivo Does (Matches web What Sportivo does section) */}
+        <View style={styles.pillarsSection}>
+          <Text style={styles.eyebrow}>What Sportivo does</Text>
+          <Text style={styles.pillarsHeading}>
+            One place for fixtures, scores and streams, in NST
           </Text>
-          <View style={styles.creatorLinkRow}>
-            <Text style={styles.creatorLinkText}>View Creator Profile &amp; Projects</Text>
-            <ArrowForwardIcon size={14} color="#c9f36b" />
+          <Text style={styles.pillarsSubtitle}>
+            Schedules from upstream sports feeds are converted to Nepal Standard Time, paired with live status and stream servers, and kept in sync while a match is on.
+          </Text>
+
+          <View style={styles.pillarGrid}>
+            <View style={styles.pillarItem}>
+              <Text style={styles.pillarTitle}>Nepal Standard Time</Text>
+              <Text style={styles.pillarDesc}>
+                Every kickoff is shown in UTC+5:45. No conversion on your side.
+              </Text>
+            </View>
+
+            <View style={styles.pillarItem}>
+              <Text style={styles.pillarTitle}>Several stream servers</Text>
+              <Text style={styles.pillarDesc}>
+                Each match lists verified servers. If one drops, switch to the next.
+              </Text>
+            </View>
+
+            <View style={styles.pillarItem}>
+              <Text style={styles.pillarTitle}>Watchlist</Text>
+              <Text style={styles.pillarDesc}>
+                Star any match or team to follow it with pre-match alerts.
+              </Text>
+            </View>
+
+            <View style={styles.pillarItem}>
+              <Text style={styles.pillarTitle}>Live status &amp; alerts</Text>
+              <Text style={styles.pillarDesc}>
+                Real-time scores and notifications when starred matches kick off.
+              </Text>
+            </View>
           </View>
-        </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
@@ -269,391 +434,412 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#080a0b',
+    backgroundColor: colors.ink900,
   },
-  header: {
+  siteHeader: {
+    height: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
-    backgroundColor: '#0c1413',
+    borderBottomColor: colors.line,
+    backgroundColor: colors.ink950,
   },
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
-  logoDotContainer: {
-    width: 12,
-    height: 12,
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoDotPing: {
-    position: 'absolute',
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#c9f36b',
-    opacity: 0.5,
-  },
-  logoDot: {
+  brandDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#c9f36b',
+    backgroundColor: colors.lime,
   },
-  logoText: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#ffffff',
-    letterSpacing: -0.5,
+  brandText: {
+    fontFamily: fonts.sansSemibold,
+    fontSize: 17,
+    color: colors.fg,
   },
-  logoAccent: {
-    color: '#c9f36b',
-  },
-  logoSubtext: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#94a3b8',
-    letterSpacing: 0.8,
-  },
-  headerRightActions: {
+  headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  creatorHeaderBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: '#c9f36b',
-  },
-  headerAvatar: {
-    width: '100%',
-    height: '100%',
-  },
-  settingsButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    justifyContent: 'center',
+  headerChip: {
+    height: 32,
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 10,
+    borderRadius: radius.md,
+    backgroundColor: colors.ink800,
+    borderWidth: 1,
+    borderColor: colors.line,
+    gap: 6,
   },
+  headerChipText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 12,
+    color: colors.fg2,
+  },
+  headerChipCount: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    color: colors.fg3,
+  },
+  iconBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.md,
+    backgroundColor: colors.ink800,
+    borderWidth: 1,
+    borderColor: colors.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+
+  /* Update Card */
   updateCard: {
-    backgroundColor: '#122216',
-    borderWidth: 1.5,
-    borderColor: '#c9f36b',
-    borderRadius: 16,
+    backgroundColor: colors.ink800,
+    marginHorizontal: 16,
+    marginTop: 12,
     padding: 16,
-    marginBottom: 16,
-    shadowColor: '#c9f36b',
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 3,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.lineStrong,
   },
-  updateHeaderRow: {
+  updateTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
   updateBadge: {
-    backgroundColor: 'rgba(201, 243, 107, 0.2)',
+    backgroundColor: 'rgba(201, 243, 107, 0.15)',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 4,
   },
   updateBadgeText: {
-    color: '#c9f36b',
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 0.5,
+    color: colors.lime,
+    fontSize: 11,
+    fontWeight: '700',
   },
   dismissBtn: {
-    color: '#94a3b8',
-    fontSize: 16,
-    paddingHorizontal: 6,
+    color: colors.fg3,
+    fontSize: 14,
   },
   updateTitle: {
+    fontFamily: fonts.sansMedium,
     fontSize: 16,
-    fontWeight: '900',
-    color: '#ffffff',
+    color: colors.fg,
     marginBottom: 4,
   },
   updateNotes: {
-    fontSize: 12,
-    color: '#cbd5e1',
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.fg2,
     lineHeight: 18,
     marginBottom: 12,
   },
   updateActionBtn: {
-    backgroundColor: '#c9f36b',
-    borderRadius: 10,
+    backgroundColor: colors.lime,
     paddingVertical: 10,
+    borderRadius: radius.md,
     alignItems: 'center',
   },
+  updateActionText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 13,
+    color: colors.limeInk,
+  },
   progressContainer: {
-    marginVertical: 4,
+    marginTop: 8,
   },
   progressBarBg: {
-    height: 8,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 4,
+    height: 6,
+    backgroundColor: colors.ink700,
+    borderRadius: 3,
     overflow: 'hidden',
-    marginBottom: 6,
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#c9f36b',
-    borderRadius: 4,
+    backgroundColor: colors.lime,
   },
   progressText: {
-    color: '#c9f36b',
-    fontSize: 11,
-    fontWeight: '800',
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    color: colors.fg3,
+    marginTop: 6,
     textAlign: 'center',
   },
-  updateActionText: {
-    color: '#080a0b',
-    fontSize: 12,
-    fontWeight: '900',
+
+  /* Hero Showcase */
+  heroSection: {
+    position: 'relative',
+    paddingBottom: 24,
   },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
+  heroImageContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 380,
+    overflow: 'hidden',
   },
-  creatorBanner: {
+  heroImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+    opacity: 0.35,
+  },
+  heroImageOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(16, 19, 18, 0.75)',
+  },
+  heroContent: {
+    paddingHorizontal: 16,
+    paddingTop: 28,
+  },
+  eyebrow: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.fg3,
+  },
+  heroHeadline: {
+    fontFamily: fonts.sansSemibold,
+    fontSize: 32,
+    lineHeight: 38,
+    color: colors.fg,
+    marginTop: 8,
+    letterSpacing: -0.5,
+  },
+  heroSubtitle: {
+    fontFamily: fonts.sans,
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.fg2,
+    marginTop: 10,
+  },
+  heroButtonsRow: {
     flexDirection: 'row',
+    gap: 10,
+    marginTop: 20,
+    marginBottom: 24,
+  },
+  btnPrimary: {
+    height: 42,
+    paddingHorizontal: 18,
+    borderRadius: radius.md,
+    backgroundColor: colors.lime,
     alignItems: 'center',
-    backgroundColor: '#0e1716',
-    borderWidth: 1,
-    borderColor: 'rgba(201, 243, 107, 0.3)',
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 16,
+    justifyContent: 'center',
   },
-  bannerAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1.5,
-    borderColor: '#c9f36b',
-    marginRight: 12,
-  },
-  bannerInfo: {
-    flex: 1,
-  },
-  bannerBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 2,
-  },
-  bannerBadgeText: {
-    color: '#94a3b8',
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: 'rgba(201, 243, 107, 0.15)',
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 8,
-  },
-  verifiedText: {
-    color: '#c9f36b',
-    fontSize: 9,
-    fontWeight: '900',
-  },
-  bannerName: {
-    color: '#ffffff',
+  btnPrimaryText: {
+    fontFamily: fonts.sansMedium,
     fontSize: 14,
-    fontWeight: '900',
+    color: colors.limeInk,
   },
-  bannerSubtext: {
-    color: '#94a3b8',
-    fontSize: 10,
-    fontWeight: '600',
-    marginTop: 1,
-  },
-  heroCard: {
-    borderRadius: 20,
+  btnSecondary: {
+    height: 42,
+    paddingHorizontal: 18,
+    borderRadius: radius.md,
+    backgroundColor: colors.ink700,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: '#0e1716',
-    padding: 18,
-    marginBottom: 20,
+    borderColor: colors.lineStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  heroBadgeRow: {
+  btnSecondaryText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 14,
+    color: colors.fg,
+  },
+
+  /* Up Next Panel (Matches web Up Next panel) */
+  upNextPanel: {
+    backgroundColor: colors.ink800,
+    borderRadius: radius.panel,
+    borderWidth: 1,
+    borderColor: colors.line,
+    overflow: 'hidden',
+  },
+  upNextHeader: {
+    height: 46,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
   },
-  liveBadge: {
+  upNextTitle: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 14,
+    color: colors.fg,
+  },
+  clockText: {
+    fontFamily: fonts.mono,
+    fontSize: 12,
+    color: colors.fg2,
+  },
+  upNextEmpty: {
+    padding: 20,
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.fg3,
+    textAlign: 'center',
+  },
+  upNextRow: {
+    height: 46,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(201, 243, 107, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+    gap: 12,
+  },
+  upNextTimeCol: {
+    width: 80,
+  },
+  liveTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 5,
   },
-  liveBadgeDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: '#c9f36b',
-  },
-  liveBadgeText: {
-    color: '#c9f36b',
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  timezoneText: {
-    color: '#94a3b8',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  heroTitle: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '900',
-    marginBottom: 6,
-  },
-  heroDescription: {
-    color: '#cbd5e1',
+  liveTagText: {
+    fontFamily: fonts.sansMedium,
     fontSize: 12,
-    lineHeight: 18,
+    color: colors.live,
   },
-  sectionHeader: {
-    marginBottom: 12,
+  upNextTimeText: {
+    fontFamily: fonts.mono,
+    fontSize: 12,
+    color: colors.fg2,
   },
-  sectionBadge: {
-    color: '#c9f36b',
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 1.5,
-    marginBottom: 2,
+  upNextMatchTitle: {
+    flex: 1,
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.fg,
+  },
+  upNextCategoryBadge: {
+    fontFamily: fonts.sans,
+    fontSize: 11,
+    color: colors.fg3,
+  },
+
+  /* Live Desks Section */
+  desksSection: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
+    gap: 12,
+  },
+  deskHeader: {
+    marginBottom: 4,
   },
   sectionTitle: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '900',
+    fontFamily: fonts.sansMedium,
+    fontSize: 22,
+    color: colors.fg,
+    marginTop: 4,
   },
-  arenaCard: {
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    backgroundColor: '#111b19',
-    padding: 16,
-    marginBottom: 12,
-  },
-  arenaTopRow: {
+  deskRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
-  },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: colors.ink800,
+    padding: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.line,
+    gap: 12,
+  },
+  deskIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.ink700,
+    alignItems: 'center',
     justifyContent: 'center',
+  },
+  deskInfo: {
+    flex: 1,
+  },
+  deskTitle: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 15,
+    color: colors.fg,
+  },
+  deskSubtitle: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    color: colors.fg3,
+    marginTop: 2,
+  },
+  deskLiveBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(229, 72, 77, 0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
-  arenaBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  arenaBadgeText: {
+  deskLiveText: {
+    fontFamily: fonts.sansMedium,
     fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 0.5,
+    color: colors.live,
   },
-  arenaTitle: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '900',
-    marginBottom: 3,
-  },
-  arenaSubtitle: {
-    color: '#94a3b8',
-    fontSize: 11,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  arenaDescription: {
-    color: '#cbd5e1',
-    fontSize: 12,
-    lineHeight: 17,
-    marginBottom: 14,
-  },
-  arenaFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+
+  /* Pillars Section (What Sportivo Does) */
+  pillarsSection: {
+    paddingHorizontal: 16,
+    paddingTop: 32,
+    marginTop: 24,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
-    paddingTop: 10,
+    borderTopColor: colors.line,
   },
-  arenaActionText: {
-    color: '#c9f36b',
-    fontSize: 12,
-    fontWeight: '900',
+  pillarsHeading: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 22,
+    lineHeight: 28,
+    color: colors.fg,
+    marginTop: 6,
   },
-  creatorCard: {
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    backgroundColor: '#0e1716',
-    padding: 16,
-    marginTop: 8,
-  },
-  creatorHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
-  },
-  creatorHeading: {
-    color: '#ffffff',
+  pillarsSubtitle: {
+    fontFamily: fonts.sans,
     fontSize: 14,
-    fontWeight: '900',
+    lineHeight: 20,
+    color: colors.fg2,
+    marginTop: 8,
+    marginBottom: 20,
   },
-  creatorDescription: {
-    color: '#cbd5e1',
-    fontSize: 11,
-    lineHeight: 17,
-    marginBottom: 10,
+  pillarGrid: {
+    gap: 14,
   },
-  creatorLinkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  pillarItem: {
+    backgroundColor: colors.ink800,
+    padding: 14,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.line,
   },
-  creatorLinkText: {
-    color: '#c9f36b',
-    fontSize: 11,
-    fontWeight: '800',
+  pillarTitle: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 14,
+    color: colors.fg,
+    marginBottom: 4,
+  },
+  pillarDesc: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.fg2,
   },
 });

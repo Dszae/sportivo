@@ -11,14 +11,13 @@ import {
   StatusBar,
   Image,
   TextInput,
+  ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   SearchIcon,
   BookmarkIcon,
-  CalendarIcon,
   CricketIcon,
-  LocationIcon,
 } from '../components/Icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -32,7 +31,7 @@ import {
 import { loadPreferences, toggleStarredMatch } from '../services/storage';
 import { triggerButtonHaptic } from '../services/notifications';
 import { LiveDot } from '../components/Live';
-import { colors, fonts, radius } from '../theme';
+import { colors, fonts, radius, ui } from '../theme';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type Tab = 'today' | 'upcoming' | 'all';
@@ -42,7 +41,7 @@ function TeamCrest({
   name,
   short,
   color,
-  size = 34,
+  size = 32,
 }: {
   uri?: string;
   name: string;
@@ -80,6 +79,10 @@ function TeamCrest({
   );
 }
 
+function shortVenue(venue: string = '') {
+  return venue.replace('Tribhuvan University International Cricket Ground', 'TU Cricket Ground');
+}
+
 export default function NplScreen() {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
@@ -91,6 +94,7 @@ export default function NplScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [starredSlugs, setStarredSlugs] = useState<string[]>([]);
+  const [lastSyncTime, setLastSyncTime] = useState('Just now');
 
   const loadData = useCallback(async () => {
     try {
@@ -100,6 +104,13 @@ export default function NplScreen() {
       ]);
       setFixtures(data);
       setStarredSlugs(prefs.starredMatches);
+      setLastSyncTime(
+        new Intl.DateTimeFormat('en-US', {
+          timeZone: 'Asia/Kathmandu',
+          hour: 'numeric',
+          minute: '2-digit',
+        }).format(new Date()) + ' NST'
+      );
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -122,7 +133,7 @@ export default function NplScreen() {
     setStarredSlugs(updated);
   };
 
-  // Grouping & live fixture calculations
+  // Grouping & live fixture calculations (same logic as web NplSchedule.tsx)
   const todayYmd = useMemo(() => getKathmanduDateKey(Date.now()), []);
 
   const { todayMatches, upcomingMatches, allMatches } = useMemo(() => {
@@ -147,7 +158,7 @@ export default function NplScreen() {
     };
   }, [fixtures, todayYmd]);
 
-  // Compute live fixture for Hero Banner: strictly auto-hides if match is COMPLETED
+  // Compute live fixture for Hero Panel: strictly auto-hides if match is COMPLETED
   const liveFixture = useMemo(() => {
     const nowMs = Date.now();
     return fixtures.find((m) => {
@@ -178,209 +189,189 @@ export default function NplScreen() {
   const renderHeader = () => {
     return (
       <View>
-        {/* Top Live Match Hero Banner (Auto-dismisses when match completes) */}
+        {/* Live Fixture Hero Panel (Matches web .panel mb-10 overflow-hidden border-line-strong) */}
         {liveFixture && (
-          <View style={styles.heroBanner}>
-            <View style={styles.heroTopRow}>
-              <View style={styles.heroLiveBeacon}>
-                <LiveDot size={8} style={{ marginRight: 6 }} />
-                <Text style={styles.heroBeaconText}>MATCH HAPPENING RIGHT NOW</Text>
+          <View style={styles.heroPanel}>
+            <View style={styles.heroHeader}>
+              <View style={styles.liveTag}>
+                <LiveDot size={8} />
+                <Text style={styles.liveTagText}>Live now</Text>
               </View>
-              <Text style={styles.heroMatchMeta}>
-                Match {liveFixture.matchNumber} · TU Cricket Ground
+              <Text style={styles.heroMeta}>
+                Match <Text style={styles.clockInline}>{liveFixture.matchNumber}</Text>, {shortVenue(liveFixture.venue || 'TU Cricket Ground')}
               </Text>
             </View>
 
-            <View style={styles.heroCategoryRow}>
-              <View style={styles.heroLivePill}>
-                <Text style={styles.heroLivePillText}>🔴 LIVE ON AIR</Text>
-              </View>
-              <Text style={styles.heroTournamentText}>Nepal Premier League 2026</Text>
-            </View>
+            <View style={styles.heroBody}>
+              <View style={styles.heroTeams}>
+                {/* Home Team */}
+                <View style={styles.heroTeamRow}>
+                  <View style={styles.heroTeamLeft}>
+                    <TeamCrest
+                      uri={liveFixture.homeTeamLogo}
+                      name={liveFixture.homeTeam}
+                      short={liveFixture.homeTeamShort}
+                      color={liveFixture.homeTeamColor}
+                      size={44}
+                    />
+                    <Text style={styles.heroTeamName} numberOfLines={1}>
+                      {liveFixture.homeTeam}
+                    </Text>
+                  </View>
+                  {liveFixture.homeScore ? (
+                    <Text style={styles.heroScoreText}>{liveFixture.homeScore}</Text>
+                  ) : null}
+                </View>
 
-            <View style={styles.heroTeamsContainer}>
-              <View style={styles.heroTeamSide}>
-                <TeamCrest
-                  uri={liveFixture.homeTeamLogo}
-                  name={liveFixture.homeTeam}
-                  short={liveFixture.homeTeamShort}
-                  color={liveFixture.homeTeamColor}
-                  size={42}
-                />
-                <Text style={styles.heroTeamName} numberOfLines={1}>
-                  {liveFixture.homeTeam}
-                </Text>
-                {liveFixture.homeScore ? (
-                  <Text style={styles.heroScoreText}>{liveFixture.homeScore}</Text>
+                {/* Away Team */}
+                <View style={styles.heroTeamRow}>
+                  <View style={styles.heroTeamLeft}>
+                    <TeamCrest
+                      uri={liveFixture.awayTeamLogo}
+                      name={liveFixture.awayTeam}
+                      short={liveFixture.awayTeamShort}
+                      color={liveFixture.awayTeamColor}
+                      size={44}
+                    />
+                    <Text style={styles.heroTeamName} numberOfLines={1}>
+                      {liveFixture.awayTeam}
+                    </Text>
+                  </View>
+                  {liveFixture.awayScore ? (
+                    <Text style={styles.heroScoreText}>{liveFixture.awayScore}</Text>
+                  ) : null}
+                </View>
+
+                {liveFixture.summary ? (
+                  <Text style={styles.heroSummaryText}>{liveFixture.summary}</Text>
                 ) : null}
               </View>
 
-              <Text style={styles.heroVs}>vs</Text>
+              <View style={styles.heroActions}>
+                <View style={styles.heroTiming}>
+                  <Text style={styles.heroStartedText}>
+                    Started <Text style={styles.clockHighlight}>{formatKathmanduTime(liveFixture.timestamp)}</Text>
+                  </Text>
+                  <Text style={styles.heroBroadcasterText}>Action Sports HD, NetTV and DishHome</Text>
+                </View>
 
-              <View style={styles.heroTeamSide}>
-                <TeamCrest
-                  uri={liveFixture.awayTeamLogo}
-                  name={liveFixture.awayTeam}
-                  short={liveFixture.awayTeamShort}
-                  color={liveFixture.awayTeamColor}
-                  size={42}
-                />
-                <Text style={styles.heroTeamName} numberOfLines={1}>
-                  {liveFixture.awayTeam}
-                </Text>
-                {liveFixture.awayScore ? (
-                  <Text style={styles.heroScoreText}>{liveFixture.awayScore}</Text>
-                ) : null}
+                <TouchableOpacity
+                  style={styles.heroWatchBtn}
+                  activeOpacity={0.88}
+                  onPress={() => {
+                    triggerButtonHaptic();
+                    navigation.navigate('MatchPlayer', {
+                      match: {
+                        id: liveFixture.id,
+                        title: `${liveFixture.homeTeam} vs ${liveFixture.awayTeam}`,
+                        category: 'cricket',
+                        status: 'Live',
+                        venue: liveFixture.venue,
+                        timestamp: liveFixture.timestamp,
+                        sources: [
+                          { source: 'npl', id: liveFixture.id, label: 'Action Sports HD / NPL Live' },
+                        ],
+                      },
+                    });
+                  }}
+                >
+                  <Text style={styles.heroWatchBtnText}>Watch live</Text>
+                </TouchableOpacity>
               </View>
             </View>
-
-            {liveFixture.summary ? (
-              <View style={styles.heroSummaryBox}>
-                <Text style={styles.heroSummaryText}>{liveFixture.summary}</Text>
-              </View>
-            ) : null}
-
-            <View style={styles.heroScheduleLine}>
-              <Text style={styles.heroKickoffText}>
-                📅 Today • Kickoff: {formatKathmanduTime(liveFixture.timestamp)}
-              </Text>
-              <Text style={styles.heroBroadcastText}>
-                Broadcasting live on Action Sports HD & Multi-Server Digital Stream
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.heroWatchBtn}
-              activeOpacity={0.88}
-              onPress={() => {
-                triggerButtonHaptic();
-                navigation.navigate('MatchPlayer', {
-                  match: {
-                    id: liveFixture.id,
-                    title: `${liveFixture.homeTeam} vs ${liveFixture.awayTeam}`,
-                    category: 'cricket',
-                    status: 'Live',
-                    venue: liveFixture.venue,
-                    timestamp: liveFixture.timestamp,
-                    sources: [
-                      { source: 'npl', id: liveFixture.id, label: 'Action Sports HD / NPL Live' },
-                    ],
-                  },
-                });
-              }}
-            >
-              <Text style={styles.heroWatchBtnText}>🔴 Watch Live Stream ⚡</Text>
-            </TouchableOpacity>
           </View>
         )}
 
-        {/* Tournament Header */}
-        <View style={styles.tournamentHeader}>
-          <View style={styles.titleRow}>
-            <View style={styles.nplBadge}>
-              <Text style={styles.nplBadgeText}>NPL</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.tournamentTitle}>Nepal Premier League (NPL) 2026</Text>
-            </View>
-            {liveFixture && (
-              <View style={styles.liveOnAirTag}>
-                <LiveDot size={6} style={{ marginRight: 4 }} />
-                <Text style={styles.liveOnAirText}>LIVE</Text>
-              </View>
-            )}
-          </View>
-          <Text style={styles.tournamentSubtitle}>
-            Official Season Fixtures, Live Scores & Broadcasting Desk — Synced to Nepal Standard Time (NST / UTC+5:45)
+        {/* Tournament Header (Eyebrow, Screen Title, Subtitle, Search) */}
+        <View style={styles.titleSection}>
+          <Text style={styles.eyebrow}>Cricket, Nepal</Text>
+          <Text style={styles.screenTitle}>Nepal Premier League 2026</Text>
+          <Text style={styles.screenSubtitle}>
+            Fixtures, live scores and streams for all{' '}
+            <Text style={styles.clockInline}>{allMatches.length}</Text> matches, in Nepal Standard Time
           </Text>
+
+          {/* Search Bar (Matches web .input pl-9 pr-8) */}
+          <View style={styles.searchBar}>
+            <SearchIcon size={16} color={colors.fg3} style={styles.searchIcon} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search"
+              placeholderTextColor={colors.fg3}
+              style={styles.searchInput}
+              returnKeyType="search"
+            />
+            {query ? (
+              <TouchableOpacity
+                onPress={() => setQuery('')}
+                style={styles.searchClearBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={styles.searchClearText}>✕</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
         </View>
 
-        {/* Search Bar */}
-        <View style={styles.searchBar}>
-          <SearchIcon size={16} color="#64748b" style={styles.searchIcon} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search teams or round..."
-            placeholderTextColor="#64748b"
-            style={styles.searchInput}
-            returnKeyType="search"
-          />
-          {query ? (
+        {/* Filter Chips (Matches web .chip and .chip-active segmented controls) */}
+        <View style={styles.chipsSection}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsScroll}>
             <TouchableOpacity
-              onPress={() => setQuery('')}
-              style={styles.clearSearchBtn}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={[styles.chip, activeTab === 'today' && styles.chipActive]}
+              onPress={() => {
+                triggerButtonHaptic();
+                setActiveTab('today');
+              }}
             >
-              <Text style={styles.clearSearchText}>✕</Text>
-            </TouchableOpacity>
-          ) : null}
-        </View>
-
-        {/* Filter Pills with Counts */}
-        <View style={styles.pillsRow}>
-          <TouchableOpacity
-            style={[styles.pill, activeTab === 'today' && styles.pillActive]}
-            onPress={() => {
-              triggerButtonHaptic();
-              setActiveTab('today');
-            }}
-          >
-            <Text style={[styles.pillText, activeTab === 'today' && styles.pillTextActive]}>
-              Today's Matches
-            </Text>
-            <View style={[styles.pillCount, activeTab === 'today' && styles.pillCountActive]}>
-              <Text style={[styles.pillCountText, activeTab === 'today' && styles.pillCountTextActive]}>
+              <Text style={[styles.chipLabel, activeTab === 'today' && styles.chipLabelActive]}>
+                Today
+              </Text>
+              <Text style={[styles.chipCount, activeTab === 'today' && styles.chipCountActive]}>
                 {todayMatches.length}
               </Text>
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.pill, activeTab === 'upcoming' && styles.pillActive]}
-            onPress={() => {
-              triggerButtonHaptic();
-              setActiveTab('upcoming');
-            }}
-          >
-            <Text style={[styles.pillText, activeTab === 'upcoming' && styles.pillTextActive]}>
-              Upcoming Fixtures
-            </Text>
-            <View style={[styles.pillCount, activeTab === 'upcoming' && styles.pillCountActive]}>
-              <Text style={[styles.pillCountText, activeTab === 'upcoming' && styles.pillCountTextActive]}>
+            <TouchableOpacity
+              style={[styles.chip, activeTab === 'upcoming' && styles.chipActive]}
+              onPress={() => {
+                triggerButtonHaptic();
+                setActiveTab('upcoming');
+              }}
+            >
+              <Text style={[styles.chipLabel, activeTab === 'upcoming' && styles.chipLabelActive]}>
+                Upcoming
+              </Text>
+              <Text style={[styles.chipCount, activeTab === 'upcoming' && styles.chipCountActive]}>
                 {upcomingMatches.length}
               </Text>
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.pill, activeTab === 'all' && styles.pillActive]}
-            onPress={() => {
-              triggerButtonHaptic();
-              setActiveTab('all');
-            }}
-          >
-            <Text style={[styles.pillText, activeTab === 'all' && styles.pillTextActive]}>
-              All Season Matches
-            </Text>
-            <View style={[styles.pillCount, activeTab === 'all' && styles.pillCountActive]}>
-              <Text style={[styles.pillCountText, activeTab === 'all' && styles.pillCountTextActive]}>
+            <TouchableOpacity
+              style={[styles.chip, activeTab === 'all' && styles.chipActive]}
+              onPress={() => {
+                triggerButtonHaptic();
+                setActiveTab('all');
+              }}
+            >
+              <Text style={[styles.chipLabel, activeTab === 'all' && styles.chipLabelActive]}>
+                All matches
+              </Text>
+              <Text style={[styles.chipCount, activeTab === 'all' && styles.chipCountActive]}>
                 {allMatches.length}
               </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+            </TouchableOpacity>
+          </ScrollView>
 
-        {/* Venue Location Indicator */}
-        <View style={styles.venueRow}>
-          <View style={styles.venueDot} />
-          <Text style={styles.venueText}>TU International Cricket Ground, Kirtipur</Text>
+          <Text style={styles.venueMeta}>
+            TU Cricket Ground, Kirtipur. Synced <Text style={styles.clockInline}>{lastSyncTime}</Text>
+          </Text>
         </View>
       </View>
     );
   };
 
-  const renderNplCard = ({ item }: { item: NplMatch }) => {
+  const renderMatchCard = ({ item }: { item: NplMatch }) => {
     const isStarred =
       starredSlugs.includes(item.id) || starredSlugs.includes(`npl-match-${item.matchNumber}`);
     const isLive = item.status === 'LIVE';
@@ -388,131 +379,110 @@ export default function NplScreen() {
 
     return (
       <View style={[styles.card, isLive && styles.cardLive]}>
-        {/* Card Header: Round, Watchlist, Status */}
+        {/* Card Header (Matches web .card header h-10 border-b border-line px-4) */}
         <View style={styles.cardHeader}>
-          <Text style={styles.roundText}>
-            Match {item.matchNumber} · {item.round}
+          <Text style={styles.cardMeta}>
+            Match <Text style={styles.clockInline}>{item.matchNumber}</Text>, {item.round}
           </Text>
-
-          <View style={styles.cardHeaderRight}>
-            <TouchableOpacity
-              onPress={() => handleToggleStar(item.id, item.matchNumber)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={[styles.watchlistBtn, isStarred && styles.watchlistBtnActive]}
-            >
-              <BookmarkIcon
-                size={14}
-                color={isStarred ? '#c9f36b' : '#64748b'}
-                fill={isStarred ? '#c9f36b' : undefined}
-                style={{ marginRight: 4 }}
-              />
-              <Text style={[styles.watchlistText, isStarred && styles.watchlistTextActive]}>
-                {isStarred ? 'Saved' : 'Watchlist'}
-              </Text>
-            </TouchableOpacity>
-
-            {isLive ? (
-              <View style={styles.liveBadge}>
-                <LiveDot size={6} style={{ marginRight: 4 }} />
-                <Text style={styles.liveBadgeText}>LIVE</Text>
-              </View>
-            ) : isCompleted ? (
-              <View style={styles.completedBadge}>
-                <Text style={styles.completedBadgeText}>COMPLETED</Text>
-              </View>
-            ) : (
-              <View style={styles.upcomingBadge}>
-                <Text style={styles.upcomingBadgeText}>UPCOMING</Text>
-              </View>
-            )}
-          </View>
+          {isLive ? (
+            <View style={styles.liveTag}>
+              <LiveDot size={8} />
+              <Text style={styles.liveTagText}>Live</Text>
+            </View>
+          ) : isCompleted ? (
+            <Text style={styles.cardMeta}>Final</Text>
+          ) : null}
         </View>
 
-        {/* Teams and Scores */}
-        <View style={styles.teamsSection}>
+        {/* Card Body (Matches web .card body p-4 space-y-3) */}
+        <View style={styles.cardBody}>
           {/* Home Team */}
           <View style={styles.teamRow}>
-            <View style={styles.teamInfo}>
+            <View style={styles.teamLeft}>
               <TeamCrest
                 uri={item.homeTeamLogo}
                 name={item.homeTeam}
                 short={item.homeTeamShort}
                 color={item.homeTeamColor}
-                size={34}
+                size={32}
               />
               <Text style={styles.teamName} numberOfLines={1}>
                 {item.homeTeam}
               </Text>
             </View>
             {item.homeScore ? (
-              <Text style={styles.scoreText}>{item.homeScore}</Text>
+              <Text style={styles.teamScore}>{item.homeScore}</Text>
             ) : null}
           </View>
 
           {/* Away Team */}
           <View style={styles.teamRow}>
-            <View style={styles.teamInfo}>
+            <View style={styles.teamLeft}>
               <TeamCrest
                 uri={item.awayTeamLogo}
                 name={item.awayTeam}
                 short={item.awayTeamShort}
                 color={item.awayTeamColor}
-                size={34}
+                size={32}
               />
               <Text style={styles.teamName} numberOfLines={1}>
                 {item.awayTeam}
               </Text>
             </View>
             {item.awayScore ? (
-              <Text style={styles.scoreText}>{item.awayScore}</Text>
+              <Text style={styles.teamScore}>{item.awayScore}</Text>
             ) : null}
           </View>
 
-          {/* Summary / Result Box */}
+          {/* Summary / Result Text */}
           {item.summary ? (
-            <View style={styles.summaryContainer}>
-              <Text style={styles.summaryText}>{item.summary}</Text>
-            </View>
+            <Text style={styles.summaryText}>{item.summary}</Text>
           ) : null}
-        </View>
 
-        {/* Schedule & Venue */}
-        <View style={styles.scheduleRow}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <CalendarIcon size={12} color="#94a3b8" />
-            <Text style={styles.scheduleDateText}>
-              {formatKathmanduDate(item.timestamp)} • {formatKathmanduTime(item.timestamp)}
-            </Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-            <LocationIcon size={11} color="#64748b" />
-            <Text style={styles.venueShortText}>TU Ground</Text>
+          {/* Schedule Footer (Matches web border-t border-line pt-3 flex justify-between) */}
+          <View style={styles.cardScheduleRow}>
+            <Text style={styles.cardDate}>{formatKathmanduDate(item.timestamp)}</Text>
+            <Text style={styles.cardTime}>{formatKathmanduTime(item.timestamp)}</Text>
           </View>
         </View>
 
-        {/* Card Footer Actions */}
+        {/* Card Actions (Matches web h-12 border-t border-line px-2 flex justify-between) */}
         <View style={styles.cardFooter}>
-          <TouchableOpacity
-            style={styles.detailsBtn}
-            onPress={() => {
-              triggerButtonHaptic();
-              navigation.navigate('MatchPlayer', {
-                match: {
-                  id: item.id,
-                  title: `${item.homeTeam} vs ${item.awayTeam}`,
-                  category: 'cricket',
-                  status: isLive ? 'Live' : isCompleted ? 'Final' : 'Upcoming',
-                  venue: item.venue,
-                  timestamp: item.timestamp,
-                  sources: [
-                    { source: 'npl', id: item.id, label: 'Action Sports HD / NPL Live' },
-                  ],
-                },
-              });
-            }}
-          >
-            <Text style={styles.detailsBtnText}>Match Details →</Text>
-          </TouchableOpacity>
+          <View style={styles.cardFooterLeft}>
+            <TouchableOpacity
+              onPress={() => handleToggleStar(item.id, item.matchNumber)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.starBtn}
+            >
+              <BookmarkIcon
+                size={18}
+                color={isStarred ? colors.lime : colors.fg3}
+                fill={isStarred ? colors.lime : undefined}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.detailsBtn}
+              onPress={() => {
+                triggerButtonHaptic();
+                navigation.navigate('MatchPlayer', {
+                  match: {
+                    id: item.id,
+                    title: `${item.homeTeam} vs ${item.awayTeam}`,
+                    category: 'cricket',
+                    status: isLive ? 'Live' : isCompleted ? 'Final' : 'Upcoming',
+                    venue: item.venue,
+                    timestamp: item.timestamp,
+                    sources: [
+                      { source: 'npl', id: item.id, label: 'Action Sports HD / NPL Live' },
+                    ],
+                  },
+                });
+              }}
+            >
+              <Text style={styles.detailsBtnText}>Details</Text>
+            </TouchableOpacity>
+          </View>
 
           {isLive ? (
             <TouchableOpacity
@@ -535,14 +505,10 @@ export default function NplScreen() {
                 });
               }}
             >
-              <Text style={styles.watchLiveBtnText}>🔴 Watch Live</Text>
+              <Text style={styles.watchLiveBtnText}>Watch live</Text>
             </TouchableOpacity>
-          ) : isCompleted ? (
-            <Text style={styles.statusFooterConcluded}>Match Concluded</Text>
           ) : (
-            <Text style={styles.statusFooterUpcoming}>
-              Starts at {formatKathmanduTime(item.timestamp)}
-            </Text>
+            <Text style={styles.cardFooterMeta}>{isCompleted ? 'Final' : ''}</Text>
           )}
         </View>
       </View>
@@ -553,38 +519,38 @@ export default function NplScreen() {
     <View style={[styles.container, { paddingTop: topPadding }]}>
       {loading ? (
         <View style={styles.centerLoading}>
-          <ActivityIndicator size="large" color="#ef4444" />
-          <Text style={styles.loadingText}>Loading NPL Season Fixtures...</Text>
+          <ActivityIndicator size="large" color={colors.lime} />
+          <Text style={styles.loadingText}>Loading NPL schedule...</Text>
         </View>
       ) : (
         <FlatList
           data={displayedMatches}
           keyExtractor={(item) => item.id}
-          renderItem={renderNplCard}
+          renderItem={renderMatchCard}
           ListHeaderComponent={renderHeader}
           contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor="#ef4444"
-              colors={['#ef4444']}
+              tintColor={colors.lime}
+              colors={[colors.lime]}
             />
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <CricketIcon size={44} color="#64748b" style={{ marginBottom: 12 }} />
+              <CricketIcon size={40} color={colors.fg3} style={{ marginBottom: 12 }} />
               <Text style={styles.emptyTitle}>
-                {query ? `No matches found for "${query}"` : 'No Fixtures In This Tab'}
+                {query ? `No matches for "${query}"` : 'No NPL matches today'}
               </Text>
               <Text style={styles.emptySubtitle}>
                 {query
-                  ? 'Try searching by another team name or match round.'
-                  : 'Check "All Season Matches" to see the full 32-match NPL schedule.'}
+                  ? 'Try searching with another team or venue name.'
+                  : `Nothing scheduled for ${formatKathmanduDate(Date.now())}`}
               </Text>
               {query ? (
                 <TouchableOpacity onPress={() => setQuery('')} style={styles.emptyActionBtn}>
-                  <Text style={styles.emptyActionText}>Clear Search</Text>
+                  <Text style={styles.emptyActionText}>Clear search</Text>
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -598,7 +564,7 @@ export default function NplScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0d0c',
+    backgroundColor: colors.ink900,
   },
   listContent: {
     paddingHorizontal: 16,
@@ -612,489 +578,357 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: '#94a3b8',
+    color: colors.fg2,
     fontFamily: fonts.sansMedium,
   },
 
-  /* Hero Live Banner */
-  heroBanner: {
-    backgroundColor: '#150808',
-    borderRadius: 18,
-    borderWidth: 1.5,
-    borderColor: 'rgba(239, 68, 68, 0.45)',
-    padding: 16,
-    marginBottom: 18,
+  /* Live Now Hero Panel (Matches web .panel overflow-hidden border-line-strong) */
+  heroPanel: {
+    backgroundColor: colors.ink800,
+    borderRadius: radius.panel,
+    borderWidth: 1,
+    borderColor: colors.lineStrong,
+    overflow: 'hidden',
+    marginBottom: 24,
     marginTop: 8,
-    shadowColor: '#ef4444',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 4,
   },
-  heroTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  heroLiveBeacon: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  heroBeaconText: {
-    color: '#ef4444',
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-  },
-  heroMatchMeta: {
-    color: '#94a3b8',
-    fontSize: 12,
-    fontFamily: fonts.mono,
-  },
-  heroCategoryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  heroLivePill: {
-    backgroundColor: '#ef4444',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  heroLivePillText: {
-    color: '#ffffff',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  heroTournamentText: {
-    color: '#cbd5e1',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  heroTeamsContainer: {
+  heroHeader: {
+    height: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginVertical: 6,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
   },
-  heroTeamSide: {
+  liveTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  liveTagText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 13,
+    color: colors.live,
+  },
+  heroMeta: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    color: colors.fg3,
+  },
+  heroBody: {
+    padding: 16,
+    gap: 20,
+  },
+  heroTeams: {
+    gap: 12,
+  },
+  heroTeamRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  heroTeamLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     flex: 1,
-    alignItems: 'center',
   },
   heroTeamName: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '700',
-    marginTop: 6,
-    textAlign: 'center',
+    fontFamily: fonts.sansMedium,
+    fontSize: 20,
+    color: colors.fg,
+    flex: 1,
   },
   heroScoreText: {
-    color: '#c9f36b',
-    fontSize: 14,
-    fontFamily: fonts.mono,
-    fontWeight: '700',
-    marginTop: 2,
-  },
-  heroVs: {
-    color: '#ef4444',
-    fontSize: 14,
-    fontWeight: '800',
-    marginHorizontal: 8,
-  },
-  heroSummaryBox: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderRadius: 8,
-    padding: 8,
-    marginTop: 10,
+    fontFamily: fonts.monoMedium,
+    fontSize: 20,
+    color: colors.fg,
   },
   heroSummaryText: {
-    color: '#fca5a5',
-    fontSize: 12,
-    textAlign: 'center',
-    fontFamily: fonts.sansMedium,
-  },
-  heroScheduleLine: {
-    marginTop: 12,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(239, 68, 68, 0.2)',
-  },
-  heroKickoffText: {
-    color: '#edf0ee',
-    fontSize: 12,
-    fontFamily: fonts.mono,
-  },
-  heroBroadcastText: {
-    color: '#64748b',
-    fontSize: 11,
-    marginTop: 2,
-  },
-  heroWatchBtn: {
-    backgroundColor: '#ef4444',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginTop: 14,
-    shadowColor: '#ef4444',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  heroWatchBtnText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-
-  /* Tournament Header Section */
-  tournamentHeader: {
-    marginBottom: 14,
+    fontFamily: fonts.sans,
+    fontSize: 14,
+    color: colors.fg2,
     marginTop: 4,
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
+  heroActions: {
+    gap: 12,
   },
-  nplBadge: {
-    backgroundColor: '#ef4444',
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 6,
+  heroTiming: {
+    gap: 2,
   },
-  nplBadgeText: {
-    color: '#ffffff',
+  heroStartedText: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.fg2,
+  },
+  heroBroadcasterText: {
+    fontFamily: fonts.sans,
     fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 0.5,
+    color: colors.fg3,
   },
-  tournamentTitle: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  liveOnAirTag: {
-    flexDirection: 'row',
+  heroWatchBtn: {
+    height: 44,
+    backgroundColor: colors.fg,
+    borderRadius: radius.md,
     alignItems: 'center',
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
+    justifyContent: 'center',
   },
-  liveOnAirText: {
-    color: '#ef4444',
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  tournamentSubtitle: {
-    color: '#94a3b8',
-    fontSize: 12,
-    lineHeight: 16,
-    marginTop: 2,
+  heroWatchBtnText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 15,
+    color: colors.ink900,
   },
 
-  /* Search Bar */
+  /* Title Section (Matches web eyebrow + screenTitle + subtitle + search) */
+  titleSection: {
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+    paddingBottom: 20,
+  },
+  eyebrow: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.fg3,
+  },
+  screenTitle: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 28,
+    color: colors.fg,
+    marginTop: 6,
+    letterSpacing: -0.3,
+  },
+  screenSubtitle: {
+    fontFamily: fonts.sans,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.fg2,
+    marginTop: 8,
+  },
   searchBar: {
+    height: 38,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#141817',
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(237, 240, 238, 0.08)',
+    borderColor: colors.line,
+    backgroundColor: colors.ink900,
     paddingHorizontal: 12,
-    height: 42,
-    marginBottom: 12,
+    marginTop: 16,
   },
   searchIcon: {
     marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    color: '#ffffff',
+    fontFamily: fonts.sans,
     fontSize: 14,
+    color: colors.fg,
     paddingVertical: 0,
   },
-  clearSearchBtn: {
+  searchClearBtn: {
     padding: 4,
   },
-  clearSearchText: {
-    color: '#94a3b8',
+  searchClearText: {
+    color: colors.fg3,
     fontSize: 12,
   },
 
-  /* Filter Pills */
-  pillsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
+  /* Chips Section (Matches web .chip and .chip-active segmented controls) */
+  chipsSection: {
+    marginBottom: 20,
+    gap: 10,
   },
-  pill: {
-    flex: 1,
+  chipsScroll: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#141817',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(237, 240, 238, 0.08)',
-    paddingVertical: 8,
-    paddingHorizontal: 8,
     gap: 6,
   },
-  pillActive: {
-    backgroundColor: '#c9f36b',
-    borderColor: '#c9f36b',
+  chip: {
+    height: 34,
+    paddingHorizontal: 12,
+    borderRadius: radius.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
-  pillText: {
-    color: '#94a3b8',
-    fontSize: 12,
+  chipActive: {
+    backgroundColor: colors.ink700,
+  },
+  chipLabel: {
     fontFamily: fonts.sansMedium,
+    fontSize: 13,
+    color: colors.fg2,
   },
-  pillTextActive: {
-    color: '#0a1110',
-    fontWeight: '700',
+  chipLabelActive: {
+    color: colors.fg,
   },
-  pillCount: {
-    backgroundColor: 'rgba(237, 240, 238, 0.08)',
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 10,
-  },
-  pillCountActive: {
-    backgroundColor: '#0a1110',
-  },
-  pillCountText: {
-    color: '#94a3b8',
-    fontSize: 11,
+  chipCount: {
     fontFamily: fonts.mono,
-  },
-  pillCountTextActive: {
-    color: '#c9f36b',
-    fontWeight: '700',
-  },
-
-  /* Venue Row */
-  venueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 14,
-    gap: 6,
-  },
-  venueDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#4cc38a',
-  },
-  venueText: {
-    color: '#94a3b8',
     fontSize: 12,
+    color: colors.fg3,
+  },
+  chipCountActive: {
+    color: colors.fg2,
+  },
+  venueMeta: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    color: colors.fg3,
+    marginTop: 2,
   },
 
-  /* Match Card */
+  /* Card (Matches web .card rounded-2xl border border-line bg-ink-800) */
   card: {
-    backgroundColor: '#141817',
-    borderRadius: 16,
+    backgroundColor: colors.ink800,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(237, 240, 238, 0.08)',
-    marginBottom: 14,
+    borderColor: colors.line,
+    marginBottom: 16,
     overflow: 'hidden',
   },
   cardLive: {
-    borderColor: 'rgba(239, 68, 68, 0.55)',
-    backgroundColor: '#181111',
+    borderColor: colors.lineStrong,
   },
   cardHeader: {
+    height: 40,
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(237, 240, 238, 0.06)',
+    borderBottomColor: colors.line,
   },
-  roundText: {
-    color: '#94a3b8',
+  cardMeta: {
+    fontFamily: fonts.sans,
     fontSize: 12,
-    fontFamily: fonts.sansMedium,
+    color: colors.fg3,
   },
-  cardHeaderRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  watchlistBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(237, 240, 238, 0.04)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  watchlistBtnActive: {
-    backgroundColor: 'rgba(201, 243, 107, 0.12)',
-  },
-  watchlistText: {
-    color: '#64748b',
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  watchlistTextActive: {
-    color: '#c9f36b',
-    fontWeight: '600',
-  },
-  liveBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  liveBadgeText: {
-    color: '#ef4444',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  completedBadge: {
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  completedBadgeText: {
-    color: '#fbbf24',
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  upcomingBadge: {
-    backgroundColor: 'rgba(148, 163, 184, 0.12)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  upcomingBadgeText: {
-    color: '#94a3b8',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-
-  /* Teams Section */
-  teamsSection: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+  cardBody: {
+    padding: 16,
+    gap: 12,
   },
   teamRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    justifyContent: 'space-between',
+    gap: 12,
   },
-  teamInfo: {
+  teamLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
     flex: 1,
-    gap: 10,
   },
   teamName: {
-    color: '#edf0ee',
+    fontFamily: fonts.sans,
     fontSize: 15,
-    fontWeight: '600',
+    color: colors.fg,
     flex: 1,
   },
-  scoreText: {
-    color: '#edf0ee',
-    fontSize: 14,
+  teamScore: {
     fontFamily: fonts.mono,
-    fontWeight: '700',
-  },
-  summaryContainer: {
-    backgroundColor: 'rgba(237, 240, 238, 0.04)',
-    borderRadius: 8,
-    padding: 8,
-    marginTop: 6,
+    fontSize: 15,
+    color: colors.fg,
   },
   summaryText: {
-    color: '#94a3b8',
-    fontSize: 12,
-    fontFamily: fonts.sansMedium,
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.fg2,
+    marginTop: 4,
   },
-
-  /* Schedule Row */
-  scheduleRow: {
+  cardScheduleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(237, 240, 238, 0.06)',
+    borderTopColor: colors.line,
+    paddingTop: 12,
+    marginTop: 4,
   },
-  scheduleDateText: {
-    color: '#94a3b8',
-    fontSize: 12,
+  cardDate: {
     fontFamily: fonts.mono,
+    fontSize: 12,
+    color: colors.fg2,
   },
-  venueShortText: {
-    color: '#64748b',
-    fontSize: 11,
+  cardTime: {
+    fontFamily: fonts.mono,
+    fontSize: 12,
+    color: colors.fg,
   },
 
-  /* Card Footer Actions */
+  /* Card Footer (Matches web h-12 border-t border-line px-2) */
   cardFooter: {
+    height: 48,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    justifyContent: 'space-between',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(237, 240, 238, 0.06)',
-    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+    borderTopColor: colors.line,
+    paddingHorizontal: 8,
+  },
+  cardFooterLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  starBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   detailsBtn: {
-    paddingVertical: 4,
+    height: 32,
+    paddingHorizontal: 12,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   detailsBtnText: {
-    color: '#94a3b8',
-    fontSize: 13,
     fontFamily: fonts.sansMedium,
+    fontSize: 13,
+    color: colors.fg2,
   },
   watchLiveBtn: {
-    backgroundColor: '#ef4444',
+    height: 32,
     paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: radius.md,
+    backgroundColor: colors.fg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   watchLiveBtnText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  statusFooterConcluded: {
-    color: '#64748b',
-    fontSize: 12,
     fontFamily: fonts.sansMedium,
+    fontSize: 13,
+    color: colors.ink900,
   },
-  statusFooterUpcoming: {
-    color: '#94a3b8',
+  cardFooterMeta: {
+    fontFamily: fonts.sans,
     fontSize: 12,
-    fontFamily: fonts.mono,
+    color: colors.fg3,
+    paddingRight: 8,
   },
 
-  /* Crest / Avatar Fallback */
+  /* Common utilities */
+  clockInline: {
+    fontFamily: fonts.mono,
+  },
+  clockHighlight: {
+    fontFamily: fonts.mono,
+    color: colors.fg,
+  },
   avatarFallback: {
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   avatarFallbackText: {
-    color: '#edf0ee',
+    fontFamily: fonts.sansMedium,
     fontSize: 11,
-    fontWeight: '700',
+    color: colors.fg,
   },
 
   /* Empty State */
@@ -1104,28 +938,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   emptyTitle: {
-    color: '#edf0ee',
+    fontFamily: fonts.sansMedium,
     fontSize: 16,
-    fontWeight: '600',
+    color: colors.fg,
     marginBottom: 4,
     textAlign: 'center',
   },
   emptySubtitle: {
-    color: '#64748b',
+    fontFamily: fonts.sans,
     fontSize: 13,
+    color: colors.fg2,
     textAlign: 'center',
     lineHeight: 18,
   },
   emptyActionBtn: {
     marginTop: 14,
-    backgroundColor: '#1e2321',
+    backgroundColor: colors.ink700,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: radius.md,
   },
   emptyActionText: {
-    color: '#c9f36b',
+    fontFamily: fonts.sansMedium,
     fontSize: 13,
-    fontWeight: '600',
+    color: colors.fg,
   },
 });
