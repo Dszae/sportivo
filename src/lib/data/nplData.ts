@@ -441,9 +441,6 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "timestamp": 1793877300000,
     "venue": "TU International Cricket Ground, Kirtipur",
     "status": "COMPLETED",
-    "homeScore": "86/1 (9.4 ov)",
-    "awayScore": "83/10 (18.3 ov)",
-    "summary": "Kathmandu Gurkhas won by 9 wickets (62 balls remaining)",
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-15"
   },
   {
@@ -796,7 +793,7 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
 export function getCalibratedNplFixtures(nowMs: number = Date.now()): NplMatch[] {
   return NPL_FIXTURES_2026.map((m) => {
     // If tournament record already marks this match as finished/completed, strictly respect it!
-    if (m.status === 'COMPLETED' || (m.summary && m.summary.toLowerCase().includes('won by'))) {
+    if (m.status === 'COMPLETED') {
       return {
         ...m,
         status: 'COMPLETED',
@@ -804,8 +801,8 @@ export function getCalibratedNplFixtures(nowMs: number = Date.now()): NplMatch[]
       };
     }
 
-    const isPast = nowMs > m.timestamp + 4.0 * 3600 * 1000;
-    const isMatchWindow = nowMs >= m.timestamp - 15 * 60 * 1000 && nowMs <= m.timestamp + 4.0 * 3600 * 1000;
+    const isPast = nowMs > m.timestamp + 3.75 * 3600 * 1000;
+    const isMatchWindow = nowMs >= m.timestamp - 15 * 60 * 1000 && nowMs <= m.timestamp + 3.75 * 3600 * 1000;
 
     let status: 'LIVE' | 'COMPLETED' | 'UPCOMING' = m.status;
     if (isPast) {
@@ -822,12 +819,14 @@ export function getCalibratedNplFixtures(nowMs: number = Date.now()): NplMatch[]
       broadcast:
         status === 'COMPLETED'
           ? undefined
-          : m.broadcast || {
+          : status === 'LIVE'
+          ? m.broadcast || {
               provider: 'NetTV Action Sports HD / FanCode',
               authorizedEmbedUrl: 'https://yonotv.pages.dev/LINK?id=NP4',
               isHls: false,
               availabilityStatus: 'online',
-            },
+            }
+          : m.broadcast,
     };
   });
 }

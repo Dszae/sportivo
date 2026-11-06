@@ -1,8 +1,9 @@
 import type { Category, NormalizedMatch, PlaybackResolution, ProviderAdapter } from '../types';
 import { sanitizePlaybackUrl } from '../allowlist';
 import { logDiagnostic } from '../diagnostics';
-import { NPL_FIXTURES_2026, type NplMatch } from '../../data/nplData';
+import { NPL_FIXTURES_2026, getCalibratedNplFixtures, type NplMatch } from '../../data/nplData';
 import { streamService } from '../../nplStreamService';
+import { slugify } from '../../sportivo';
 
 let cachedNplMatches: NormalizedMatch[] | null = null;
 let lastNplFetch = 0;
@@ -41,11 +42,11 @@ function toNplBackendId(id: string): string {
 function toNormalizedMatch(m: NplMatch): NormalizedMatch {
   const now = Date.now();
   let status: 'Live' | 'Final' | 'Upcoming' = 'Upcoming';
-  if (m.status === 'COMPLETED' || (m.summary && m.summary.toLowerCase().includes('won by'))) {
+  if (m.status === 'COMPLETED') {
     status = 'Final';
   } else {
-    const isPast = now > m.timestamp + 4.0 * 60 * 60 * 1000;
-    const isMatchWindow = now >= m.timestamp - 15 * 60 * 1000 && now <= m.timestamp + 4.0 * 60 * 60 * 1000;
+    const isPast = now > m.timestamp + 3.75 * 60 * 60 * 1000;
+    const isMatchWindow = now >= m.timestamp - 15 * 60 * 1000 && now <= m.timestamp + 3.75 * 60 * 60 * 1000;
     if (isPast) {
       status = 'Final';
     } else if (isMatchWindow) {
@@ -350,18 +351,22 @@ export const nplAdapter: ProviderAdapter = {
   },
 
   async resolvePlayback(id: string, signal?: AbortSignal): Promise<PlaybackResolution> {
-    const fixture = NPL_FIXTURES_2026.find(
-      (m) => m.id.toLowerCase() === id.toLowerCase() || toNplBackendId(m.id).toLowerCase() === id.toLowerCase()
+    const rawFixture = NPL_FIXTURES_2026.find(
+      (m) =>
+        m.id.toLowerCase() === id.toLowerCase() ||
+        toNplBackendId(m.id).toLowerCase() === id.toLowerCase() ||
+        slugify(`${m.homeTeam} vs ${m.awayTeam}`) === slugify(id) ||
+        slugify(`${m.awayTeam} vs ${m.homeTeam}`) === slugify(id)
     );
 
     // If fixture has an explicit authorized broadcast in dataset (e.g. test fixture npl26-03)
-    if (fixture?.broadcast?.authorizedEmbedUrl && fixture.broadcast.authorizedEmbedUrl.includes('.m3u8')) {
+    if (rawFixture?.broadcast?.authorizedEmbedUrl && rawFixture.broadcast.authorizedEmbedUrl.includes('.m3u8')) {
       return {
         status: 'ready',
-        provider: fixture.broadcast.provider || 'Action Sports HD',
+        provider: rawFixture.broadcast.provider || 'Action Sports HD',
         streams: [
           {
-            embedUrl: fixture.broadcast.authorizedEmbedUrl,
+            embedUrl: rawFixture.broadcast.authorizedEmbedUrl,
             hd: true,
             isNativeVideo: true,
             isSandboxedIframe: false,
@@ -371,8 +376,19 @@ export const nplAdapter: ProviderAdapter = {
       };
     }
 
+    const now = Date.now();
+    const calibrated = getCalibratedNplFixtures(now);
+    const fixture =
+      calibrated.find(
+        (m) =>
+          m.id.toLowerCase() === id.toLowerCase() ||
+          toNplBackendId(m.id).toLowerCase() === id.toLowerCase() ||
+          slugify(`${m.homeTeam} vs ${m.awayTeam}`) === slugify(id) ||
+          slugify(`${m.awayTeam} vs ${m.homeTeam}`) === slugify(id)
+      ) || rawFixture;
+
     // Completed match should return unavailable - match has ended!
-    if (fixture && (fixture.status === 'COMPLETED' || Date.now() > fixture.timestamp + 4 * 3600 * 1000)) {
+    if (fixture && (fixture.status === 'COMPLETED' || now > fixture.timestamp + 3.75 * 3600 * 1000)) {
       return {
         status: 'unavailable',
         provider: 'NPL Broadcast Desk',
@@ -382,7 +398,7 @@ export const nplAdapter: ProviderAdapter = {
     }
 
     // Future match without broadcast should return unavailable without inventing streams
-    if (fixture && fixture.status === 'UPCOMING' && !fixture.broadcast) {
+    if (fixture && now < fixture.timestamp - 15 * 60 * 1000 && !fixture.broadcast) {
       return {
         status: 'unavailable',
         provider: 'NPL Broadcast Desk',

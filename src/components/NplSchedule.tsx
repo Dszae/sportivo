@@ -368,13 +368,21 @@ export default function NplSchedule() {
     );
   };
 
-  const liveFixture = useMemo(() => fixtures.find((m) => m.status === 'LIVE'), [fixtures]);
+  const liveFixture = useMemo(() => {
+    const nowMs = Date.now();
+    return fixtures.find((m) => {
+      if (m.status === 'COMPLETED') return false;
+      if (m.status === 'LIVE') return true;
+      return nowMs >= m.timestamp - 15 * 60 * 1000 && nowMs <= m.timestamp + 3.75 * 3600 * 1000;
+    });
+  }, [fixtures]);
+
   const liveSlug = liveFixture ? slugify(`${liveFixture.homeTeam} vs ${liveFixture.awayTeam}`) : '';
   const liveStreamUrl = liveSlug ? `/cricket/match/${encodeURIComponent(liveSlug)}/` : '';
 
   return (
     <div className="w-full">
-      {/* Featured Live Match Banner - 100% reactive to real-time sync */}
+      {/* Featured Live Match Banner - 100% reactive to real-time client sync & auto-hides when match concludes */}
       {liveFixture && (
         <section className="mb-10 overflow-hidden rounded-3xl border border-red-500/50 bg-gradient-to-br from-[#1c0808] via-[#0d1413] to-[#0a0f0e] p-6 sm:p-8 shadow-2xl ring-1 ring-red-500/30">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4 mb-6">

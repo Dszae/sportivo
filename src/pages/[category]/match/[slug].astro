@@ -3,7 +3,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SiteHeader from '../../../components/SiteHeader.astro';
 import SiteFooter from '../../../components/SiteFooter.astro';
 import MatchPlayer from '../../../components/MatchPlayer';
-import { NPL_FIXTURES_2026 } from '../../../lib/data/nplData';
+import { getCalibratedNplFixtures } from '../../../lib/data/nplData';
 import { fetchUnifiedMatches } from '../../../lib/providers';
 import {
   detectFootballLeague,
@@ -36,7 +36,9 @@ if (validCategory) {
 
     // If not found in real-time feeds, check verified tournament databases (e.g. NPL)
     if (!match && category === 'cricket') {
-      const nplMatch = NPL_FIXTURES_2026.find((m) => {
+      const now = Date.now();
+      const calibratedFixtures = getCalibratedNplFixtures(now);
+      const nplMatch = calibratedFixtures.find((m) => {
         const s1 = slugify(`${m.homeTeam} vs ${m.awayTeam}`);
         const s2 = slugify(`${m.awayTeam} vs ${m.homeTeam}`);
         return (
@@ -48,11 +50,12 @@ if (validCategory) {
       });
 
       if (nplMatch) {
-        const now = Date.now();
-        const isPast = now > nplMatch.timestamp + 4.0 * 3600 * 1000;
-        const isMatchWindow = now >= nplMatch.timestamp - 15 * 60 * 1000 && now <= nplMatch.timestamp + 4.0 * 3600 * 1000;
-        const isConcluded = nplMatch.status === 'COMPLETED' || Boolean(nplMatch.summary && nplMatch.summary.toLowerCase().includes('won by'));
-        const nplStatus = isConcluded || isPast ? 'Final' : isMatchWindow ? 'Live' : 'Upcoming';
+        const isPast = nplMatch.status === 'COMPLETED' || now > nplMatch.timestamp + 3.75 * 3600 * 1000;
+        const isMatchWindow =
+          !isPast &&
+          (nplMatch.status === 'LIVE' ||
+            (now >= nplMatch.timestamp - 15 * 60 * 1000 && now <= nplMatch.timestamp + 3.75 * 3600 * 1000));
+        const nplStatus = isPast ? 'Final' : isMatchWindow ? 'Live' : 'Upcoming';
 
         match = {
           id: nplMatch.id,
@@ -74,7 +77,7 @@ if (validCategory) {
                   {
                     source: 'npl',
                     id: nplMatch.id,
-                    label: nplMatch.broadcast?.provider || 'NPL Live Broadcast',
+                    label: nplMatch.broadcast?.provider || 'NetTV Action Sports HD / FanCode',
                   },
                 ],
         };
@@ -84,36 +87,43 @@ if (validCategory) {
     if (match) {
       relatedMatches = list.filter((item) => slugify(titleOf(item)) !== slug).slice(0, 4);
       if (relatedMatches.length === 0 && category === 'cricket') {
-        relatedMatches = NPL_FIXTURES_2026
+        const now = Date.now();
+        relatedMatches = getCalibratedNplFixtures(now)
           .filter((m) => m.id !== match?.id)
           .slice(0, 4)
-          .map((m) => ({
-            id: m.id,
-            title: `${m.homeTeam} vs ${m.awayTeam}`,
-            category: 'cricket' as Category,
-            competition: 'Nepal Premier League',
-            league: 'NPL',
-            status:
-              m.status === 'COMPLETED' || Date.now() > m.timestamp + 4.5 * 3600 * 1000
-                ? 'Final'
-                : m.status === 'LIVE' ||
-                  (Date.now() >= m.timestamp - 15 * 60 * 1000 && Date.now() <= m.timestamp + 4.5 * 3600 * 1000)
-                ? 'Live'
-                : 'Upcoming',
-            date: m.timestamp,
-            teams: {
-              home: { name: m.homeTeam, badge: m.homeTeamLogo },
-              away: { name: m.awayTeam, badge: m.awayTeamLogo },
-            },
-            poster: m.homeTeamLogo,
-            sources: [
-              {
-                source: 'npl',
-                id: m.id,
-                label: m.broadcast?.provider || 'NPL Broadcast',
+          .map((m) => {
+            const isPast = m.status === 'COMPLETED' || now > m.timestamp + 3.75 * 3600 * 1000;
+            const isMatchWindow =
+              !isPast &&
+              (m.status === 'LIVE' ||
+                (now >= m.timestamp - 15 * 60 * 1000 && now <= m.timestamp + 3.75 * 3600 * 1000));
+            const relStatus = isPast ? 'Final' : isMatchWindow ? 'Live' : 'Upcoming';
+
+            return {
+              id: m.id,
+              title: `${m.homeTeam} vs ${m.awayTeam}`,
+              category: 'cricket' as Category,
+              competition: 'Nepal Premier League',
+              league: 'NPL',
+              status: relStatus,
+              date: m.timestamp,
+              teams: {
+                home: { name: m.homeTeam, badge: m.homeTeamLogo },
+                away: { name: m.awayTeam, badge: m.awayTeamLogo },
               },
-            ],
-          }));
+              poster: m.homeTeamLogo,
+              sources:
+                relStatus === 'Final'
+                  ? []
+                  : [
+                      {
+                        source: 'npl',
+                        id: m.id,
+                        label: m.broadcast?.provider || 'NetTV Action Sports HD / FanCode',
+                      },
+                    ],
+            };
+          });
       }
     }
   } catch {

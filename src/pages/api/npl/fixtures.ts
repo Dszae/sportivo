@@ -30,82 +30,77 @@ async function fetchOfficialScoreUpdates(): Promise<Map<string, Partial<NplMatch
   }
 
   try {
-    const urls = ['https://nepalpremierleague.org', 'https://nepalpremierleague.org/fixtures'];
+    const res = await fetch('https://nepalpremierleague.org/fixtures', {
+      headers: { 'User-Agent': 'Sportivo-LiveDesk/1.0' },
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!res.ok) return cachedUpstreamUpdates;
+
+    const html = await res.text();
     const updates = new Map<string, Partial<NplMatch>>();
 
-    for (const url of urls) {
-      try {
-        const res = await fetch(url, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-          signal: AbortSignal.timeout(4000),
-        });
-        if (!res.ok) continue;
+    const matchIdRegex = /href="\/matches\/(npl26-\d+)"/g;
+    let m: RegExpExecArray | null;
+    const matchIds: string[] = [];
+    while ((m = matchIdRegex.exec(html)) !== null) {
+      if (!matchIds.includes(m[1])) matchIds.push(m[1]);
+    }
 
-        const html = await res.text();
-        const matchIdRegex = /href="\/matches\/(npl26-\d+)"/g;
-        let m: RegExpExecArray | null;
-        const matchIds: string[] = [];
-        while ((m = matchIdRegex.exec(html)) !== null) {
-          if (!matchIds.includes(m[1])) matchIds.push(m[1]);
-        }
+    for (const id of matchIds) {
+      const idx = html.indexOf(`href="/matches/${id}"`);
+      if (idx === -1) continue;
+      const snippet = html.substring(idx, idx + 2000);
 
-        for (const id of matchIds) {
-          if (updates.has(id)) continue;
-          const idx = html.indexOf(`href="/matches/${id}"`);
-          if (idx === -1) continue;
-          const snippet = html.substring(idx, idx + 1600);
+      const isLive = snippet.includes('Live</span>') || snippet.includes('>Live<');
+      const isConcluded = snippet.includes('won by');
+      const wonMatch = snippet.match(/([A-Za-z\s]+won by[^\n<]+)/);
 
-          const isResult = snippet.includes('Result') || snippet.includes('won by');
-          const wonMatch = snippet.match(/([A-Za-z\s]+won by[^\n<]+)/);
-          const isLive = !isResult && (snippet.includes('>Live<') || snippet.includes('Live</span>'));
+      const scoreMatches = [
+        ...snippet.matchAll(
+          /tabular-nums">(\d+)(?:<!-- -->)?\/(?:<!-- -->)?(\d+)<span[^>]*>\((?:<!-- -->)?([\d.]+)/g
+        ),
+      ];
 
-          const scoreMatches = [
-            ...snippet.matchAll(
-              /tabular-nums">(\d+)(?:<!-- -->)?\/(?:<!-- -->)?(\d+)<span[^>]*>\((?:<!-- -->)?([\d.]+)/g
-            ),
-          ];
+      const partial: Partial<NplMatch> = {};
+      if (isConcluded) {
+        partial.status = 'COMPLETED';
+      } else if (isLive) {
+        partial.status = 'LIVE';
+      }
 
-          const partial: Partial<NplMatch> = {};
-          if (isResult || wonMatch) {
-            partial.status = 'COMPLETED';
-            if (wonMatch) {
-              partial.summary = wonMatch[1].replace(/<!--[\s\S]*?-->/g, '').replace(/\\/g, '').trim();
+      if (scoreMatches.length >= 2) {
+        partial.homeScore = `${scoreMatches[0][1]}/${scoreMatches[0][2]} (${scoreMatches[0][3]} ov)`;
+        partial.awayScore = `${scoreMatches[1][1]}/${scoreMatches[1][2]} (${scoreMatches[1][3]} ov)`;
+      } else if (scoreMatches.length === 1) {
+        partial.homeScore = `${scoreMatches[0][1]}/${scoreMatches[0][2]} (${scoreMatches[0][3]} ov)`;
+      }
+
+      // If match is LIVE, scrape the dedicated match scorecard for live ball-by-ball overs & wickets
+      if (isLive) {
+        try {
+          const detailRes = await fetch(`https://nepalpremierleague.org/matches/${id}`, {
+            headers: { 'User-Agent': 'Sportivo-LiveDesk/1.0' },
+            signal: AbortSignal.timeout(3000),
+          });
+          if (detailRes.ok) {
+            const detailHtml = await detailRes.text();
+            const clean = detailHtml.replace(/<!--[\s\S]*?-->/g, '').replace(/<[^>]+>/g, ' ');
+            const mScore = clean.match(/(\d+)\s*\/\s*(\d+)\s*\(\s*([\d.]+)\s*\)/);
+            if (mScore) {
+              partial.homeScore = `${mScore[1]}/${mScore[2]} (${mScore[3]} ov)`;
+              partial.status = 'LIVE';
             }
-          } else if (isLive) {
-            partial.status = 'LIVE';
           }
+        } catch {}
+      }
 
-          if (scoreMatches.length >= 2) {
-            partial.homeScore = `${scoreMatches[0][1]}/${scoreMatches[0][2]} (${scoreMatches[0][3]} ov)`;
-            partial.awayScore = `${scoreMatches[1][1]}/${scoreMatches[1][2]} (${scoreMatches[1][3]} ov)`;
-          } else if (scoreMatches.length === 1) {
-            partial.homeScore = `${scoreMatches[0][1]}/${scoreMatches[0][2]} (${scoreMatches[0][3]} ov)`;
-          }
+      if (wonMatch) {
+        partial.summary = wonMatch[1].replace(/\\/g, '').trim();
+      }
 
-          // If match is LIVE, scrape the dedicated match scorecard for live ball-by-ball overs & wickets
-          if (isLive) {
-            try {
-              const detailRes = await fetch(`https://nepalpremierleague.org/matches/${id}`, {
-                headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-                signal: AbortSignal.timeout(3000),
-              });
-              if (detailRes.ok) {
-                const detailHtml = await detailRes.text();
-                const clean = detailHtml.replace(/<!--[\s\S]*?-->/g, '').replace(/<[^>]+>/g, ' ');
-                const mScore = clean.match(/(\d+)\s*\/\s*(\d+)\s*\(\s*([\d.]+)\s*\)/);
-                if (mScore) {
-                  partial.homeScore = `${mScore[1]}/${mScore[2]} (${mScore[3]} ov)`;
-                  partial.status = 'LIVE';
-                }
-              }
-            } catch {}
-          }
-
-          if (Object.keys(partial).length > 0) {
-            updates.set(id, partial);
-          }
-        }
-      } catch {}
+      if (Object.keys(partial).length > 0) {
+        updates.set(id, partial);
+      }
     }
 
     if (updates.size > 0) {
@@ -197,7 +192,7 @@ export const GET: APIRoute = async () => {
   // 3. Dynamic time calibration: Ensure past matches cannot show as LIVE, and today's active match shows as LIVE
   const now = Date.now();
   fixtures = fixtures.map((f) => {
-    if (f.status === 'COMPLETED' || (f.summary && f.summary.toLowerCase().includes('won by'))) {
+    if (f.status === 'COMPLETED') {
       return {
         ...f,
         status: 'COMPLETED',
