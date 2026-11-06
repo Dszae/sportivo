@@ -1,7 +1,7 @@
 {
-  "version": "1.0.9",
-  "versionCode": 10,
+  "version": "1.1.0",
+  "versionCode": 11,
   "downloadUrl": "https://sportivo.dipeshsapkota7.com.np/download/sportivo.apk",
-  "releaseNotes": "Horizontal landscape fullscreen mode, multi-server DaddyLive & PPV cricket feeds, and isolated NPL telemetry.",
-  "publishedAt": "2026-10-31"
+  "releaseNotes": "Nepal Premier League (NPL 2026) zero-delay DASH 1080p live streams, Action Sports HD verified feeds, real-time match lifecycle sync, and live ball-by-ball scorecards.",
+  "publishedAt": "2026-11-06"
 }

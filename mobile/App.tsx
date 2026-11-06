@@ -3,26 +3,41 @@ import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
+import * as SplashScreen from 'expo-splash-screen';
+import { useFonts, Manrope_400Regular, Manrope_500Medium, Manrope_600SemiBold } from '@expo-google-fonts/manrope';
+import { JetBrainsMono_400Regular, JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
 import RootNavigator from './src/navigation/RootNavigator';
 import {
   setupNotificationChannels,
   requestNativeNotificationPermission,
 } from './src/services/notifications';
 import { startGroundScorePoller } from './src/services/scoreService';
+import { colors } from './src/theme';
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const SportivoDarkTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
-    background: '#080a0b',
-    card: '#0c1211',
-    text: '#ffffff',
-    border: 'rgba(255,255,255,0.08)',
-    primary: '#c9f36b',
+    background: colors.ink900,
+    card: colors.ink950,
+    text: colors.fg,
+    border: colors.line,
+    primary: colors.lime,
+    notification: colors.live,
   },
 };
 
 export default function App() {
+  const [fontsLoaded, fontError] = useFonts({
+    Manrope_400Regular,
+    Manrope_500Medium,
+    Manrope_600SemiBold,
+    JetBrainsMono_400Regular,
+    JetBrainsMono_500Medium,
+  });
+
   useEffect(() => {
     (async () => {
       await setupNotificationChannels();
@@ -40,10 +55,17 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (fontsLoaded || fontError) SplashScreen.hideAsync().catch(() => {});
+  }, [fontsLoaded, fontError]);
+
+  // Render with system fonts if loading fails rather than blocking the app.
+  if (!fontsLoaded && !fontError) return null;
+
   return (
     <SafeAreaProvider>
       <NavigationContainer theme={SportivoDarkTheme}>
-        <StatusBar style="light" backgroundColor="#080a0b" translucent={false} />
+        <StatusBar style="light" backgroundColor={colors.ink950} translucent={false} />
         <RootNavigator />
       </NavigationContainer>
     </SafeAreaProvider>

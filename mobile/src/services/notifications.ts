@@ -147,13 +147,13 @@ export async function scheduleMatchKickoffNotification(
         title: minutesBefore === 5 ? '🔔 Kickoff in 5 Minutes!' : '🏏 Matchday Reminder',
         body: `${matchTitle} starts soon! Watch live on Sportivo.`,
         data: { matchTitle, minutesBefore },
-        channelId: 'match-alerts',
         sound: 'default',
       },
       trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
         seconds: diffSec,
         channelId: 'match-alerts',
-      } as any,
+      },
     });
     return id;
   } catch (error) {
@@ -199,10 +199,9 @@ export async function notifyLiveMoment(options: {
         title: options.title,
         body: options.body,
         data: { alertKey: options.key, type: options.type },
-        channelId: 'match-moments',
         sound: 'default',
       },
-      trigger: null, // immediate alert
+      trigger: { channelId: 'match-moments' }, // immediate alert
     });
   } catch (e) {
     console.warn('[Notifications] notifyLiveMoment error:', e);
@@ -267,10 +266,9 @@ export async function autoScheduleAllMatchAlerts(
             title: `🏏 Match Starting Soon! (${Math.round(diffMs / 60000)}m)`,
             body: `${match.title} begins soon! Tap to open live stream desk.`,
             data: { alertKey: immediateKey, matchTitle: match.title },
-            channelId: 'match-alerts',
             sound: 'default',
           },
-          trigger: null, // immediate
+          trigger: { channelId: 'match-alerts' }, // immediate
         });
       }
 
@@ -283,13 +281,13 @@ export async function autoScheduleAllMatchAlerts(
             title: `🏏 30m Reminder: ${match.title}`,
             body: `${match.title} kicks off in 30 minutes! Live coverage in Nepal Standard Time.`,
             data: { alertKey: key30, matchTitle: match.title },
-            channelId: 'match-alerts',
             sound: 'default',
           },
           trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
             seconds: diffSec30,
             channelId: 'match-alerts',
-          } as any,
+          },
         });
       }
 
@@ -302,13 +300,13 @@ export async function autoScheduleAllMatchAlerts(
             title: `🔔 Kickoff in 5 Minutes!`,
             body: `${match.title} is starting now! Tap to watch verified live stream.`,
             data: { alertKey: key5, matchTitle: match.title },
-            channelId: 'match-alerts',
             sound: 'default',
           },
           trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
             seconds: diffSec5,
             channelId: 'match-alerts',
-          } as any,
+          },
         });
       }
     }

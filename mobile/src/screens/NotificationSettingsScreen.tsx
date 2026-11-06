@@ -57,9 +57,8 @@ export default function NotificationSettingsScreen() {
           title: '🔔 Kickoff in 5 Minutes!',
           body: 'Real Madrid 🆚 Barcelona. El Clásico kicks off at 8:45 PM NST. Get ready to watch live!',
           data: { matchTitle: 'Real Madrid vs Barcelona' },
-          channelId: 'match-alerts',
         },
-        trigger: null, // send immediately
+        trigger: { channelId: 'match-alerts' }, // send immediately on the match alerts channel
       });
       Alert.alert('Alert Sent', 'Native notification fired with vibration.');
     } catch {

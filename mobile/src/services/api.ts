@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Match, NplMatch, Category } from '../types';
+import { Match, NplMatch, Category, StreamSource } from '../types';
 
 export const API_BASE_URL = 'https://sportivo.dipeshsapkota7.com.np/api';
 
@@ -109,7 +109,8 @@ export async function resolveMatchStreams(match: Match): Promise<StreamSource[]>
               const isDirect =
                 item.isNativeVideo === true ||
                 cleanUrl.endsWith('.m3u8') ||
-                cleanUrl.endsWith('.mp4');
+                cleanUrl.endsWith('.mp4') ||
+                cleanUrl.endsWith('.mpd');
 
               allResolved.push({
                 id: `${s.source}-${idx}`,
@@ -193,6 +194,17 @@ export function formatKathmanduDate(timestamp: number | string): string {
   } catch {
     return 'Today';
   }
+}
+
+export function getKathmanduDateKey(timestamp: number | string): string {
+  const parts = new Intl.DateTimeFormat('en', {
+    timeZone: 'Asia/Kathmandu',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(timestamp));
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
 }
 
 export interface LiveScorerMobile {

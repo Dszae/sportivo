@@ -11,6 +11,8 @@
     "build:aab": "eas build --platform android --profile production"
   },
   "dependencies": {
+    "@expo-google-fonts/jetbrains-mono": "^0.2.3",
+    "@expo-google-fonts/manrope": "^0.2.3",
     "@react-native-async-storage/async-storage": "^2.1.0",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",

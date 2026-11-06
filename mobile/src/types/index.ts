@@ -15,10 +15,12 @@ export interface MatchTeams {
   home?: {
     name?: string;
     badge?: string;
+    score?: string;
   };
   away?: {
     name?: string;
     badge?: string;
+    score?: string;
   };
 }
 
@@ -37,6 +39,7 @@ export interface Match {
   sources?: Array<{ source: string; id: string; label?: string }>;
   streams?: StreamSource[];
   league?: string;
+  competition?: string;
   venue?: string;
   score?: string;
   round?: string;

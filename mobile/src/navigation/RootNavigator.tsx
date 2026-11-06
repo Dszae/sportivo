@@ -2,8 +2,9 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { GridIcon, FootballIcon, FlameIcon, CricketIcon, BookmarkIcon } from '../components/Icons';
+import { GridIcon, FootballIcon, TrophyIcon, CricketIcon, BookmarkIcon } from '../components/Icons';
 import { RootStackParamList } from '../types';
+import { colors, fonts } from '../theme';
 
 import HomeScreen from '../screens/HomeScreen';
 import FootballScreen from '../screens/FootballScreen';
@@ -23,18 +24,18 @@ function BottomTabs() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#090f0e',
-          borderTopColor: 'rgba(255,255,255,0.08)',
+          backgroundColor: colors.ink950,
+          borderTopColor: colors.line,
           borderTopWidth: 1,
           height: 60,
           paddingBottom: 8,
-          paddingTop: 6,
+          paddingTop: 8,
         },
-        tabBarActiveTintColor: '#c9f36b',
-        tabBarInactiveTintColor: '#64748b',
+        tabBarActiveTintColor: colors.fg,
+        tabBarInactiveTintColor: colors.fg3,
         tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '800',
+          fontFamily: fonts.sansMedium,
+          fontSize: 11,
         },
       }}
     >
@@ -42,10 +43,8 @@ function BottomTabs() {
         name="HomeTab"
         component={HomeScreen}
         options={{
-          tabBarLabel: 'Desk',
-          tabBarIcon: ({ color }) => (
-            <GridIcon size={20} color={color} />
-          ),
+          tabBarLabel: 'Home',
+          tabBarIcon: ({ color }) => <GridIcon size={20} color={color} />,
         }}
       />
 
@@ -54,9 +53,7 @@ function BottomTabs() {
         component={FootballScreen}
         options={{
           tabBarLabel: 'Football',
-          tabBarIcon: ({ color }) => (
-            <FootballIcon size={20} color={color} />
-          ),
+          tabBarIcon: ({ color }) => <FootballIcon size={20} color={color} />,
         }}
       />
 
@@ -64,12 +61,11 @@ function BottomTabs() {
         name="NplTab"
         component={NplScreen}
         options={{
-          tabBarLabel: 'NPL 2026',
-          tabBarActiveTintColor: '#ef4444',
+          tabBarLabel: 'NPL',
           tabBarIcon: ({ color }) => (
-            <View style={{ position: 'relative' }}>
-              <FlameIcon size={20} color={color} />
-              <View style={styles.pulseDot} />
+            <View>
+              <TrophyIcon size={20} color={color} />
+              <View style={styles.liveMark} />
             </View>
           ),
         }}
@@ -80,9 +76,7 @@ function BottomTabs() {
         component={CricketScreen}
         options={{
           tabBarLabel: 'Cricket',
-          tabBarIcon: ({ color }) => (
-            <CricketIcon size={20} color={color} />
-          ),
+          tabBarIcon: ({ color }) => <CricketIcon size={20} color={color} />,
         }}
       />
 
@@ -91,10 +85,7 @@ function BottomTabs() {
         component={WatchlistScreen}
         options={{
           tabBarLabel: 'Watchlist',
-          tabBarActiveTintColor: '#fbbf24',
-          tabBarIcon: ({ color, focused }) => (
-            <BookmarkIcon size={20} color={color} fill={focused ? color : undefined} />
-          ),
+          tabBarIcon: ({ color, focused }) => <BookmarkIcon size={20} color={color} fill={focused ? color : undefined} />,
         }}
       />
     </Tab.Navigator>
@@ -105,59 +96,33 @@ export default function RootNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: {
-          backgroundColor: '#0c1211',
-        },
-        headerTintColor: '#ffffff',
-        headerTitleStyle: {
-          fontWeight: '900',
-          fontSize: 16,
-        },
+        headerStyle: { backgroundColor: colors.ink950 },
+        headerTintColor: colors.fg,
+        headerTitleStyle: { fontFamily: fonts.sansMedium, fontSize: 16 },
         headerShadowVisible: false,
+        contentStyle: { backgroundColor: colors.ink900 },
       }}
     >
-      <Stack.Screen
-        name="MainTabs"
-        component={BottomTabs}
-        options={{ headerShown: false }}
-      />
-
-      <Stack.Screen
-        name="MatchPlayer"
-        component={MatchPlayerScreen}
-        options={{
-          headerShown: false,
-        }}
-      />
-
+      <Stack.Screen name="MainTabs" component={BottomTabs} options={{ headerShown: false }} />
+      <Stack.Screen name="MatchPlayer" component={MatchPlayerScreen} options={{ headerShown: false }} />
       <Stack.Screen
         name="NotificationSettings"
         component={NotificationSettingsScreen}
-        options={{
-          title: 'Alert Settings',
-          headerBackTitle: 'Back',
-        }}
+        options={{ title: 'Alerts', headerBackTitle: 'Back' }}
       />
-
-      <Stack.Screen
-        name="AboutCreator"
-        component={AboutScreen}
-        options={{
-          headerShown: false,
-        }}
-      />
+      <Stack.Screen name="AboutCreator" component={AboutScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
 
 const styles = StyleSheet.create({
-  pulseDot: {
+  liveMark: {
     position: 'absolute',
     top: -2,
-    right: -3,
+    right: -4,
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#ef4444',
+    backgroundColor: colors.live,
   },
 });

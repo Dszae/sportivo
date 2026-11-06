@@ -15,9 +15,11 @@ import { BookmarkIcon, CalendarIcon, FlameIcon, CricketIcon } from '../component
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NplMatch, RootStackParamList } from '../types';
-import { fetchNplFixtures, formatKathmanduTime, formatKathmanduDate } from '../services/api';
+import { fetchNplFixtures, formatKathmanduTime, formatKathmanduDate, getKathmanduDateKey } from '../services/api';
 import { loadPreferences, toggleStarredMatch } from '../services/storage';
 import { triggerButtonHaptic } from '../services/notifications';
+import { LiveTag } from '../components/Live';
+import { colors, fonts } from '../theme';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -62,9 +64,7 @@ export default function NplScreen() {
 
   const filteredFixtures = fixtures.filter((m) => {
     if (activeTab === 'today') {
-      const todayStr = new Date().toISOString().split('T')[0];
-      const matchStr = new Date(m.timestamp).toISOString().split('T')[0];
-      return todayStr === matchStr;
+      return getKathmanduDateKey(Date.now()) === getKathmanduDateKey(m.timestamp);
     }
     if (activeTab === 'upcoming') {
       return m.status === 'UPCOMING';
@@ -84,10 +84,7 @@ export default function NplScreen() {
           <Text style={styles.roundText}>{item.round} · Match {item.matchNumber}</Text>
           <View style={styles.headerRight}>
             {isLive ? (
-              <View style={styles.liveBadge}>
-                <View style={styles.liveDot} />
-                <Text style={styles.liveText}>LIVE</Text>
-              </View>
+              <LiveTag label="LIVE" style={styles.liveBadge} />
             ) : isCompleted ? (
               <View style={styles.completedBadge}>
                 <Text style={styles.completedText}>FINAL</Text>
@@ -218,7 +215,7 @@ export default function NplScreen() {
                 })
               }
             >
-              <Text style={styles.watchLiveText}>Watch Live &rarr;</Text>
+              <Text style={styles.watchLiveText}>Watch Live →</Text>
             </TouchableOpacity>
           ) : (
             <Text style={styles.venueShort}>TU Cricket Ground</Text>
@@ -306,15 +303,15 @@ export default function NplScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#080a0b',
+    backgroundColor: colors.ink900,
   },
   topBanner: {
     paddingHorizontal: 16,
     paddingTop: 14,
     paddingBottom: 12,
-    backgroundColor: '#0f1715',
+    backgroundColor: colors.ink950,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
+    borderBottomColor: colors.line,
   },
   nplTitleRow: {
     flexDirection: 'row',
@@ -327,14 +324,14 @@ const styles = StyleSheet.create({
   },
   nplTitle: {
     fontSize: 18,
-    fontWeight: '900',
-    color: '#ffffff',
+    fontFamily: fonts.sansSemibold,
+    color: colors.fg,
     letterSpacing: -0.3,
   },
   nplSubtitle: {
     fontSize: 11,
-    color: '#94a3b8',
-    fontWeight: '600',
+    fontFamily: fonts.sansMedium,
+    color: colors.fg3,
     marginTop: 2,
   },
   pillsRow: {
@@ -343,39 +340,39 @@ const styles = StyleSheet.create({
   },
   pill: {
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    minHeight: 36,
+    justifyContent: 'center',
+    borderRadius: 8,
+    backgroundColor: colors.ink800,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.lineStrong,
   },
   pillActive: {
-    backgroundColor: '#dc2626',
-    borderColor: '#ef4444',
+    backgroundColor: colors.lime,
+    borderColor: colors.lime,
   },
   pillText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#94a3b8',
+    fontFamily: fonts.sansMedium,
+    color: colors.fg2,
   },
   pillTextActive: {
-    color: '#ffffff',
-    fontWeight: '900',
+    color: colors.limeInk,
   },
   listContent: {
     padding: 16,
     paddingBottom: 32,
   },
   card: {
-    backgroundColor: '#111a19',
+    backgroundColor: colors.ink800,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: colors.line,
     marginBottom: 14,
     overflow: 'hidden',
   },
   liveCard: {
-    borderColor: 'rgba(239,68,68,0.6)',
+    borderColor: 'rgba(229,72,77,0.6)',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -384,13 +381,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingTop: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.04)',
+    borderBottomColor: colors.line,
     paddingBottom: 8,
   },
   roundText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#94a3b8',
+    fontFamily: fonts.sansMedium,
+    color: colors.fg3,
   },
   headerRight: {
     flexDirection: 'row',
@@ -398,48 +395,34 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   liveBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#dc2626',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    gap: 4,
-  },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#ffffff',
-  },
-  liveText: {
-    fontSize: 9,
-    fontWeight: '900',
-    color: '#ffffff',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: 'rgba(229,72,77,0.12)',
   },
   completedBadge: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: colors.ink700,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
   completedText: {
     fontSize: 9,
-    fontWeight: '800',
-    color: '#cbd5e1',
+    fontFamily: fonts.sansMedium,
+    color: colors.fg2,
   },
   upcomingBadge: {
-    backgroundColor: 'rgba(251,191,36,0.15)',
+    backgroundColor: 'rgba(76,195,138,0.1)',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: 'rgba(251,191,36,0.3)',
+    borderColor: 'rgba(76,195,138,0.24)',
   },
   upcomingText: {
     fontSize: 9,
-    fontWeight: '800',
-    color: '#fbbf24',
+    fontFamily: fonts.sansMedium,
+    color: colors.up,
   },
   starBtn: {
     padding: 2,
@@ -475,19 +458,19 @@ const styles = StyleSheet.create({
   },
   teamShortText: {
     fontSize: 10,
-    fontWeight: '900',
-    color: '#ffffff',
+    fontFamily: fonts.sansSemibold,
+    color: colors.fg,
   },
   teamName: {
     fontSize: 14,
-    fontWeight: '800',
-    color: '#ffffff',
+    fontFamily: fonts.sansMedium,
+    color: colors.fg,
     flex: 1,
   },
   scoreText: {
     fontSize: 14,
-    fontWeight: '900',
-    color: '#ffffff',
+    fontFamily: fonts.monoMedium,
+    color: colors.fg,
     fontVariant: ['tabular-nums'],
   },
   summaryBox: {
@@ -499,39 +482,40 @@ const styles = StyleSheet.create({
   },
   summaryText: {
     fontSize: 11,
-    color: '#c9f36b',
-    fontWeight: '600',
+    fontFamily: fonts.sansMedium,
+    color: colors.lime,
   },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
+    borderTopColor: colors.line,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    backgroundColor: colors.ink900,
   },
   scheduleText: {
     fontSize: 11,
-    color: '#94a3b8',
-    fontWeight: '600',
+    fontFamily: fonts.mono,
+    color: colors.fg2,
   },
   venueShort: {
     fontSize: 10,
-    color: '#64748b',
-    fontWeight: '600',
+    fontFamily: fonts.sansMedium,
+    color: colors.fg3,
   },
   watchLiveBtn: {
-    backgroundColor: '#dc2626',
+    backgroundColor: colors.live,
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    minHeight: 36,
+    justifyContent: 'center',
     borderRadius: 8,
   },
   watchLiveText: {
     fontSize: 11,
-    fontWeight: '900',
-    color: '#ffffff',
+    fontFamily: fonts.sansMedium,
+    color: colors.black,
   },
   centerLoading: {
     flex: 1,
@@ -541,8 +525,8 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 13,
-    color: '#94a3b8',
-    fontWeight: '600',
+    fontFamily: fonts.sansMedium,
+    color: colors.fg2,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -555,12 +539,13 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 16,
-    fontWeight: '800',
-    color: '#ffffff',
+    fontFamily: fonts.sansMedium,
+    color: colors.fg,
   },
   emptySubtitle: {
     fontSize: 12,
-    color: '#94a3b8',
+    fontFamily: fonts.sans,
+    color: colors.fg2,
     textAlign: 'center',
     marginTop: 6,
   },

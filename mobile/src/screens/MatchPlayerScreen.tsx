@@ -208,10 +208,10 @@ export default function MatchPlayerScreen() {
   const fallbackStream: StreamSource = {
     id: 'server-1',
     source: 'npl',
-    label: 'Action Sports HD (YonoTV Live)',
-    embedUrl: 'https://yonotv.pages.dev/fc',
-    streamUrl: 'https://yonotv.pages.dev/fc',
-    isDirectStream: false,
+    label: 'Action Sports HD (TU Ground Live)',
+    embedUrl: 'https://hugh.cdn.rumble.cloud/live/hd37fm8g/live-hls/yjkj-u9ug/chunklist_i1_DVR.m3u8',
+    streamUrl: 'https://hugh.cdn.rumble.cloud/live/hd37fm8g/live-hls/yjkj-u9ug/chunklist_i1_DVR.m3u8',
+    isDirectStream: true,
     hd: true,
   };
 
@@ -259,7 +259,7 @@ export default function MatchPlayerScreen() {
 
       {/* Video Player Stage (ExoPlayer Native Streaming) */}
       <View style={[styles.playerStage, isFullscreen && styles.playerStageFullscreen]}>
-        {activeStream.streamUrl || activeStream.embedUrl?.includes('.m3u8') ? (
+        {activeStream.isDirectStream || activeStream.streamUrl || activeStream.embedUrl?.includes('.m3u8') || activeStream.embedUrl?.includes('.mpd') ? (
           <Video
             ref={videoRef}
             source={{ uri: activeStream.streamUrl || activeStream.embedUrl || '' }}
