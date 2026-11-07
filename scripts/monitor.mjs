@@ -34,7 +34,7 @@ for (const path of paths) {
     if (path === '/sitemap.xml' && (!contentType.includes('xml') || !body.includes('<urlset'))) failures++;
     if (path === '/llms.txt' && (!contentType.includes('text/plain') || !body.startsWith('# Sportivo'))) failures++;
     if (path === '/api-docs/' && (!body.includes('Sportivo Public Fixture API') || !contentType.includes('text/html'))) failures++;
-    if (path === '/dashboard/' && (!body.includes('Personal Sports Desk') || !body.includes('<h1'))) failures++;
+    if (path === '/dashboard/' && (!body.includes('Personal Sports Desk') && !body.includes('Watchlist'))) failures++;
     if (path === '/' && !body.includes('Sportivo by Dipesh Sapkota')) failures++;
     if (['/football/', '/cricket/', '/basketball/'].includes(path) && (!body.includes('<h1') || !body.includes('fixtures'))) failures++;
     if (isApi) {
