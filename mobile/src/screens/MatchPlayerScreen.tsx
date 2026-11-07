@@ -11,6 +11,7 @@ import {
   Platform,
   StatusBar,
   BackHandler,
+  Linking,
 } from 'react-native';
 import { Video, ResizeMode, AVPlaybackStatus, VideoFullscreenUpdate } from 'expo-av';
 import * as ScreenOrientation from 'expo-screen-orientation';
@@ -301,12 +302,33 @@ export default function MatchPlayerScreen() {
             mediaPlaybackRequiresUserAction={false}
             javaScriptEnabled
             domStorageEnabled
+            originWhitelist={['*']}
+            mixedContentMode="always"
+            allowsProtectedMedia
+            userAgent="Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36"
+            setSupportMultipleWindows={false}
+            sharedCookiesEnabled
+            thirdPartyCookiesEnabled
             renderError={() => (
-              <View style={[styles.video, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }]}>
-                <ActivityIndicator size="large" color="#c9f36b" />
-                <Text style={{ color: '#c9f36b', marginTop: 12, fontSize: 12, fontWeight: 'bold' }}>
-                  Connecting to Live Broadcast...
+              <View style={[styles.video, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#000', padding: 16 }]}>
+                <Text style={{ color: '#ef4444', fontSize: 13, fontWeight: 'bold', textAlign: 'center', marginBottom: 8 }}>
+                  Feed blocked by external stream host policy
                 </Text>
+                <TouchableOpacity
+                  style={{ backgroundColor: '#c9f36b', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, marginBottom: 8 }}
+                  onPress={() => {
+                    const url = activeStream.embedUrl || activeStream.streamUrl;
+                    if (url) Linking.openURL(url).catch(() => {});
+                  }}
+                >
+                  <Text style={{ color: '#090d0b', fontWeight: 'bold', fontSize: 12 }}>Open in External Player ↗</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 8 }}
+                  onPress={() => setSelectedServer((selectedServer + 1) % Math.max(1, streams.length))}
+                >
+                  <Text style={{ color: '#ffffff', fontSize: 11 }}>Switch Server</Text>
+                </TouchableOpacity>
               </View>
             )}
           />

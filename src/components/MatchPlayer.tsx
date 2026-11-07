@@ -969,8 +969,8 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
                   src={activeStream.embedUrl}
                   className="h-full w-full border-0"
                   allowFullScreen
-                  allow="autoplay; fullscreen; picture-in-picture; encrypted-media; clipboard-write"
-                  referrerPolicy="no-referrer"
+                  allow="autoplay; fullscreen; picture-in-picture; encrypted-media; clipboard-write; display-capture"
+                  referrerPolicy="no-referrer-when-downgrade"
                   title={`${title} live stream`}
                   onLoad={() => setPlayerState('playing')}
                 ></iframe>
@@ -978,6 +978,29 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
             </>
           )}
         </div>
+
+        {/* Direct stream fallback notice if external stream provider blocks iframe embedding */}
+        {activeStream && !activeStream.isNativeVideo && !isFullscreen && (
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line bg-ink-950/80 px-4 py-2 text-xs text-fg-2 backdrop-blur-sm">
+            <span className="flex items-center gap-2">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-lime"></span>
+              <span>Seeing &quot;content blocked&quot;? Switch server or launch stream directly.</span>
+            </span>
+            <a
+              href={activeStream.embedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 font-semibold text-lime hover:underline"
+            >
+              <span>Direct Popout Window</span>
+              <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </a>
+          </div>
+        )}
 
         {/* Server Selection & Latency Toolbar - hidden in fullscreen mode */}
         {streams.length > 0 && !isFullscreen && (
@@ -994,6 +1017,23 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
                 {stream.hd && <span className="chip-count">HD</span>}
               </button>
             ))}
+
+            {activeStream && !activeStream.isNativeVideo && (
+              <a
+                href={activeStream.embedUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="chip border-lime/40 bg-lime/10 text-lime hover:bg-lime/20 inline-flex items-center gap-1.5"
+                title="Bypasses iframe security blocks by opening directly in a clean dedicated player window"
+              >
+                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+                <span>Popout ↗</span>
+              </a>
+            )}
 
             <button
               type="button"
