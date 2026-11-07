@@ -3,6 +3,7 @@ import type { Category } from '../lib/sportivo';
 import NotificationCenter from './NotificationCenter';
 import MobileNav from './MobileNav.astro';
 import DownloadApkButton from './InstallPrompt';
+import ThemeToggle from './ThemeToggle';
 
 interface Props {
   activeCategory?: Category | 'creator' | 'api-docs' | 'dashboard' | 'npl';
@@ -52,6 +53,8 @@ const links: { href: string; label: string; key: string; live?: boolean }[] = [
       </a>
 
       <NotificationCenter client:load />
+
+      <ThemeToggle client:load />
 
       <div class="md:hidden flex items-center">
         <DownloadApkButton client:load />

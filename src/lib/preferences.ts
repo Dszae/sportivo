@@ -10,7 +10,10 @@ export interface NotificationSettings {
   notifyFullTime: boolean; // full time & match conclusions
 }
 
+export type ThemeMode = 'dark' | 'light';
+
 export interface UserPreferences {
+  theme?: ThemeMode;
   favoriteSports: string[];
   favoriteLeagues: string[];
   favoriteTeams: string[];
@@ -91,6 +94,7 @@ const LEGACY_FAVS_KEY = 'sportivo_favs';
 
 export function getDefaultPreferences(): UserPreferences {
   return {
+    theme: 'dark',
     favoriteSports: ['football', 'cricket', 'basketball'],
     favoriteLeagues: ['Premier League', 'Champions League', 'NPL', 'La Liga'],
     favoriteTeams: [],
@@ -131,7 +135,9 @@ export function loadUserPreferences(): UserPreferences {
     }
 
     const n = prefs.notifications;
+    const storedTheme = (localStorage.getItem('sportivo_theme') as ThemeMode) || prefs.theme || defaults.theme;
     return {
+      theme: storedTheme === 'light' ? 'light' : 'dark',
       favoriteSports: Array.isArray(prefs.favoriteSports) ? prefs.favoriteSports : defaults.favoriteSports,
       favoriteLeagues: Array.isArray(prefs.favoriteLeagues) ? prefs.favoriteLeagues : defaults.favoriteLeagues,
       favoriteTeams: Array.isArray(prefs.favoriteTeams) ? prefs.favoriteTeams : defaults.favoriteTeams,
