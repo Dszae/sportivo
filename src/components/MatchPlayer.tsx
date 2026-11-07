@@ -839,10 +839,25 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
               </div>
 
               {status === 'Final' ? (
-                <div className="relative z-10 flex max-w-md flex-col items-center rounded-2xl border border-line bg-ink-950/80 p-5 backdrop-blur-sm">
-                  <span className="meta">Full time</span>
-                  <p className="mt-2 text-base font-medium text-fg">Final result</p>
-                  <p className="mt-1 text-sm text-fg-2">This broadcast has ended. Scorecards and upcoming fixtures are below.</p>
+                <div className="relative z-10 flex max-w-md flex-col items-center rounded-2xl border border-line bg-ink-950/80 p-5 text-center backdrop-blur-sm">
+                  <span className="meta">Match Concluded · Full Time</span>
+                  {(match as any)?.score ? (
+                    <div className="mt-3 flex items-center justify-center gap-4">
+                      <span className="clock text-lg font-medium text-fg">{(match as any).score.home || ''}</span>
+                      <span className="text-fg-3">—</span>
+                      <span className="clock text-lg font-medium text-fg">{(match as any).score.away || ''}</span>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-base font-medium text-fg">Final result</p>
+                  )}
+                  {(match as any)?.summary ? (
+                    <p className="mt-2 text-sm font-medium text-lime">{(match as any).summary}</p>
+                  ) : (
+                    <p className="mt-1 text-sm text-fg-2">This broadcast has ended. Official results are above.</p>
+                  )}
+                  <a href="/npl/" className="btn btn-secondary btn-sm mt-4">
+                    View NPL Schedule &amp; Standings
+                  </a>
                 </div>
               ) : isLive || sources.length > 0 ? (
                 <button

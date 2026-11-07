@@ -94,6 +94,8 @@ export type Match = {
   poster?: string;
   image?: string;
   thumbnail?: string;
+  score?: { home?: string; away?: string };
+  summary?: string;
   sources?: StreamSource[];
 };
 

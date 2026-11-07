@@ -460,7 +460,10 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "startTime": "2026-11-06T12:30:00+05:45",
     "timestamp": 1793947500000,
     "venue": "TU International Cricket Ground, Kirtipur",
-    "status": "UPCOMING",
+    "status": "COMPLETED",
+    "homeScore": "176/6 (20.0 ov)",
+    "awayScore": "137/7 (20.0 ov)",
+    "summary": "Sudurpaschim Royals won by 39 runs",
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-16"
   },
   {
@@ -480,7 +483,10 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "startTime": "2026-11-06T17:00:00+05:45",
     "timestamp": 1793963700000,
     "venue": "TU International Cricket Ground, Kirtipur",
-    "status": "UPCOMING",
+    "status": "COMPLETED",
+    "homeScore": "151/6 (20.0 ov)",
+    "awayScore": "121/10 (19.0 ov)",
+    "summary": "Chitwan Rhinos won by 30 runs",
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-17"
   },
   {
@@ -792,8 +798,12 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
  */
 export function getCalibratedNplFixtures(nowMs: number = Date.now()): NplMatch[] {
   return NPL_FIXTURES_2026.map((m) => {
-    // If tournament record already marks this match as finished/completed, strictly respect it!
-    if (m.status === 'COMPLETED') {
+    // If tournament record already marks this match as finished/completed or summary shows result, strictly respect it!
+    const hasConcludedSummary = Boolean(m.summary && /won by|tied|no result|abandoned|defeated/i.test(m.summary));
+    const isPast = nowMs > m.timestamp + 3.25 * 3600 * 1000;
+    const isCompleted = m.status === 'COMPLETED' || hasConcludedSummary || isPast;
+
+    if (isCompleted) {
       return {
         ...m,
         status: 'COMPLETED',
@@ -801,13 +811,10 @@ export function getCalibratedNplFixtures(nowMs: number = Date.now()): NplMatch[]
       };
     }
 
-    const isPast = nowMs > m.timestamp + 3.75 * 3600 * 1000;
-    const isMatchWindow = nowMs >= m.timestamp - 15 * 60 * 1000 && nowMs <= m.timestamp + 3.75 * 3600 * 1000;
+    const isMatchWindow = nowMs >= m.timestamp - 15 * 60 * 1000 && nowMs <= m.timestamp + 3.25 * 3600 * 1000;
 
     let status: 'LIVE' | 'COMPLETED' | 'UPCOMING' = m.status;
-    if (isPast) {
-      status = 'COMPLETED';
-    } else if (isMatchWindow) {
+    if (isMatchWindow) {
       status = 'LIVE';
     } else if (nowMs < m.timestamp - 15 * 60 * 1000) {
       status = 'UPCOMING';
@@ -821,9 +828,9 @@ export function getCalibratedNplFixtures(nowMs: number = Date.now()): NplMatch[]
           ? undefined
           : status === 'LIVE'
           ? m.broadcast || {
-              provider: 'NetTV Action Sports HD / FanCode',
-              authorizedEmbedUrl: 'https://yonotv.pages.dev/LINK?id=NP4',
-              isHls: false,
+              provider: 'Action Sports HD (TU Ground Direct Feed)',
+              authorizedEmbedUrl: 'https://lb-ottnp.nettvstreamz.com/npl/live_match6/playlist.m3u8',
+              isHls: true,
               availabilityStatus: 'online',
             }
           : m.broadcast,

@@ -226,10 +226,9 @@ export default function NplSchedule() {
     const matchSlug = slugify(`${m.homeTeam} vs ${m.awayTeam}`);
     const detailUrl = `/cricket/match/${encodeURIComponent(matchSlug)}/`;
     const nowMs = Date.now();
-    const isLive =
-      m.status === 'LIVE' ||
-      (nowMs >= m.timestamp - 15 * 60 * 1000 && nowMs <= m.timestamp + 4.5 * 3600 * 1000 && m.status !== 'COMPLETED');
-    const isCompleted = m.status === 'COMPLETED' || (!isLive && nowMs > m.timestamp + 4.5 * 3600 * 1000);
+    const hasConcludedSummary = Boolean(m.summary && /won by|tied|no result|abandoned|defeated/i.test(m.summary));
+    const isCompleted = m.status === 'COMPLETED' || hasConcludedSummary || nowMs > m.timestamp + 3.25 * 3600 * 1000;
+    const isLive = !isCompleted && (m.status === 'LIVE' || (nowMs >= m.timestamp - 15 * 60 * 1000 && nowMs <= m.timestamp + 3.25 * 3600 * 1000));
     const isFollowed =
       prefs.starredMatches.includes(`npl-match-${m.matchNumber}`) ||
       prefs.favoriteTeams.some(
@@ -312,11 +311,28 @@ export default function NplSchedule() {
   const liveFixture = useMemo(() => {
     const nowMs = Date.now();
     return fixtures.find((m) => {
-      if (m.status === 'COMPLETED') return false;
+      const hasConcluded =
+        m.status === 'COMPLETED' ||
+        Boolean(m.summary && /won by|tied|no result|abandoned|defeated/i.test(m.summary)) ||
+        nowMs > m.timestamp + 3.25 * 3600 * 1000;
+      if (hasConcluded) return false;
       if (m.status === 'LIVE') return true;
-      return nowMs >= m.timestamp - 15 * 60 * 1000 && nowMs <= m.timestamp + 3.75 * 3600 * 1000;
+      return nowMs >= m.timestamp - 15 * 60 * 1000 && nowMs <= m.timestamp + 3.25 * 3600 * 1000;
     });
   }, [fixtures]);
+
+  const featuredUpcoming = useMemo(() => {
+    if (liveFixture) return null;
+    const nowMs = Date.now();
+    const todayUpcoming = todayMatches.find((m) => {
+      const hasConcluded =
+        m.status === 'COMPLETED' ||
+        Boolean(m.summary && /won by|tied|no result|abandoned|defeated/i.test(m.summary)) ||
+        nowMs > m.timestamp + 3.25 * 3600 * 1000;
+      return !hasConcluded && nowMs < m.timestamp;
+    });
+    return todayUpcoming || nextUpcoming || null;
+  }, [liveFixture, todayMatches, nextUpcoming]);
 
   const liveSlug = liveFixture ? slugify(`${liveFixture.homeTeam} vs ${liveFixture.awayTeam}`) : '';
   const liveStreamUrl = liveSlug ? `/cricket/match/${encodeURIComponent(liveSlug)}/` : '';
@@ -369,6 +385,44 @@ export default function NplSchedule() {
               </div>
               <a href={liveStreamUrl} className="btn btn-live btn-lg w-full sm:w-auto">
                 Watch live
+              </a>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {!liveFixture && featuredUpcoming && (
+        <section className="panel mb-10 overflow-hidden border-line" aria-label="Up next">
+          <div className="flex h-12 items-center justify-between border-b border-line px-5">
+            <span className="chip text-xs">
+              Next match
+            </span>
+            <span className="meta hidden sm:inline">
+              Match <span className="clock">{featuredUpcoming.matchNumber}</span>, {shortVenue(featuredUpcoming.venue || 'TU Cricket Ground')}
+            </span>
+          </div>
+
+          <div className="grid gap-8 p-5 sm:p-6 lg:grid-cols-12 lg:items-center">
+            <div className="space-y-4 lg:col-span-8">
+              <div className="flex items-center gap-4">
+                <Crest logo={featuredUpcoming.homeTeamLogo} name={featuredUpcoming.homeTeam} short={featuredUpcoming.homeTeamShort} color={featuredUpcoming.homeTeamColor} size={44} />
+                <span className="truncate text-2xl font-medium tracking-[-0.01em] text-fg sm:text-[28px]">{featuredUpcoming.homeTeam}</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <Crest logo={featuredUpcoming.awayTeamLogo} name={featuredUpcoming.awayTeam} short={featuredUpcoming.awayTeamShort} color={featuredUpcoming.awayTeamColor} size={44} />
+                <span className="truncate text-2xl font-medium tracking-[-0.01em] text-fg sm:text-[28px]">{featuredUpcoming.awayTeam}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4 lg:col-span-4 lg:items-end">
+              <div className="text-sm text-fg-2 lg:text-right">
+                <p>
+                  Kickoff <span className="clock text-fg">{formatKathmanduTime(featuredUpcoming.timestamp)}</span>
+                </p>
+                <p className="mt-1 meta">{shortDate(featuredUpcoming.timestamp)} · Action Sports HD, NetTV</p>
+              </div>
+              <a href={`/cricket/match/${encodeURIComponent(slugify(`${featuredUpcoming.homeTeam} vs ${featuredUpcoming.awayTeam}`))}/`} className="btn btn-secondary btn-lg w-full sm:w-auto">
+                Match details
               </a>
             </div>
           </div>

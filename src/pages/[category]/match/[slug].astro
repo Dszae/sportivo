@@ -1,4 +1,4 @@
-﻿---
+---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SiteHeader from '../../../components/SiteHeader.astro';
 import SiteFooter from '../../../components/SiteFooter.astro';
@@ -50,11 +50,12 @@ if (validCategory) {
       });
 
       if (nplMatch) {
-        const isPast = nplMatch.status === 'COMPLETED' || now > nplMatch.timestamp + 3.75 * 3600 * 1000;
+        const hasConcludedSummary = Boolean(nplMatch.summary && /won by|tied|no result|abandoned|defeated/i.test(nplMatch.summary));
+        const isPast = nplMatch.status === 'COMPLETED' || hasConcludedSummary || now > nplMatch.timestamp + 3.25 * 3600 * 1000;
         const isMatchWindow =
           !isPast &&
           (nplMatch.status === 'LIVE' ||
-            (now >= nplMatch.timestamp - 15 * 60 * 1000 && now <= nplMatch.timestamp + 3.75 * 3600 * 1000));
+            (now >= nplMatch.timestamp - 15 * 60 * 1000 && now <= nplMatch.timestamp + 3.25 * 3600 * 1000));
         const nplStatus = isPast ? 'Final' : isMatchWindow ? 'Live' : 'Upcoming';
 
         match = {
@@ -70,6 +71,11 @@ if (validCategory) {
             away: { name: nplMatch.awayTeam, badge: nplMatch.awayTeamLogo },
           },
           poster: nplMatch.homeTeamLogo || 'https://nepalpremierleague.org/icon.svg',
+          score: {
+            home: nplMatch.homeScore,
+            away: nplMatch.awayScore,
+          },
+          summary: nplMatch.summary,
           sources:
             nplStatus === 'Final'
               ? []
@@ -77,7 +83,7 @@ if (validCategory) {
                   {
                     source: 'npl',
                     id: nplMatch.id,
-                    label: nplMatch.broadcast?.provider || 'NetTV Action Sports HD / FanCode',
+                    label: nplMatch.broadcast?.provider || 'Action Sports HD (TU Ground Direct Feed)',
                   },
                 ],
         };

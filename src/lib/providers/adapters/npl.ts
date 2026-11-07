@@ -42,14 +42,13 @@ function toNplBackendId(id: string): string {
 function toNormalizedMatch(m: NplMatch): NormalizedMatch {
   const now = Date.now();
   let status: 'Live' | 'Final' | 'Upcoming' = 'Upcoming';
-  if (m.status === 'COMPLETED') {
+  const hasConcludedSummary = Boolean(m.summary && /won by|tied|no result|abandoned|defeated/i.test(m.summary));
+  const isPast = m.status === 'COMPLETED' || hasConcludedSummary || now > m.timestamp + 3.25 * 60 * 60 * 1000;
+  if (isPast) {
     status = 'Final';
   } else {
-    const isPast = now > m.timestamp + 3.75 * 60 * 60 * 1000;
-    const isMatchWindow = now >= m.timestamp - 15 * 60 * 1000 && now <= m.timestamp + 3.75 * 60 * 60 * 1000;
-    if (isPast) {
-      status = 'Final';
-    } else if (isMatchWindow) {
+    const isMatchWindow = now >= m.timestamp - 15 * 60 * 1000 && now <= m.timestamp + 3.25 * 60 * 60 * 1000;
+    if (isMatchWindow) {
       status = 'Live';
     }
   }
@@ -61,7 +60,7 @@ function toNormalizedMatch(m: NplMatch): NormalizedMatch {
           {
             source: 'npl',
             id: m.id,
-            label: m.broadcast?.provider || 'NPL Live Feed',
+            label: m.broadcast?.provider || 'Action Sports HD (TU Ground Direct)',
           },
         ];
 
@@ -159,14 +158,16 @@ async function discoverAndProbeNplStreams(signal?: AbortSignal) {
             ? validDirect
             : validParent || validDirect;
 
+        // Strictly exclude foreign feeds and FanCode
+        if (chosenUrl.includes('/fc') || chosenUrl.toLowerCase().includes('fancode')) {
+          continue;
+        }
+
         if (chosenUrl && !seenUrls.has(chosenUrl)) {
           seenUrls.add(chosenUrl);
           const isNative = chosenUrl.endsWith('.m3u8') || chosenUrl.endsWith('.mp4');
-          const isFc = chosenUrl.includes('/fc');
           const isNetTv = chosenUrl.includes('nettv.com.np') || chosenUrl.includes('nettvstreamz');
-          const label = isFc
-            ? 'Action Sports HD (Live Web Player)'
-            : isNative && isNetTv
+          const label = isNative && isNetTv
             ? 'Action Sports HD (Direct Native - 0 Delay)'
             : isNetTv
             ? 'Action Sports HD (NetTV Feed)'
@@ -223,10 +224,10 @@ async function discoverAndProbeNplStreams(signal?: AbortSignal) {
 
   // Auto-rank: verified healthy feeds first, prioritizing NetTV DASH zero-lag cluster and genuine Action Sports
   probed.sort((a, b) => {
+    if (a.url.includes('nettvstreamz') && !b.url.includes('nettvstreamz')) return -1;
+    if (!a.url.includes('nettvstreamz') && b.url.includes('nettvstreamz')) return 1;
     if (a.url.includes('nettv.com.np') && !b.url.includes('nettv.com.np')) return -1;
     if (!a.url.includes('nettv.com.np') && b.url.includes('nettv.com.np')) return 1;
-    if (a.url.includes('cenc.mpd') && !b.url.includes('cenc.mpd')) return -1;
-    if (!a.url.includes('cenc.mpd') && b.url.includes('cenc.mpd')) return 1;
     if (a.isAlive && !b.isAlive) return -1;
     if (!a.isAlive && b.isAlive) return 1;
     return a.latency - b.latency;
@@ -244,32 +245,32 @@ async function discoverAndProbeNplStreams(signal?: AbortSignal) {
   if (formattedStreams.length === 0) {
     formattedStreams.push(
       {
+        embedUrl: 'https://lb-ottnp.nettvstreamz.com/npl/live_match6/playlist.m3u8',
+        hd: true,
+        isNativeVideo: true,
+        isSandboxedIframe: false,
+        language: 'Server DSZ1 (TU Ground Direct HLS)',
+      },
+      {
+        embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/pdx-nitro/live/clients/dash/enc/3qvpw810gz/out/v1/e4b320f9ef924fe59188752dcf9c7fbf/cenc.mpd&keyid=5d52529b6ff19eca2315013244513b68&key=ba5c7dfad287aab538463d9da6811a8c',
+        hd: true,
+        isNativeVideo: false,
+        isSandboxedIframe: true,
+        language: 'Server DSZ2 (Action Sports Akamai Master)',
+      },
+      {
+        embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/q4skycp0em/out/v1/ff0967ee82ad427abee362dc40a4f60f/cenc.mpd&keyid=5d52529b6ff19eca2315013244513b68&key=ba5c7dfad287aab538463d9da6811a8c',
+        hd: true,
+        isNativeVideo: false,
+        isSandboxedIframe: true,
+        language: 'Server DSZ3 (Action Sports Akamai Backup)',
+      },
+      {
         embedUrl: 'https://ott-lb.nettv.com.np/npl/live_match/index.mpd',
         hd: true,
         isNativeVideo: true,
         isSandboxedIframe: false,
-        language: 'Server DSZ1 (1080p Master)',
-      },
-      {
-        embedUrl: 'https://ott-edge-mtdc04.nettv.com.np/npl/live_match/index.mpd',
-        hd: true,
-        isNativeVideo: true,
-        isSandboxedIframe: false,
-        language: 'Server DSZ2 (1080p Edge 04)',
-      },
-      {
-        embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/vfq7vktpaj/out/v1/e5454d69a91c478db2e1b3e56cf9bf47/cenc.mpd&keyid=ba4284442c87f52ddeaa95c65d236805&key=56f0808d1f1fbfc0703b384081f1d340',
-        hd: true,
-        isNativeVideo: false,
-        isSandboxedIframe: true,
-        language: 'Server DSZ3 (Action Sports HD DRM)',
-      },
-      {
-        embedUrl: 'https://yonotv.pages.dev/fc',
-        hd: true,
-        isNativeVideo: false,
-        isSandboxedIframe: true,
-        language: 'Server DSZ4 (Action Sports Web Mirror)',
+        language: 'Server DSZ4 (NetTV Master DASH)',
       }
     );
   }
@@ -388,7 +389,13 @@ export const nplAdapter: ProviderAdapter = {
       ) || rawFixture;
 
     // Completed match should return unavailable - match has ended!
-    if (fixture && (fixture.status === 'COMPLETED' || now > fixture.timestamp + 3.75 * 3600 * 1000)) {
+    const isCompleted =
+      fixture &&
+      (fixture.status === 'COMPLETED' ||
+        Boolean(fixture.summary && /won by|tied|no result|abandoned|defeated/i.test(fixture.summary)) ||
+        now > fixture.timestamp + 3.25 * 3600 * 1000);
+
+    if (isCompleted) {
       return {
         status: 'unavailable',
         provider: 'NPL Broadcast Desk',
