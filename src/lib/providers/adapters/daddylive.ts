@@ -88,8 +88,8 @@ export class DaddyLiveAdapter implements ProviderAdapter {
   async resolvePlayback(id: string): Promise<PlaybackResolution> {
     const streamId = encodeURIComponent(id);
     const candidateUrls = [
+      `https://dembed.st/premiumtv/daddy.php?id=${streamId}`,
       `${BASE_URL}/stream/stream-${streamId}.php`,
-      `${BASE_URL}/cast/stream-${streamId}.php`,
       `${BASE_URL}/player/stream-${streamId}.php`,
     ];
 

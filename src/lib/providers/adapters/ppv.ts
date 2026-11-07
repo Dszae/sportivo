@@ -309,27 +309,20 @@ export class PpvAdapter implements ProviderAdapter {
       }
     }
 
-    // High-availability CDN mirrors for major 24/7 cricket networks
+    // High-availability CDN mirrors for major 24/7 cricket networks (clean direct player embeds)
     if (foundStream.uri_name?.includes('willow') || foundStream.name?.toLowerCase().includes('willow')) {
       resultStreams.unshift(
         {
-          embedUrl: 'https://thedaddy.pk/player/stream-346.php',
+          embedUrl: 'https://dembed.st/premiumtv/daddy.php?id=346',
           hd: true,
-          language: 'Server DSZ1',
+          language: 'Server DSZ1 (Direct HD)',
           isNativeVideo: false,
-          isSandboxedIframe: true,
-        },
-        {
-          embedUrl: 'https://thedaddy.pk/stream/stream-346.php',
-          hd: true,
-          language: 'Server DSZ2',
-          isNativeVideo: false,
-          isSandboxedIframe: true,
+          isSandboxedIframe: false,
         },
         {
           embedUrl: 'https://yonotv.pages.dev/fc',
           hd: true,
-          language: 'Server DSZ3',
+          language: 'Server DSZ2 (Web Mirror)',
           isNativeVideo: false,
           isSandboxedIframe: false,
         }
@@ -337,18 +330,18 @@ export class PpvAdapter implements ProviderAdapter {
     } else if (foundStream.uri_name?.includes('fox-cricket') || foundStream.name?.toLowerCase().includes('fox cricket')) {
       resultStreams.unshift(
         {
-          embedUrl: 'https://yonotv.pages.dev/fc',
+          embedUrl: 'https://dembed.st/premiumtv/daddy.php?id=369',
           hd: true,
-          language: 'Server DSZ1',
+          language: 'Server DSZ1 (Direct HD)',
           isNativeVideo: false,
           isSandboxedIframe: false,
         },
         {
-          embedUrl: 'https://thedaddy.pk/player/stream-369.php',
+          embedUrl: 'https://yonotv.pages.dev/fc',
           hd: true,
-          language: 'Server DSZ2',
+          language: 'Server DSZ2 (Web Mirror)',
           isNativeVideo: false,
-          isSandboxedIframe: true,
+          isSandboxedIframe: false,
         }
       );
     }

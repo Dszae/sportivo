@@ -6,6 +6,8 @@
 export const APPROVED_PLAYBACK_DOMAINS = [
   'strmfree.st',
   'thedaddy.pk',
+  'dembed.st',
+  'daddyhd.com',
   'timst.top',
   'wigilive.top',
   'ehgembxe.cfd',
