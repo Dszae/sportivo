@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: ['class', '[data-theme="light"]', '[data-theme="dark"]'],
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -9,29 +10,29 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Graphite ramp with a faint turf tint. Surfaces stay neutral; the lime carries the color.
+        // Dynamic multi-mode design tokens with full Tailwind opacity support (e.g. bg-ink-950/80)
         ink: {
-          950: '#0b0e0d',
-          900: '#101312',
-          800: '#161a19',
-          700: '#1e2321',
-          600: '#2a302d',
+          950: 'rgb(var(--color-ink-950) / <alpha-value>)',
+          900: 'rgb(var(--color-ink-900) / <alpha-value>)',
+          800: 'rgb(var(--color-ink-800) / <alpha-value>)',
+          700: 'rgb(var(--color-ink-700) / <alpha-value>)',
+          600: 'rgb(var(--color-ink-600) / <alpha-value>)',
         },
         fg: {
-          DEFAULT: '#edf0ee',
-          2: '#a4aca8',
-          3: '#7c847f',
+          DEFAULT: 'rgb(var(--color-fg) / <alpha-value>)',
+          2: 'rgb(var(--color-fg-2) / <alpha-value>)',
+          3: 'rgb(var(--color-fg-3) / <alpha-value>)',
         },
         line: {
-          DEFAULT: 'rgba(237, 240, 238, 0.08)',
-          strong: 'rgba(237, 240, 238, 0.14)',
+          DEFAULT: 'var(--color-line)',
+          strong: 'var(--color-line-strong)',
         },
         lime: {
-          DEFAULT: '#c9f36b',
-          ink: '#0f130c',
+          DEFAULT: 'rgb(var(--color-lime) / <alpha-value>)',
+          ink: 'rgb(var(--color-lime-ink) / <alpha-value>)',
         },
-        live: '#e5484d',
-        up: '#4cc38a',
+        live: 'rgb(var(--color-live) / <alpha-value>)',
+        up: 'rgb(var(--color-up) / <alpha-value>)',
       },
       fontFamily: {
         sans: ['Manrope', 'Segoe UI', 'system-ui', 'sans-serif'],
@@ -46,8 +47,9 @@ export default {
         enter: '400ms',
       },
       boxShadow: {
-        lift: 'inset 0 1px 0 rgba(255,255,255,0.08)',
-        float: '0 16px 40px rgba(0,0,0,0.45)',
+        lift: 'var(--shadow-lift)',
+        float: 'var(--shadow-float)',
+        card: 'var(--shadow-card)',
       },
     },
   },
