@@ -8,6 +8,7 @@
     "build": "node scripts/generate-sitemap.mjs && astro check && astro build",
     "test": "npx tsx tests/providers.test.mjs",
     "lint": "oxlint",
+    "check": "astro check",
     "monitor": "node scripts/monitor.mjs",
     "audit": "node scripts/audit.mjs",
     "preview": "astro dev --mode production"

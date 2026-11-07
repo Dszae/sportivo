@@ -267,7 +267,7 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "homeTeamShort": "SUR",
     "awayTeamShort": "BIR",
     "homeTeamColor": "#5B2A86",
-    "homeTeamColor": "#c8102e",
+    "awayTeamColor": "#c8102e",
     "homeTeamLogo": "https://nepalpremierleague.org/uploads/teams/sudurpaschim-royals.png",
     "awayTeamLogo": "https://nepalpremierleague.org/uploads/teams/biratnagar-kings.png",
     "startTime": "2026-10-31T17:00:00+05:45",

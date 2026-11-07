@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { NPL_FIXTURES_2026, getCalibratedNplFixtures, type NplMatch } from '../../../lib/data/nplData';
+import { getCalibratedNplFixtures, type NplMatch } from '../../../lib/data/nplData';
 
 export const prerender = false;
 

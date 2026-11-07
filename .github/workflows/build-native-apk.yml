@@ -42,6 +42,12 @@ jobs:
           cd mobile
           npm ci --legacy-peer-deps
 
+      - name: Extract App Version
+        id: get_version
+        run: |
+          VERSION=$(node -p "require('./mobile/app.json').expo.version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
@@ -64,11 +70,13 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: success()
         with:
-          tag_name: v1.0.0-apk
-          name: Sportivo Native Android App v1.0.0
+          tag_name: v${{ steps.get_version.outputs.version }}-apk
+          name: Sportivo Native Android App v${{ steps.get_version.outputs.version }}
+          make_latest: true
           body: |
             ### Sportivo Official Android App (Native APK)
             - **App ID**: `np.com.dipeshsapkota7.sportivo`
+            - **Version**: `v${{ steps.get_version.outputs.version }}`
             - **Developer**: Dipesh Sapkota
             - **Features**: Native ExoPlayer streaming, NPL 2026 live scores, Nepal Standard Time (NST) kickoff alerts.
             
