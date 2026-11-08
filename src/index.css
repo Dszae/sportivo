@@ -34,7 +34,8 @@
 		--site-bg-gradient: radial-gradient(1200px 700px at 50% -80px, rgba(201, 243, 107, 0.045), transparent 70%),
 		                    radial-gradient(900px 500px at 85% 15%, rgba(76, 195, 138, 0.03), transparent 60%),
 		                    #101312;
-		--header-bg: rgba(11, 14, 13, 0.88);
+		--header-bg: rgba(16, 19, 18, 0.78);
+		--header-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.45);
 		--card-bg: linear-gradient(180deg, rgba(30, 35, 33, 0.72) 0%, rgba(22, 26, 25, 0.96) 100%);
 		--panel-bg: linear-gradient(180deg, rgba(30, 35, 33, 0.85) 0%, rgba(22, 26, 25, 0.98) 100%);
 		--shadow-lift: inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -70,7 +71,8 @@
 		--site-bg-gradient: radial-gradient(1200px 700px at 50% -100px, rgba(22, 163, 74, 0.07), transparent 70%),
 		                    radial-gradient(900px 500px at 85% 15%, rgba(201, 243, 107, 0.12), transparent 60%),
 		                    #f8faf8;
-		--header-bg: rgba(248, 250, 248, 0.88);
+		--header-bg: rgba(248, 250, 248, 0.82);
+		--header-shadow: 0 4px 20px -2px rgba(14, 20, 17, 0.06);
 		--card-bg: linear-gradient(180deg, #ffffff 0%, #f9faf9 100%);
 		--panel-bg: linear-gradient(180deg, #ffffff 0%, #f6f8f7 100%);
 		--shadow-lift: 0 1px 2px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1);
@@ -114,11 +116,24 @@
 	}
 
 	.site-header {
-		background: var(--header-bg);
-		backdrop-filter: blur(16px);
-		-webkit-backdrop-filter: blur(16px);
+		background-color: transparent;
+		border-color: transparent;
+		backdrop-filter: blur(0px);
+		-webkit-backdrop-filter: blur(0px);
+		box-shadow: none;
+		transition: background-color 240ms cubic-bezier(0.22, 1, 0.36, 1),
+		            border-color 240ms cubic-bezier(0.22, 1, 0.36, 1),
+		            backdrop-filter 240ms cubic-bezier(0.22, 1, 0.36, 1),
+		            -webkit-backdrop-filter 240ms cubic-bezier(0.22, 1, 0.36, 1),
+		            box-shadow 240ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.site-header.is-scrolled {
+		background-color: var(--header-bg);
 		border-color: var(--color-line);
-		transition: background-color 200ms cubic-bezier(0.22, 1, 0.36, 1), border-color 200ms cubic-bezier(0.22, 1, 0.36, 1);
+		backdrop-filter: blur(20px) saturate(180%);
+		-webkit-backdrop-filter: blur(20px) saturate(180%);
+		box-shadow: var(--header-shadow);
 	}
 
 	.site-accent {
