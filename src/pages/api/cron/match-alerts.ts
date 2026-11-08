@@ -47,7 +47,6 @@ export const GET: APIRoute = async ({ request }) => {
     );
   }
 
-  const now = Date.now();
   let totalDispatched = 0;
 
   try {
