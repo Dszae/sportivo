@@ -143,6 +143,93 @@
 		box-shadow: var(--header-shadow) !important;
 	}
 
+	/* High-contrast, crystal-clear typography and controls for transparent navbar */
+	.site-header:not(.is-scrolled) .brand-title {
+		color: #ffffff !important;
+		font-weight: 700 !important;
+		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+	}
+
+	.site-header:not(.is-scrolled) .chip {
+		color: #ffffff !important;
+		font-weight: 600 !important;
+		text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+		transition: all 180ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.site-header:not(.is-scrolled) .chip:hover {
+		background-color: rgba(255, 255, 255, 0.16) !important;
+		color: #ffffff !important;
+	}
+
+	.site-header:not(.is-scrolled) .chip-active {
+		background-color: rgba(255, 255, 255, 0.22) !important;
+		color: #ffffff !important;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+	}
+
+	.site-header:not(.is-scrolled) .icon-btn {
+		color: #ffffff !important;
+		background-color: rgba(255, 255, 255, 0.12) !important;
+		border-color: rgba(255, 255, 255, 0.22) !important;
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+	}
+
+	.site-header:not(.is-scrolled) .icon-btn:hover {
+		background-color: rgba(255, 255, 255, 0.2) !important;
+		border-color: rgba(255, 255, 255, 0.35) !important;
+	}
+
+	.site-header:not(.is-scrolled) button[title*="Switch to"] {
+		color: #ffffff !important;
+		background-color: rgba(255, 255, 255, 0.12) !important;
+		border-color: rgba(255, 255, 255, 0.22) !important;
+		backdrop-filter: blur(8px) !important;
+		-webkit-backdrop-filter: blur(8px) !important;
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3) !important;
+	}
+
+	.site-header:not(.is-scrolled) button[title*="Switch to"] span {
+		color: #ffffff !important;
+		font-weight: 700 !important;
+	}
+
+	.site-header:not(.is-scrolled) button[title*="Switch to"]:hover {
+		background-color: rgba(255, 255, 255, 0.2) !important;
+		border-color: rgba(255, 255, 255, 0.35) !important;
+	}
+
+	/* Light mode crisp contrast overrides */
+	.light .site-header:not(.is-scrolled) .brand-title {
+		color: #0e1411 !important;
+		text-shadow: none;
+	}
+	.light .site-header:not(.is-scrolled) .chip {
+		color: #0e1411 !important;
+		text-shadow: none;
+	}
+	.light .site-header:not(.is-scrolled) .chip:hover {
+		background-color: rgba(14, 20, 17, 0.08) !important;
+	}
+	.light .site-header:not(.is-scrolled) .chip-active {
+		background-color: rgba(14, 20, 17, 0.12) !important;
+	}
+	.light .site-header:not(.is-scrolled) .icon-btn {
+		color: #0e1411 !important;
+		background-color: rgba(255, 255, 255, 0.8) !important;
+		border-color: rgba(14, 20, 17, 0.15) !important;
+	}
+	.light .site-header:not(.is-scrolled) button[title*="Switch to"] {
+		color: #0e1411 !important;
+		background-color: rgba(255, 255, 255, 0.8) !important;
+		border-color: rgba(14, 20, 17, 0.15) !important;
+	}
+	.light .site-header:not(.is-scrolled) button[title*="Switch to"] span {
+		color: #0e1411 !important;
+	}
+
 	.site-accent {
 		color: rgb(var(--color-lime));
 	}

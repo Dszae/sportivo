@@ -61,6 +61,7 @@ export default function HeroShowcase({ matches = [] }: Props) {
           style={{ filter: 'brightness(0.75) saturate(0.9)' }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-ink-900 from-15% via-ink-900/55 via-50% to-ink-900/0" />
+        <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/60 via-black/25 to-transparent pointer-events-none" />
         <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-ink-900 via-ink-900/70 to-transparent" />
       </div>
 
