@@ -18,7 +18,7 @@ const links: { href: string; label: string; key: string; live?: boolean }[] = [
   { href: '/npl/', label: 'NPL 2026', key: 'npl', live: true },
 ];
 ---
-<header class="site-header sticky top-0 z-50 border-b" itemscope itemtype="https://schema.org/WPHeader">
+<header class="site-header sticky top-0 z-50 border-b border-transparent" itemscope itemtype="https://schema.org/WPHeader">
   <div class="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
     <a href="/" class="flex shrink-0 items-center gap-2" aria-label="Sportivo home">
       <span class="h-2 w-2 rounded-full bg-lime" aria-hidden="true"></span>
@@ -65,30 +65,36 @@ const links: { href: string; label: string; key: string; live?: boolean }[] = [
 
 <MobileNav activeCategory={activeCategory} />
 
-<script>
-  function initHeaderScroll() {
-    const header = document.querySelector('.site-header');
-    if (!header) return;
+<script is:inline>
+  (() => {
+    function initHeaderScroll() {
+      const header = document.querySelector('.site-header');
+      if (!header) return;
 
-    let ticking = false;
-    const checkScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          if (window.scrollY > 8) {
-            header.classList.add('is-scrolled');
-          } else {
-            header.classList.remove('is-scrolled');
-          }
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
+      let ticking = false;
+      const checkScroll = () => {
+        if (!ticking) {
+          window.requestAnimationFrame(() => {
+            if (window.scrollY > 8) {
+              header.classList.add('is-scrolled');
+            } else {
+              header.classList.remove('is-scrolled');
+            }
+            ticking = false;
+          });
+          ticking = true;
+        }
+      };
 
-    window.addEventListener('scroll', checkScroll, { passive: true });
-    checkScroll();
-  }
+      window.addEventListener('scroll', checkScroll, { passive: true });
+      checkScroll();
+    }
 
-  initHeaderScroll();
-  document.addEventListener('astro:page-load', initHeaderScroll);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initHeaderScroll);
+    } else {
+      initHeaderScroll();
+    }
+    document.addEventListener('astro:page-load', initHeaderScroll);
+  })();
 </script>
