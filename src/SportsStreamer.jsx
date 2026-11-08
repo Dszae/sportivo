@@ -161,15 +161,6 @@ export default function SportsStreamer() {
       } catch {}
     }
 
-    if (!data) {
-      try {
-        const response = await fetch(`https://streamed.pk/api/matches/${encodeURIComponent(category)}`, { signal });
-        if (response.ok) data = await response.json();
-      } catch (err) {
-        if (err.name === 'AbortError') return;
-      }
-    }
-
     if (data && Array.isArray(data)) {
       setMatches(data);
       setLastUpdated(new Date());
@@ -213,13 +204,6 @@ export default function SportsStreamer() {
       if (!streamData) {
         try {
           const res = await fetch(`/api/stream/${src}/${sid}`);
-          if (res.ok) streamData = await res.json();
-        } catch {}
-      }
-
-      if (!streamData) {
-        try {
-          const res = await fetch(`https://streamed.pk/api/stream/${src}/${sid}`);
           if (res.ok) streamData = await res.json();
         } catch {}
       }
@@ -446,7 +430,7 @@ export default function SportsStreamer() {
                   
                   let matchPoster = match.poster || match.image || match.thumbnail || null;
                   if (matchPoster && matchPoster.startsWith('/')) {
-                    matchPoster = `https://streamed.pk${matchPoster}`;
+                    matchPoster = `/api/thumbnail/?url=${encodeURIComponent('https://streamed.pk' + matchPoster)}`;
                   }
                   if (!isSafeExternalUrl(matchPoster)) matchPoster = null;
 

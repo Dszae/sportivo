@@ -1,9 +1,11 @@
 import type { APIRoute } from 'astro';
 import { resolveUnifiedPlayback, sanitizeIdentifier } from '../../../../lib/providers';
+import { getSafeCorsHeaders } from '../../../../lib/security';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ params }) => {
+export const GET: APIRoute = async ({ params, request }) => {
+  const corsHeaders = getSafeCorsHeaders(request);
   const sourceParam = params.source;
   const idParam = params.id;
 
@@ -17,7 +19,7 @@ export const GET: APIRoute = async ({ params }) => {
         status: 400,
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
+          ...corsHeaders,
         },
       }
     );
@@ -31,7 +33,7 @@ export const GET: APIRoute = async ({ params }) => {
         headers: {
           'Content-Type': 'application/json',
           'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
-          'Access-Control-Allow-Origin': '*',
+          ...corsHeaders,
         },
       });
     }
@@ -48,7 +50,7 @@ export const GET: APIRoute = async ({ params }) => {
         headers: {
           'Content-Type': 'application/json',
           'Retry-After': '60',
-          'Access-Control-Allow-Origin': '*',
+          ...corsHeaders,
         },
       }
     );
@@ -60,7 +62,7 @@ export const GET: APIRoute = async ({ params }) => {
         headers: {
           'Content-Type': 'application/json',
           'Retry-After': '60',
-          'Access-Control-Allow-Origin': '*',
+          ...corsHeaders,
         },
       }
     );

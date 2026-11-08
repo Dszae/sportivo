@@ -29,6 +29,7 @@ interface StreamItem {
 type Props = {
   match: Match;
   showNplHub?: boolean; // Ball-by-ball commentary and table hub strictly in NPL live section only
+  initialStreams?: StreamItem[];
 };
 
 // Shaka Player dynamic CDN loader for zero-delay DASH (.mpd) streams
@@ -67,15 +68,16 @@ function getShaka(): Promise<any> {
   return shakaLoadPromise;
 }
 
-export default function MatchPlayer({ match, showNplHub = false }: Props) {
+export default function MatchPlayer({ match, showNplHub = false, initialStreams }: Props) {
   const sources = match.sources || [];
   const [selectedSourceIndex, setSelectedSourceIndex] = useState(0);
   const currentSource = sources[selectedSourceIndex];
 
+  const hasInitial = Array.isArray(initialStreams) && initialStreams.length > 0;
   // Player States: 'idle' | 'resolving' | 'ready' | 'playing' | 'failed' | 'unavailable' | 'unsupported'
-  const [playerState, setPlayerState] = useState<PlayerState>('idle');
-  const [streams, setStreams] = useState<StreamItem[]>([]);
-  const [activeStream, setActiveStream] = useState<StreamItem | null>(null);
+  const [playerState, setPlayerState] = useState<PlayerState>(() => (hasInitial ? 'ready' : 'idle'));
+  const [streams, setStreams] = useState<StreamItem[]>(() => (hasInitial ? initialStreams! : []));
+  const [activeStream, setActiveStream] = useState<StreamItem | null>(() => (hasInitial ? initialStreams![0] : null));
   const [errorMessage, setErrorMessage] = useState('');
   const [failoverToast, setFailoverToast] = useState<string | null>(null);
   const [shortcutToast, setShortcutToast] = useState<string | null>(null);
@@ -543,12 +545,14 @@ export default function MatchPlayer({ match, showNplHub = false }: Props) {
     }
   }
 
-  // Auto-connect to live stream ONLY if match is actively LIVE and not concluded
+  // Auto-connect to live stream ONLY if match is actively LIVE, not concluded, and not already preloaded from SSR backend
   useEffect(() => {
     if (isLive && status !== 'Final' && sources.length > 0 && playerState === 'idle' && !isResolvingRef.current) {
-      resolvePlayback();
+      if (!streams || streams.length === 0) {
+        resolvePlayback();
+      }
     }
-  }, [isLive, status, sources.length, playerState]);
+  }, [isLive, status, sources.length, playerState, streams]);
 
   const handleSourceChange = (idx: number) => {
     setSelectedSourceIndex(idx);

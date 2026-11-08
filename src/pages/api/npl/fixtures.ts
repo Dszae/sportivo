@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getCalibratedNplFixtures, type NplMatch } from '../../../lib/data/nplData';
+import { getSafeCorsHeaders } from '../../../lib/security';
 
 export const prerender = false;
 
@@ -113,7 +114,8 @@ async function fetchOfficialScoreUpdates(): Promise<Map<string, Partial<NplMatch
   }
 }
 
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ request }) => {
+  const corsHeaders = getSafeCorsHeaders(request);
   let fixtures: NplMatch[] = getCalibratedNplFixtures();
 
   // 1. Check Supabase for real-time live score and status overrides
@@ -232,6 +234,7 @@ export const GET: APIRoute = async () => {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
         'CDN-Cache-Control': 'no-store',
         'Vercel-CDN-Cache-Control': 'no-store',
+        ...corsHeaders,
       },
     }
   );

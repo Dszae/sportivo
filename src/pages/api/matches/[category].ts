@@ -1,9 +1,11 @@
 import type { APIRoute } from 'astro';
 import { fetchLiveMatches, fetchMatches, isCategory } from '../../../lib/sportivo';
+import { getSafeCorsHeaders } from '../../../lib/security';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ params }) => {
+export const GET: APIRoute = async ({ params, request }) => {
+  const corsHeaders = getSafeCorsHeaders(request);
   const category = params.category || '';
   if (category === 'live') {
     try {
@@ -12,7 +14,7 @@ export const GET: APIRoute = async ({ params }) => {
         headers: {
           'Content-Type': 'application/json',
           'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
-          'Access-Control-Allow-Origin': '*',
+          ...corsHeaders,
         },
       });
     } catch {
@@ -22,7 +24,7 @@ export const GET: APIRoute = async ({ params }) => {
           status: 502,
           headers: {
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
+            ...corsHeaders,
           },
         }
       );
@@ -36,7 +38,7 @@ export const GET: APIRoute = async ({ params }) => {
         status: 404,
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
+          ...corsHeaders,
         },
       }
     );
@@ -48,7 +50,7 @@ export const GET: APIRoute = async ({ params }) => {
       headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
-        'Access-Control-Allow-Origin': '*',
+        ...corsHeaders,
       },
     });
   } catch {
@@ -59,7 +61,7 @@ export const GET: APIRoute = async ({ params }) => {
         headers: {
           'Content-Type': 'application/json',
           'Retry-After': '60',
-          'Access-Control-Allow-Origin': '*',
+          ...corsHeaders,
         },
       }
     );

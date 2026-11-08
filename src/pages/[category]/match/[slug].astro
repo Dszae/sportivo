@@ -4,7 +4,7 @@ import SiteHeader from '../../../components/SiteHeader.astro';
 import SiteFooter from '../../../components/SiteFooter.astro';
 import MatchPlayer from '../../../components/MatchPlayer';
 import { getCalibratedNplFixtures } from '../../../lib/data/nplData';
-import { fetchUnifiedMatches } from '../../../lib/providers';
+import { fetchUnifiedMatches, resolveUnifiedPlayback } from '../../../lib/providers';
 import {
   detectFootballLeague,
   getMatchTimestamp,
@@ -141,6 +141,21 @@ if (!validCategory || !match) {
   Astro.response.status = 404;
 }
 
+// Server-Side Stream Resolution (SSR Backend):
+// Resolves streams on the backend server before HTML delivery so no client-side API calls are exposed to the user.
+let initialStreams: any[] = [];
+if (match?.sources && match.sources.length > 0 && statusOf(match) !== 'Final') {
+  const primarySource = match.sources[0];
+  if (primarySource?.source && primarySource?.id) {
+    try {
+      const resolution = await resolveUnifiedPlayback(primarySource.source, primarySource.id);
+      if (resolution.status === 'ready' && resolution.streams.length > 0) {
+        initialStreams = resolution.streams;
+      }
+    } catch {}
+  }
+}
+
 const title = match ? titleOf(match) : 'Fixture not found';
 const categoryLabel = category[0].toUpperCase() + category.slice(1);
 const pageTitle = match
@@ -272,6 +287,7 @@ const matchJsonLd = match
           <MatchPlayer
             client:load
             match={match}
+            initialStreams={initialStreams}
             showNplHub={Boolean(category === 'cricket' && (match.league === 'NPL' || match.competition?.toLowerCase().includes('nepal premier league') || match.sources?.some((s) => s.source === 'npl')))}
           />
 

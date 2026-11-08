@@ -1,10 +1,12 @@
 import type { APIRoute } from 'astro';
 import { fetchLiveBallMoments } from '../../../../lib/scoreService';
+import { getSafeCorsHeaders } from '../../../../lib/security';
 
 export const prerender = false;
 
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ request }) => {
   const result = await fetchLiveBallMoments();
+  const corsHeaders = getSafeCorsHeaders(request);
 
   return new Response(
     JSON.stringify(
@@ -21,6 +23,7 @@ export const GET: APIRoute = async () => {
         'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
         'CDN-Cache-Control': 'no-store',
         'Vercel-CDN-Cache-Control': 'no-store',
+        ...corsHeaders,
       },
     }
   );

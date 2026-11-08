@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { getSafeCorsHeaders } from '../../lib/security';
 
 export const prerender = false;
 
@@ -81,12 +82,13 @@ export const GET: APIRoute = async ({ request }) => {
 
     const buffer = await upstreamRes.arrayBuffer();
 
+    const corsHeaders = getSafeCorsHeaders(request);
     return new Response(buffer, {
       status: 200,
       headers: {
         'Content-Type': contentType,
         'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
-        'Access-Control-Allow-Origin': '*',
+        ...corsHeaders,
       },
     });
   } catch {

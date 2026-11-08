@@ -6,11 +6,13 @@ import {
   sendWebPush,
   type StoredSubscription,
 } from '../../../lib/pushServer';
+import { getSafeCorsHeaders } from '../../../lib/security';
 
 export const prerender = false;
 
 // GET: Return public VAPID key for client pushManager.subscribe()
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ request }) => {
+  const corsHeaders = getSafeCorsHeaders(request);
   return new Response(
     JSON.stringify({
       publicKey: VAPID_PUBLIC_KEY,
@@ -20,6 +22,7 @@ export const GET: APIRoute = async () => {
       headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-store',
+        ...corsHeaders,
       },
     }
   );
@@ -27,6 +30,7 @@ export const GET: APIRoute = async () => {
 
 // POST: Register or update Web Push subscription
 export const POST: APIRoute = async ({ request }) => {
+  const corsHeaders = getSafeCorsHeaders(request);
   try {
     const body = await request.json();
     const { subscription, preferences, test } = body;
@@ -34,7 +38,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (!subscription || !subscription.endpoint || !subscription.keys) {
       return new Response(
         JSON.stringify({ error: 'Invalid push subscription payload' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
       );
     }
 
@@ -80,19 +84,20 @@ export const POST: APIRoute = async ({ request }) => {
       JSON.stringify({ success: true, message: 'Push subscription registered successfully' }),
       {
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
       }
     );
   } catch (error: any) {
     return new Response(
       JSON.stringify({ error: error?.message || 'Failed to register subscription' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
   }
 };
 
 // DELETE: Unsubscribe
 export const DELETE: APIRoute = async ({ request }) => {
+  const corsHeaders = getSafeCorsHeaders(request);
   try {
     const body = await request.json();
     if (body.endpoint) {
@@ -100,10 +105,13 @@ export const DELETE: APIRoute = async ({ request }) => {
     }
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   } catch {
-    return new Response(JSON.stringify({ error: 'Failed to delete' }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Failed to delete' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    });
   }
 };
 

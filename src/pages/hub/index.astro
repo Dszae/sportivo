@@ -3,6 +3,38 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
 import FotmobHub from '../../components/FotmobHub';
+import { fetchMatches, type Match } from '../../lib/sportivo';
+import { getCalibratedNplFixtures } from '../../lib/data/nplData';
+
+// Server-Side Rendering (SSR Backend):
+// Prefetch matches on the server so no client-side API calls are exposed to the user on initial load.
+const [football, cricket, basketball] = await Promise.all([
+  fetchMatches('football').catch(() => [] as Match[]),
+  fetchMatches('cricket').catch(() => [] as Match[]),
+  fetchMatches('basketball').catch(() => [] as Match[]),
+]);
+
+const nplRaw = getCalibratedNplFixtures();
+const nplMatches: Match[] = nplRaw.map((m) => ({
+  id: `npl-${m.matchNumber}`,
+  title: `${m.homeTeam} vs ${m.awayTeam}`,
+  category: 'cricket',
+  league: 'Nepal Premier League',
+  status: m.status === 'LIVE' ? 'Live' : m.status === 'COMPLETED' ? 'Final' : 'Upcoming',
+  date: m.timestamp,
+  teams: {
+    home: { name: m.homeTeam, badge: m.homeTeamLogo },
+    away: { name: m.awayTeam, badge: m.awayTeamLogo },
+  },
+  poster: m.homeTeamLogo,
+}));
+
+const initialMatches: Match[] = [
+  ...football.map((m) => ({ ...m, category: 'football' })),
+  ...cricket.map((m) => ({ ...m, category: 'cricket' })),
+  ...basketball.map((m) => ({ ...m, category: 'basketball' })),
+  ...nplMatches,
+];
 
 const title = 'FotMob Sports Hub — Live Scores, Standings & Streams (NST) | Sportivo';
 const description = 'Interactive FotMob-style live sports hub for football, NPL cricket, and basketball with live scores, standings, and multi-server streams in Nepal Standard Time.';
@@ -17,7 +49,7 @@ const canonical = 'https://sportivo.dipeshsapkota7.com.np/hub/';
   <SiteHeader />
 
   <main class="site-shell min-h-screen">
-    <FotmobHub client:load />
+    <FotmobHub client:load initialMatches={initialMatches} />
   </main>
 
   <SiteFooter />

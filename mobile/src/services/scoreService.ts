@@ -1,5 +1,6 @@
 import { notifyLiveMoment } from './notifications';
 import { loadPreferences } from './storage';
+import { fetchLiveDeskMoments } from './api';
 
 export interface BallMoment {
   over: number;
@@ -15,40 +16,10 @@ export interface BallMoment {
 const seenBalls = new Set<string>();
 let isInitialized = false;
 let pollerInterval: any = null;
-let activeMatchUrl: string | null = null;
-let lastDiscoveryTime = 0;
 
 /**
- * 1. Dynamic Match Discovery
- * Resolves active NPL match URL from live tournament schedule
- */
-export async function discoverActiveMatchUrl(): Promise<string | null> {
-  const now = Date.now();
-  if (activeMatchUrl && now - lastDiscoveryTime < 60000) {
-    return activeMatchUrl;
-  }
-
-  try {
-    const res = await fetch('https://crex.com/fixtures/match-list', {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
-    });
-    if (!res.ok) return activeMatchUrl;
-    const html = await res.text();
-    const matchRegex = /"https:\/\/crex\.com\/cricket-live-score\/([^"]*(?:nepal|npl|pka|spr|ktg|cwr|btr|jkb|kry|lbl)[^"]*)"/gi;
-    const matches = [...html.matchAll(matchRegex)].map((m) => m[0].replace(/"/g, ''));
-
-    if (matches.length > 0) {
-      activeMatchUrl = matches[0];
-      lastDiscoveryTime = now;
-      return activeMatchUrl;
-    }
-  } catch {}
-
-  return 'https://crex.com/cricket-live-score/pka-vs-spr-4th-t20-nepal-premier-league-2026-match-updates-14EV';
-}
-
-/**
- * 2. Scrapes and decodes the live scoring state from app-root-state JSON
+ * Polls live moments through the Sportivo backend API service.
+ * Zero external scraping or direct upstream exposure on client devices.
  */
 export async function pollCrexGroundScores(): Promise<void> {
   try {
@@ -57,100 +28,49 @@ export async function pollCrexGroundScores(): Promise<void> {
       return;
     }
 
-    const matchUrl = await discoverActiveMatchUrl();
-    if (!matchUrl) return;
+    const payload = await fetchLiveDeskMoments();
+    if (!payload) return;
 
-    const res = await fetch(matchUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
-    });
-    if (!res.ok) return;
+    const { moments, recentBalls, score } = payload as any;
 
-    const html = await res.text();
-    const scriptMatch = html.match(/<script id="app-root-state"[^>]*>([\s\S]*?)<\/script>/);
-    if (!scriptMatch) return;
-
-    const jsonStr = scriptMatch[1].replace(/&q;/g, '"');
-    const state = JSON.parse(jsonStr);
-    const sv3 = state['https://api.goscorer.com/api/v3/getSV3'] || {};
-
-    const score = (sv3.score1 || '').replace('-', '/');
-    const overs = sv3.over1 || '';
-    const rbList: Array<{
-      o: number;
-      ts?: string;
-      b?: Array<{ d: number; u: string }>;
-    }> = Array.isArray(sv3.rb) ? sv3.rb : [];
-
-    // Initial boot: mark all historical balls as already seen
+    // Initial boot: mark all historical deliveries as already seen
     if (!isInitialized) {
-      for (const overObj of rbList) {
-        if (!overObj.b) continue;
-        for (const b of overObj.b) {
-          const ballId = `${overObj.o}.${b.d}:${(b.u || '').toLowerCase().trim()}`;
+      if (Array.isArray(recentBalls)) {
+        for (const rb of recentBalls) {
+          const ballId = `${rb.over}.${rb.delivery}:${(rb.code || '').toLowerCase().trim()}`;
           seenBalls.add(ballId);
+        }
+      }
+      if (Array.isArray(moments)) {
+        for (const m of moments) {
+          if (m.ballId) seenBalls.add(m.ballId);
         }
       }
       isInitialized = true;
       return;
     }
 
-    // Process new deliveries
-    for (const overObj of rbList) {
-      if (!overObj.b) continue;
-      for (const b of overObj.b) {
-        const resCode = (b.u || '').toLowerCase().trim();
-        const ballId = `${overObj.o}.${b.d}:${resCode}`;
+    // Process new live moments received from backend
+    if (Array.isArray(moments) && moments.length > 0) {
+      for (const m of moments) {
+        if (!m.ballId || seenBalls.has(m.ballId)) continue;
+        seenBalls.add(m.ballId);
 
-        if (seenBalls.has(ballId)) continue;
-        seenBalls.add(ballId);
-
-        const currentScore = overObj.ts || score;
-
-        if (resCode === '4') {
-          await notifyLiveMoment({
-            key: ballId,
-            title: '🏏 FOUR BOUNDARY! (4 Runs)',
-            body: `Boundary four! Score: ${currentScore} (${overObj.o}.${b.d} ov)`,
-            type: 'boundary',
-          });
-        } else if (resCode === '6') {
-          await notifyLiveMoment({
-            key: ballId,
-            title: '🚀 MAXIMUM SIX! (6 Runs)',
-            body: `Huge SIX over the ropes! Score: ${currentScore} (${overObj.o}.${b.d} ov)`,
-            type: 'boundary',
-          });
-        } else if (resCode.includes('w') && !resCode.includes('wd')) {
-          await notifyLiveMoment({
-            key: ballId,
-            title: '💥 WICKET FALLEN!',
-            body: `Wicket down! Now ${currentScore} (${overObj.o}.${b.d} ov)`,
-            type: 'wicket',
-          });
-        } else if (resCode.includes('wd')) {
-          await notifyLiveMoment({
-            key: ballId,
-            title: '⚠️ WIDE BALL (+1 Extra)',
-            body: `Wide delivery bowled! Score: ${currentScore}`,
-            type: 'boundary',
-          });
-        } else if (resCode.includes('nb')) {
-          await notifyLiveMoment({
-            key: ballId,
-            title: '🚨 NO BALL / FREE HIT!',
-            body: `Overstepped! Next delivery is a FREE HIT! Score: ${currentScore}`,
-            type: 'boundary',
-          });
-        }
+        await notifyLiveMoment({
+          key: m.ballId,
+          title: m.title || '🏏 Match Moment',
+          body: m.message || `Score: ${score || ''}`,
+          type: m.type === 'WICKET' ? 'wicket' : 'boundary',
+        });
       }
     }
   } catch (err) {
-    console.warn('[ScoreService] Poller error:', err);
+    console.warn('[ScoreService] Poller notice:', err);
   }
 }
 
 /**
- * Starts continuous 3.5s background polling for live match moments
+ * Starts continuous 3.5s background polling for live match moments via backend
  */
 export function startGroundScorePoller(): () => void {
   if (pollerInterval) {
@@ -160,10 +80,10 @@ export function startGroundScorePoller(): () => void {
   // Initial poll
   pollCrexGroundScores();
 
-  // 3.5 second interval matching ground scorer refresh rate
+  // 4 second interval matching backend update cycle
   pollerInterval = setInterval(() => {
     pollCrexGroundScores();
-  }, 3500);
+  }, 4000);
 
   return () => {
     if (pollerInterval) {

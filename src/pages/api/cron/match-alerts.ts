@@ -3,11 +3,13 @@ import { fetchMatches, type Match, titleOf, slugify, statusOf, getMatchTimestamp
 import { NPL_FIXTURES_2026 } from '../../../lib/data/nplData';
 import { broadcastMatchPush, getAllSubscriptions } from '../../../lib/pushServer';
 import { fetchLiveBallMoments } from '../../../lib/scoreService';
+import { getSafeCorsHeaders } from '../../../lib/security';
 
 export const prerender = false;
 
 // In-memory record of dispatched alerts to prevent duplicate push notifications
 const dispatchedAlertsCache = new Map<string, number>();
+let lastCronRun = 0;
 
 function isAlreadyDispatched(key: string): boolean {
   const ts = dispatchedAlertsCache.get(key);
@@ -24,12 +26,24 @@ function markDispatched(key: string): void {
   dispatchedAlertsCache.set(key, Date.now());
 }
 
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ request }) => {
+  const corsHeaders = getSafeCorsHeaders(request);
   const subscribers = getAllSubscriptions();
+
+  const now = Date.now();
+  // Debounce guard to prevent denial-of-service or alert spamming
+  if (now - lastCronRun < 15000) {
+    return new Response(
+      JSON.stringify({ status: 'ok', debounced: true, subscribers: subscribers.length, dispatched: 0 }),
+      { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+    );
+  }
+  lastCronRun = now;
+
   if (subscribers.length === 0) {
     return new Response(
       JSON.stringify({ status: 'ok', subscribers: 0, dispatched: 0 }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
   }
 
@@ -211,12 +225,12 @@ export const GET: APIRoute = async () => {
         dispatched: totalDispatched,
         timestamp: new Date().toISOString(),
       }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
   } catch (error: any) {
     return new Response(
       JSON.stringify({ error: error?.message || 'Error processing alerts' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
     );
   }
 };

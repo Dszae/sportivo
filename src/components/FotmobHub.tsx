@@ -14,6 +14,7 @@ import NotificationCenter from './NotificationCenter';
 
 interface Props {
   initialCategory?: string;
+  initialMatches?: Match[];
 }
 
 type TabType = 'home' | 'matches' | 'livetv' | 'leagues' | 'profile';
@@ -56,7 +57,7 @@ const STANDINGS_DATA: Record<string, { team: string; p: number; gd: number; pts:
   ],
 };
 
-export default function FotmobHub({ initialCategory = 'all' }: Props) {
+export default function FotmobHub({ initialCategory = 'all', initialMatches }: Props) {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [selectedSport, setSelectedSport] = useState<SportFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,8 +65,9 @@ export default function FotmobHub({ initialCategory = 'all' }: Props) {
   const [selectedLeague, setSelectedLeague] = useState<string>('Premier League');
   const [activeDetailMatch, setActiveDetailMatch] = useState<Match | null>(null);
 
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [loading, setLoading] = useState(true);
+  const hasInitial = Array.isArray(initialMatches) && initialMatches.length > 0;
+  const [matches, setMatches] = useState<Match[]>(() => (hasInitial ? initialMatches! : []));
+  const [loading, setLoading] = useState(() => !hasInitial);
   const [prefs, setPrefs] = useState<UserPreferences>(() => loadUserPreferences());
   const [favorites, setFavorites] = useState<string[]>([]);
 
