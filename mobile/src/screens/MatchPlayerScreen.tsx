@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -234,6 +234,62 @@ export default function MatchPlayerScreen() {
 
   const activeStream = streams.length > 0 ? streams[selectedServer] || streams[0] : fallbackStream;
 
+  const getWebViewSource = useCallback((stream: StreamSource) => {
+    const rawUrl = stream.embedUrl || stream.streamUrl || '';
+    if (rawUrl.includes('.mpd')) {
+      const activeLicense =
+        stream.licenseUrl ||
+        'https://widevine-dash.ezdrm.com/proxy?pX=196792&user_id=M2ZhNWI0YzAtNzgxNy00MjRlLWFlODMtZWFmYWJmNDRmMjU1&CustomData=eyJyZXNlbGxlcl9pZCI6IjEwNyIsInN1YnNjcmliZXJfaWQiOiIxMDc3NDk3NiIsInNlcmlhbCI6ImdsXzExMTUwMTQwMDk4MTM0NDk0MDcxMi0xMDciLCJtYXRjaF9rZXkiOiJhLXJ6LS1jcmlja2V0LS1wODIxMDMxNjQ3MDA5NzA4NzY5NzYiLCJleHAiOjE3OTQyMjQzMTksInNpZCI6IjdhMWJmNzExNTNiYjljOTNmOGQwYWJlOWY0NGRjNjJjIiwicGxhdGZvcm0iOiJ3ZWIiLCJlbnRpdGxlZF91bnRpbCI6MTc5NDIzNzgxOSwibWF4X2NvbmN1cnJlbnQiOjEsInN1YnNjcmliZXJfc3RiX2lkIjoiMTM3Mzg1NTAiLCJ1YmJfZ3VpZCI6IjNmYTViNGMwLTc4MTctNDI0ZS1hZTgzLWVhZmFiZjQ0ZjI1NSJ9.eXeuibnuH9Nrm3s16kg2Pst92shpPB9DaBqm5gmJnzQ';
+
+      return {
+        html: `<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.compiled.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }
+    video { width: 100%; height: 100%; object-fit: contain; }
+  </style>
+</head>
+<body>
+  <video id="player" autoplay playsinline webkit-playsinline controls></video>
+  <script>
+    async function init() {
+      shaka.polyfill.installAll();
+      if (!shaka.Player.isBrowserSupported()) return;
+      const video = document.getElementById('player');
+      const player = new shaka.Player(video);
+      player.configure({
+        drm: {
+          servers: {
+            'com.widevine.alpha': '${activeLicense}'
+          }
+        },
+        streaming: {
+          rebufferingGoal: 2,
+          bufferingGoal: 4,
+          lowLatencyMode: true
+        }
+      });
+      try {
+        await player.load('${rawUrl}');
+        video.play().catch(function() {});
+      } catch (err) {
+        console.error('Shaka load error:', err);
+      }
+    }
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>`,
+        baseUrl: 'https://sportivo.internal',
+      };
+    }
+    return { uri: rawUrl };
+  }, []);
+
   const isDirectVideo = Boolean(
     activeStream.isDirectStream &&
     activeStream.streamUrl &&
@@ -321,7 +377,7 @@ export default function MatchPlayerScreen() {
           />
         ) : (
           <WebView
-            source={{ uri: activeStream.embedUrl || activeStream.streamUrl || '' }}
+            source={getWebViewSource(activeStream)}
             style={styles.video}
             allowsFullscreenVideo
             allowsInlineMediaPlayback

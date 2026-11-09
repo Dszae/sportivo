@@ -89,8 +89,8 @@ android {
         applicationId 'np.com.dipeshsapkota7.sportivo'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 17
-        versionName "1.1.6"
+        versionCode 18
+        versionName "1.1.7"
     }
     signingConfigs {
         debug {

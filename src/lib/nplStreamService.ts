@@ -102,56 +102,68 @@ export class StreamService {
   async ingestCandidateFeeds(): Promise<StreamItem[]> {
     const feeds: StreamItem[] = [];
 
-    // 1. Direct Multi-Device HLS Stream (GoogleVideo HD - Unencrypted Native)
-    feeds.push({
-      id: 'DIRECT-HLS-GV-MATCH20',
-      name: 'Action Sports HD (Direct 1080p Stream 1)',
-      url: 'https://manifest.googlevideo.com/api/manifest/hls_variant/expire/1794244959/ei/_6zxaq6bDq7t4t4Ppd7T2Qs/ip/103.167.232.247/id/ea982876dd667b38/source/youtube/requiressl/yes/xpc/EgVo2aDSNQ%3D%3D/playback_host/rr1---sn-uxjihpoqn-cigs.googlevideo.com/cps/38/met/1794223359%2C/mh/mB/mm/31%2C29/mn/sn-uxjihpoqn-cigs%2Csn-fapo3ox25a-3uhz/ms/au%2Crdu/mv/m/mvi/1/pl/24/rms/au%2Cau/hfr/1/demuxed/1/tts_caps/1/maudio/1/pcm2/no/initcwndbps/1193250/bui/AZFAFb9km0bFKKtvPKTFS9JS4y5lOTMFRK1l5OI4tjEgvlHoVhxdK0fBwqvCOaHK524jDgVFz_4HFkxN/spc/mpRQ_66caick_gKXMsGNPq_l78X2-xPLI0iADGzhgefjlRgQ2Lcg8h0thQ7uH3A/vprv/1/go/1/rqh/5/epbp/1/mt/1794222856/fvip/4/nvgoi/1/short_key/1/ncsapi/1/keepalive/yes/fexp/51565115/dover/13/itag/0/playlist_type/DVR/sparams/expire%2Cei%2Cip%2Cid%2Csource%2Crequiressl%2Cxpc%2Chfr%2Cdemuxed%2Ctts_caps%2Cmaudio%2Cpcm2%2Cbui%2Cspc%2Cvprv%2Cgo%2Crqh%2Citag%2Cplaylist_type/sig/AE0s2JYwRgIhAPto41gFNMJuNtt7LNma4MLU1635K0gPvlnRo1KQCpgeAiEA0Q01I_JmbqL-RfEz_HthGfT-5I8Mnq67nJgvuMX8XUw%3D/lsparams/playback_host%2Ccps%2Cmet%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps/lsig/APaTxxMwRQIgYdkcuVXgZvRc61JsO5kdDdOQfpeWErQxrOZYnbrTWuICIQDtBKJVYQE8_dYXeVNz-wcAnbdBW9MKra8GbRbh6Qu5nA%3D%3D/file/index.m3u8',
-      type: 'hls',
-      isEmbed: false,
-      priority: 1,
-    });
-
-    // 2. NetTV Live Match 3 - Edge MTDC (Match 20 Active Session)
+    // 1. NetTV Live Match 3 - Edge MTDC (Match 20 Active Session 2822474a)
     feeds.push({
       id: 'NETTV-DASH-EDGE-MTDC3',
       name: 'NetTV Action Sports HD (Edge MTDC Live 3)',
       url: 'https://ott-edge-mtdc.nettv.com.np/npl/live_match3/index.mpd?CMCD=br%3D4194%2Cot%3Dm%2Cmtp%3D4194%2Csu%2Ccid%3D%22a-rz--cricket--p82103164700970876976%22%2Csf%3Dd%2Csid%3D%222822474a-c730-4fd1-8cc2-e615573de093%22%2Cst%3Dv',
       type: 'dash',
       isEmbed: false,
-      priority: 2,
+      priority: 1,
       licenseUrl: 'https://widevine-dash.ezdrm.com/proxy?pX=196792&user_id=M2ZhNWI0YzAtNzgxNy00MjRlLWFlODMtZWFmYWJmNDRmMjU1&CustomData=eyJyZXNlbGxlcl9pZCI6IjEwNyIsInN1YnNjcmliZXJfaWQiOiIxMDc3NDk3NiIsInNlcmlhbCI6ImdsXzExMTUwMTQwMDk4MTM0NDk0MDcxMi0xMDciLCJtYXRjaF9rZXkiOiJhLXJ6LS1jcmlja2V0LS1wODIxMDMxNjQ3MDA5NzA4NzY5NzYiLCJleHAiOjE3OTQyMjQzMTksInNpZCI6IjdhMWJmNzExNTNiYjljOTNmOGQwYWJlOWY0NGRjNjJjIiwicGxhdGZvcm0iOiJ3ZWIiLCJlbnRpdGxlZF91bnRpbCI6MTc5NDIzNzgxOSwibWF4X2NvbmN1cnJlbnQiOjEsInN1YnNjcmliZXJfc3RiX2lkIjoiMTM3Mzg1NTAiLCJ1YmJfZ3VpZCI6IjNmYTViNGMwLTc4MTctNDI0ZS1hZTgzLWVhZmFiZjQ0ZjI1NSJ9.eXeuibnuH9Nrm3s16kg2Pst92shpPB9DaBqm5gmJnzQ',
     });
 
-    // 3. NetTV Live Match 3 - Load Balancer (Match 20 Active Session)
+    // 2. NetTV Live Match 3 - Load Balancer (Match 20 Active Session 2822474a)
     feeds.push({
       id: 'NETTV-DASH-LB3',
       name: 'NetTV Action Sports HD (LB Live 3)',
       url: 'https://ott-lb.nettv.com.np/npl/live_match3/index.mpd?CMCD=br%3D4194%2Cot%3Dm%2Cmtp%3D4194%2Csu%2Ccid%3D%22a-rz--cricket--p82103164700970876976%22%2Csf%3Dd%2Csid%3D%222822474a-c730-4fd1-8cc2-e615573de093%22%2Cst%3Dv',
       type: 'dash',
       isEmbed: false,
+      priority: 2,
+      licenseUrl: 'https://widevine-dash.ezdrm.com/proxy?pX=196792&user_id=M2ZhNWI0YzAtNzgxNy00MjRlLWFlODMtZWFmYWJmNDRmMjU1&CustomData=eyJyZXNlbGxlcl9pZCI6IjEwNyIsInN1YnNjcmliZXJfaWQiOiIxMDc3NDk3NiIsInNlcmlhbCI6ImdsXzExMTUwMTQwMDk4MTM0NDk0MDcxMi0xMDciLCJtYXRjaF9rZXkiOiJhLXJ6LS1jcmlja2V0LS1wODIxMDMxNjQ3MDA5NzA4NzY5NzYiLCJleHAiOjE3OTQyMjQzMTksInNpZCI6IjdhMWJmNzExNTNiYjljOTNmOGQwYWJlOWY0NGRjNjJjIiwicGxhdGZvcm0iOiJ3ZWIiLCJlbnRpdGxlZF91bnRpbCI6MTc5NDIzNzgxOSwibWF4X2NvbmN1cnJlbnQiOjEsInN1YnNjcmliZXJfc3RiX2lkIjoiMTM3Mzg1NTAiLCJ1YmJfZ3VpZCI6IjNmYTViNGMwLTc4MTctNDI0ZS1hZTgzLWVhZmFiZjQ0ZjI1NSJ9.eXeuibnuH9Nrm3s16kg2Pst92shpPB9DaBqm5gmJnzQ',
+    });
+
+    // 3. NetTV Live Match 3 - Edge MTDC (Match 20 Active Session 72e4fbbc)
+    feeds.push({
+      id: 'NETTV-DASH-EDGE-MTDC3-ALT',
+      name: 'NetTV Action Sports HD (Edge MTDC Live 3 Alt)',
+      url: 'https://ott-edge-mtdc.nettv.com.np/npl/live_match3/index.mpd?CMCD=br%3D4194%2Cot%3Dm%2Cmtp%3D4194%2Csu%2Ccid%3D%22a-rz--cricket--p82103164700970876976%22%2Csf%3Dd%2Csid%3D%2272e4fbbc-1164-432c-a971-e66e1720d965%22%2Cst%3Dv',
+      type: 'dash',
+      isEmbed: false,
       priority: 3,
       licenseUrl: 'https://widevine-dash.ezdrm.com/proxy?pX=196792&user_id=M2ZhNWI0YzAtNzgxNy00MjRlLWFlODMtZWFmYWJmNDRmMjU1&CustomData=eyJyZXNlbGxlcl9pZCI6IjEwNyIsInN1YnNjcmliZXJfaWQiOiIxMDc3NDk3NiIsInNlcmlhbCI6ImdsXzExMTUwMTQwMDk4MTM0NDk0MDcxMi0xMDciLCJtYXRjaF9rZXkiOiJhLXJ6LS1jcmlja2V0LS1wODIxMDMxNjQ3MDA5NzA4NzY5NzYiLCJleHAiOjE3OTQyMjQzMTksInNpZCI6IjdhMWJmNzExNTNiYjljOTNmOGQwYWJlOWY0NGRjNjJjIiwicGxhdGZvcm0iOiJ3ZWIiLCJlbnRpdGxlZF91bnRpbCI6MTc5NDIzNzgxOSwibWF4X2NvbmN1cnJlbnQiOjEsInN1YnNjcmliZXJfc3RiX2lkIjoiMTM3Mzg1NTAiLCJ1YmJfZ3VpZCI6IjNmYTViNGMwLTc4MTctNDI0ZS1hZTgzLWVhZmFiZjQ0ZjI1NSJ9.eXeuibnuH9Nrm3s16kg2Pst92shpPB9DaBqm5gmJnzQ',
     });
 
-    // 4. Action Sports HD Akamai Master Player
+    // 4. NetTV Live Match 3 - Load Balancer (Match 20 Active Session 72e4fbbc)
     feeds.push({
-      id: 'ACTIONSPORTS-AKAMAI-NEP',
-      name: 'Action Sports HD (Akamai Master)',
-      url: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/pdx-nitro/live/clients/dash/enc/3qvpw810gz/out/v1/e4b320f9ef924fe59188752dcf9c7fbf/cenc.mpd&keyid=5d52529b6ff19eca2315013244513b68&key=ba5c7dfad287aab538463d9da6811a8c',
-      type: 'embed',
-      isEmbed: true,
+      id: 'NETTV-DASH-LB3-ALT',
+      name: 'NetTV Action Sports HD (LB Live 3 Alt)',
+      url: 'https://ott-lb.nettv.com.np/npl/live_match3/index.mpd?CMCD=br%3D4194%2Cot%3Dm%2Cmtp%3D4194%2Csu%2Ccid%3D%22a-rz--cricket--p82103164700970876976%22%2Csf%3Dd%2Csid%3D%2272e4fbbc-1164-432c-a971-e66e1720d965%22%2Cst%3Dv',
+      type: 'dash',
+      isEmbed: false,
       priority: 4,
+      licenseUrl: 'https://widevine-dash.ezdrm.com/proxy?pX=196792&user_id=M2ZhNWI0YzAtNzgxNy00MjRlLWFlODMtZWFmYWJmNDRmMjU1&CustomData=eyJyZXNlbGxlcl9pZCI6IjEwNyIsInN1YnNjcmliZXJfaWQiOiIxMDc3NDk3NiIsInNlcmlhbCI6ImdsXzExMTUwMTQwMDk4MTM0NDk0MDcxMi0xMDciLCJtYXRjaF9rZXkiOiJhLXJ6LS1jcmlja2V0LS1wODIxMDMxNjQ3MDA5NzA4NzY5NzYiLCJleHAiOjE3OTQyMjQzMTksInNpZCI6IjdhMWJmNzExNTNiYjljOTNmOGQwYWJlOWY0NGRjNjJjIiwicGxhdGZvcm0iOiJ3ZWIiLCJlbnRpdGxlZF91bnRpbCI6MTc5NDIzNzgxOSwibWF4X2NvbmN1cnJlbnQiOjEsInN1YnNjcmliZXJfc3RiX2lkIjoiMTM3Mzg1NTAiLCJ1YmJfZ3VpZCI6IjNmYTViNGMwLTc4MTctNDI0ZS1hZTgzLWVhZmFiZjQ0ZjI1NSJ9.eXeuibnuH9Nrm3s16kg2Pst92shpPB9DaBqm5gmJnzQ',
     });
 
-    // 5. Direct HLS Broadcast Feed (TU Ground Live Feed)
+    // 5. Universal Multi-Device Stream (YonoTV Action Sports Live)
+    feeds.push({
+      id: 'ACTIONSPORTS-UNIVERSAL',
+      name: 'Action Sports HD (Universal Web Stream)',
+      url: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/8wxsmuwvra/out/v1/06f2368f16e8470b8593cb77dcad31fe/cenc.mpd&keyid=f638f10e9bee65a698926a527722e332&key=a9f519367caf419607f6705e3d767935',
+      type: 'embed',
+      isEmbed: true,
+      priority: 5,
+    });
+
+    // 6. Direct HLS Broadcast Feed (TU Ground Live Feed)
     feeds.push({
       id: 'NETTV-HLS-DIRECT',
       name: 'Action Sports HD (Direct HLS Feed)',
       url: 'https://lb-ottnp.nettvstreamz.com/npl/live_match6/playlist.m3u8',
       type: 'hls',
       isEmbed: false,
-      priority: 5,
+      priority: 6,
     });
 
     // 5. Action Sports HD Akamai Backup Player
