@@ -276,7 +276,16 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
               setRecentBalls((prev) => (prev.length !== data.recentBalls.length ? data.recentBalls : prev));
             }
             if (Array.isArray(data.commentary) && data.commentary.length > 0) {
-              setCommentaryList((prev) => (prev.length !== data.commentary.length ? data.commentary : prev));
+              setCommentaryList((prev) => {
+                const combined = [...data.commentary];
+                for (const oldItem of prev) {
+                  const exists = combined.some(
+                    (c) => c.ball === oldItem.ball && c.text === oldItem.text
+                  );
+                  if (!exists) combined.push(oldItem);
+                }
+                return combined;
+              });
             }
           }
         }
@@ -287,11 +296,28 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
       }
     };
 
+    // Fetch official live standings
+    const fetchStandings = async () => {
+      try {
+        const res = await fetch('/api/npl/standings/');
+        if (res.ok && isMounted) {
+          const list = await res.json();
+          if (Array.isArray(list) && list.length > 0) {
+            setNplStandings(list);
+          }
+        }
+      } catch {}
+    };
+
     pollLiveDesk();
+    fetchStandings();
+
+    const standingsTimer = setInterval(fetchStandings, 30000);
 
     return () => {
       isMounted = false;
       if (timer) clearTimeout(timer);
+      clearInterval(standingsTimer);
     };
   }, []);
 
@@ -666,19 +692,17 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
     URL.revokeObjectURL(link.href);
   };
 
-  // NPL Standings calculation
-  const nplStandings = useMemo(() => {
-    return [
-      { name: 'Sudurpaschim Royals', p: 1, w: 1, l: 0, pts: 2, nrr: '+1.450' },
-      { name: 'Janakpur Bolts', p: 1, w: 1, l: 0, pts: 2, nrr: '+1.120' },
-      { name: 'Biratnagar Kings', p: 1, w: 1, l: 0, pts: 2, nrr: '+0.850' },
-      { name: 'Chitwan Rhinos', p: 1, w: 1, l: 0, pts: 2, nrr: '+0.420' },
-      { name: 'Kathmandu Gurkhas', p: 1, w: 0, l: 1, pts: 0, nrr: '-0.420' },
-      { name: 'Pokhara Avengers', p: 1, w: 0, l: 1, pts: 0, nrr: '-0.850' },
-      { name: 'Lumbini Lions', p: 1, w: 0, l: 1, pts: 0, nrr: '-1.120' },
-      { name: 'Karnali Yaks', p: 1, w: 0, l: 1, pts: 0, nrr: '-1.450' },
-    ];
-  }, []);
+  // Real-time official NPL Standings state
+  const [nplStandings, setNplStandings] = useState<any[]>(() => [
+    { rank: 1, name: 'Lumbini Lions', short: 'LUM', p: 4, w: 3, l: 1, nr: 0, nrr: '+1.526', pts: 6 },
+    { rank: 2, name: 'Kathmandu Gurkhas', short: 'KTG', p: 4, w: 3, l: 1, nr: 0, nrr: '+1.341', pts: 6 },
+    { rank: 3, name: 'Sudurpaschim Royals', short: 'SUR', p: 5, w: 3, l: 2, nr: 0, nrr: '-0.036', pts: 6 },
+    { rank: 4, name: 'Chitwan Rhinos', short: 'CHR', p: 3, w: 2, l: 1, nr: 0, nrr: '+0.207', pts: 4 },
+    { rank: 5, name: 'Janakpur Bolts', short: 'JAN', p: 5, w: 2, l: 3, nr: 0, nrr: '-0.083', pts: 4 },
+    { rank: 6, name: 'Karnali Yaks', short: 'KAR', p: 4, w: 2, l: 2, nr: 0, nrr: '-0.320', pts: 4 },
+    { rank: 7, name: 'Biratnagar Kings', short: 'BIR', p: 5, w: 2, l: 3, nr: 0, nrr: '-0.820', pts: 4 },
+    { rank: 8, name: 'Pokhara Avengers', short: 'POK', p: 4, w: 0, l: 4, nr: 0, nrr: '-1.959', pts: 0 },
+  ]);
 
   // Upcoming NPL Matches
   const upcomingNplMatches = useMemo(() => {
@@ -1069,221 +1093,233 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
             const venue = liveHeader?.venue || 'TU International Cricket Ground, Kirtipur';
             const tossNote = liveHeader?.tossNote || 'PKA opt to Bat';
 
-            const team1Short =
+            // Dynamic team names & short codes based on ongoing live match
+            const t1Name = liveHeader?.team1Name || match.teams?.home?.name || 'Pokhara Avengers';
+            const t1Short =
               liveHeader?.team1Short ||
-              (match.teams?.away?.name ? match.teams.away.name.slice(0, 3).toUpperCase() : 'KNY');
-            const team1Name = liveHeader?.team1Name || match.teams?.away?.name || 'Karnali Yaks';
-            const team1Score = liveHeader?.team1Score || (match.score?.away || '176/6');
-            const team1Overs = liveHeader?.team1Overs || '(20.0 ov)';
-
-            const team2Short =
-              liveHeader?.team2Short ||
               (match.teams?.home?.name ? match.teams.home.name.slice(0, 3).toUpperCase() : 'PKA');
-            const team2Name = liveHeader?.team2Name || match.teams?.home?.name || 'Pokhara Avengers';
-            const team2Score = liveScore || liveHeader?.team2Score || (match.score?.home || '91-1');
-            const team2Overs = liveOvers
-              ? `(${liveOvers} ov)`
-              : liveHeader?.team2Overs || '(10.0 ov)';
+            const t1Score = liveHeader?.team1Score || liveScore || '179/2';
+            const t1Overs = liveHeader?.team1Overs || (liveOvers ? `(${liveOvers} ov)` : '');
+            const t1IsBatting = liveHeader ? liveHeader.activeTeam === 1 : true;
 
-            const displayTarget = liveTarget || liveHeader?.target || 'Target 177';
-            const displayCrr = liveCrr || liveHeader?.crr || '9.10';
-            const displayRrr = liveRrr || liveHeader?.rrr || '--';
+            const t2Name = liveHeader?.team2Name || match.teams?.away?.name || 'Karnali Yaks';
+            const t2Short =
+              liveHeader?.team2Short ||
+              (match.teams?.away?.name ? match.teams.away.name.slice(0, 3).toUpperCase() : 'KNY');
+            const t2Score = liveHeader?.team2Score || (match.score?.away || 'Yet to Bat');
+            const t2Overs = liveHeader?.team2Overs || '';
+            const t2IsBatting = liveHeader ? liveHeader.activeTeam === 2 : false;
 
-            const defaultBatters: LiveBatter[] = [
-              { name: 'Yuvraj Samra', isOnStrike: true, runs: '65', balls: '28', fours: '8', sixes: '3' },
-              { name: 'Kushal Bhurtel', isOnStrike: true, runs: '20', balls: '16', fours: '0', sixes: '2' },
-            ];
-            const activeBatters =
-              liveBatters && liveBatters.length > 0 ? liveBatters : defaultBatters;
+            const displayTarget = liveTarget || liveHeader?.target || '';
+            const displayCrr = liveCrr || liveHeader?.crr || '';
+            const displayRrr =
+              liveRrr && liveRrr !== '--'
+                ? liveRrr
+                : liveHeader?.rrr && liveHeader.rrr !== '--'
+                ? liveHeader.rrr
+                : '';
 
-            const defaultBowler: LiveBowler = { name: 'Yuvraj Khatri', figures: '0-15' };
-            const activeBowler = liveBowler?.name ? liveBowler : defaultBowler;
-
-            const fallbackRecent: RecentBall[] = [
-              { over: 10, delivery: 1, code: '6', isBoundary: true, isWicket: false, isExtra: false },
-              { over: 10, delivery: 2, code: '6', isBoundary: true, isWicket: false, isExtra: false },
-              { over: 10, delivery: 3, code: '1', isBoundary: false, isWicket: false, isExtra: false },
-              { over: 10, delivery: 4, code: '0', isBoundary: false, isWicket: false, isExtra: false },
-              { over: 10, delivery: 5, code: '1', isBoundary: false, isWicket: false, isExtra: false },
-              { over: 10, delivery: 6, code: '1', isBoundary: false, isWicket: false, isExtra: false },
-            ];
+            const activeBatters = liveBatters || [];
+            const activeBowler = liveBowler;
             const displayRecent =
-              recentBalls && recentBalls.length > 0 ? recentBalls.slice(-6) : fallbackRecent;
+              recentBalls && recentBalls.length > 0 ? recentBalls.slice(-8) : [];
 
             return (
-              <div className="rounded-xl border border-[#1e2638] bg-[#0c1017] p-4 text-fg shadow-xl sm:p-5">
+              <div className="card p-4 sm:p-5 shadow-panel">
                 {/* Top Match Header Bar */}
-                <div className="flex flex-wrap items-center justify-between gap-2 pb-3">
-                  <div className="flex items-center gap-2 text-xs text-slate-300 sm:text-sm">
-                    <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-red-500" />
-                    <span className="font-semibold text-white">{matchTitle}</span>
-                    <span className="text-slate-600">|</span>
-                    <span className="truncate text-slate-400">{venue}</span>
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-3">
+                  <div className="flex items-center gap-2 text-xs sm:text-sm">
+                    <span className="live-dot" />
+                    <span className="font-semibold text-fg">{matchTitle}</span>
+                    <span className="text-fg-3">|</span>
+                    <span className="truncate text-fg-2">{venue}</span>
                   </div>
                   {tossNote && (
-                    <div className="rounded-md border border-[#1e3a5f] bg-[#101928] px-3 py-0.5 text-xs font-medium text-[#60a5fa]">
+                    <span className="chip text-xs">
                       {tossNote}
-                    </div>
+                    </span>
                   )}
                 </div>
 
                 {/* Teams & Scores Row */}
-                <div className="grid grid-cols-1 gap-4 py-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
-                  {/* Team 1 (Left: 1st Innings) */}
+                <div className="grid grid-cols-1 gap-4 py-4 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+                  {/* Team 1 (Left) */}
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
-                      <span className="rounded border border-slate-700/60 bg-[#161c28] px-2 py-0.5 font-mono text-xs font-bold text-slate-200">
-                        {team1Short}
+                      <span className="rounded bg-ink-700 border border-line px-2 py-0.5 font-mono text-xs font-semibold text-fg">
+                        {t1Short}
                       </span>
-                      <span className="text-sm font-semibold text-white sm:text-base">
-                        {team1Name}
+                      <span className="text-sm sm:text-base font-semibold text-fg">
+                        {t1Name}
                       </span>
+                      {t1IsBatting && (
+                        <span className="live-dot" title="Currently Batting" />
+                      )}
                     </div>
-                    <div className="mt-1 flex items-baseline gap-2">
-                      <span className="font-mono text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                        {team1Score}
+                    <div className="mt-1.5 flex items-baseline gap-2">
+                      <span className="font-mono text-2xl sm:text-3xl font-bold tracking-tight text-fg">
+                        {t1Score}
                       </span>
-                      {team1Overs && (
-                        <span className="font-mono text-xs text-slate-400 sm:text-sm">
-                          {team1Overs.startsWith('(') ? team1Overs : `(${team1Overs})`}
+                      {t1Overs && (
+                        <span className="font-mono text-xs sm:text-sm text-fg-3">
+                          {t1Overs.startsWith('(') ? t1Overs : `(${t1Overs})`}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  {/* VS & Target Pill (Center) */}
-                  <div className="flex flex-row items-center justify-center gap-3 sm:flex-col sm:gap-1">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  {/* Center: VS & Target */}
+                  <div className="flex flex-row items-center justify-center gap-3 sm:flex-col sm:gap-1.5 py-1 sm:py-0">
+                    <span className="text-xs font-bold uppercase tracking-wider text-fg-3">
                       VS
                     </span>
-                    {displayTarget && (
-                      <span className="rounded border border-[#1d4ed8]/40 bg-[#172554] px-2.5 py-0.5 font-mono text-xs font-medium text-[#93c5fd]">
+                    {displayTarget ? (
+                      <span className="chip text-xs text-lime border-lime/30">
                         {displayTarget}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-mono text-fg-3">
+                        Innings 1
                       </span>
                     )}
                   </div>
 
-                  {/* Team 2 (Right: 2nd Innings / Active Chase) */}
+                  {/* Team 2 (Right) */}
                   <div className="flex flex-col sm:items-end sm:text-right">
                     <div className="flex items-center gap-2 sm:flex-row-reverse">
-                      <span
-                        className="inline-block h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"
-                        title="Currently Batting"
-                      />
-                      <span className="text-sm font-semibold text-white sm:text-base">
-                        {team2Name}
+                      {t2IsBatting && (
+                        <span className="live-dot" title="Currently Batting" />
+                      )}
+                      <span className="text-sm sm:text-base font-semibold text-fg">
+                        {t2Name}
                       </span>
-                      <span className="rounded border border-slate-700/60 bg-[#161c28] px-2 py-0.5 font-mono text-xs font-bold text-slate-200">
-                        {team2Short}
+                      <span className="rounded bg-ink-700 border border-line px-2 py-0.5 font-mono text-xs font-semibold text-fg">
+                        {t2Short}
                       </span>
                     </div>
-                    <div className="mt-1 flex items-baseline gap-2 sm:flex-row-reverse">
-                      <span className="font-mono text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                        {team2Score}
+                    <div className="mt-1.5 flex items-baseline gap-2 sm:flex-row-reverse">
+                      <span
+                        className={`font-mono text-2xl sm:text-3xl font-bold tracking-tight ${
+                          t2Score === 'Yet to Bat' ? 'text-fg-3 text-lg sm:text-xl' : 'text-fg'
+                        }`}
+                      >
+                        {t2Score}
                       </span>
-                      {team2Overs && (
-                        <span className="font-mono text-xs text-slate-400 sm:text-sm">
-                          {team2Overs.startsWith('(') ? team2Overs : `(${team2Overs})`}
+                      {t2Overs && (
+                        <span className="font-mono text-xs sm:text-sm text-fg-3">
+                          {t2Overs.startsWith('(') ? t2Overs : `(${t2Overs})`}
                         </span>
                       )}
                     </div>
                     {/* Telemetry CRR & RRR badges */}
-                    <div className="mt-1 flex items-center gap-1.5 sm:justify-end">
-                      <span className="rounded border border-slate-800 bg-[#141a24] px-2 py-0.5 font-mono text-[11px] text-slate-400">
-                        CRR: {displayCrr}
-                      </span>
-                      <span className="rounded border border-slate-800 bg-[#141a24] px-2 py-0.5 font-mono text-[11px] text-slate-400">
-                        RRR: {displayRrr}
-                      </span>
-                    </div>
+                    {(displayCrr || displayRrr) && (
+                      <div className="mt-1.5 flex items-center gap-1.5 sm:justify-end">
+                        {displayCrr && (
+                          <span className="chip text-[11px] font-mono">
+                            CRR: {displayCrr}
+                          </span>
+                        )}
+                        {displayRrr && (
+                          <span className="chip text-[11px] font-mono text-lime border-lime/30">
+                            RRR: {displayRrr}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Batters & Active Bowler Row */}
-                <div className="mt-4 grid grid-cols-1 gap-6 border-t border-slate-800/80 pt-4 md:grid-cols-2">
-                  {/* Batters Column */}
-                  <div>
-                    <div className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                      Batters
-                    </div>
-                    <div className="space-y-1.5">
-                      {activeBatters.slice(0, 2).map((bat, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-sm">
-                          <span className="flex items-center gap-1 font-semibold text-white">
-                            {bat.name}
-                            {bat.isOnStrike && <span className="font-bold text-emerald-400">*</span>}
-                          </span>
-                          <span className="font-mono font-medium text-slate-300">
-                            {bat.runs}{' '}
-                            <span className="text-xs text-slate-400">
-                              ({bat.balls}b, {bat.fours}x4, {bat.sixes}x6)
+                {(activeBatters.length > 0 || activeBowler?.name) && (
+                  <div className="mt-2 grid grid-cols-1 gap-6 border-t border-line pt-4 md:grid-cols-2">
+                    {/* Batters */}
+                    <div>
+                      <div className="eyebrow mb-2">
+                        Batters
+                      </div>
+                      <div className="space-y-1.5">
+                        {activeBatters.slice(0, 2).map((bat, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-sm">
+                            <span className="flex items-center gap-1.5 font-semibold text-fg">
+                              {bat.name}
+                              {bat.isOnStrike && <span className="text-lime font-bold">*</span>}
                             </span>
+                            <span className="font-mono text-fg-2">
+                              {bat.runs}{' '}
+                              <span className="text-xs text-fg-3">
+                                ({bat.balls}b, {bat.fours}x4, {bat.sixes}x6)
+                              </span>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Active Bowler */}
+                    {activeBowler?.name && (
+                      <div>
+                        <div className="eyebrow mb-2">
+                          Active Bowler
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-semibold text-fg">
+                            {activeBowler.name}
+                          </span>
+                          <span className="font-mono text-base font-bold text-fg">
+                            {activeBowler.figures}
+                            {activeBowler.overs && (
+                              <span className="ml-1.5 text-xs text-fg-3">
+                                ({activeBowler.overs})
+                              </span>
+                            )}
                           </span>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    )}
                   </div>
-
-                  {/* Active Bowler Column */}
-                  <div>
-                    <div className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                      Active Bowler
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-semibold text-white">
-                        {activeBowler.name}
-                      </span>
-                      <span className="font-mono text-base font-bold tracking-wide text-white">
-                        {activeBowler.figures}
-                        {activeBowler.overs && (
-                          <span className="ml-1.5 text-xs font-normal text-slate-400">
-                            ({activeBowler.overs})
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                )}
 
                 {/* Recent Deliveries Bar */}
-                <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-800/80 pt-3">
-                  <span className="mr-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                    Recent
-                  </span>
-                  <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
-                    {displayRecent.map((b, idx) => {
-                      const code = (b.code || '').trim();
-                      const lowerCode = code.toLowerCase();
-                      const isSix = lowerCode === '6';
-                      const isFour = lowerCode === '4';
-                      const isWkt =
-                        lowerCode === 'w' || (lowerCode.includes('w') && !lowerCode.includes('wd'));
-                      const isExtra = lowerCode.includes('wd') || lowerCode.includes('nb');
-                      const isDot = lowerCode === '0';
+                {displayRecent.length > 0 && (
+                  <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-3">
+                    <span className="eyebrow mr-1 shrink-0">
+                      Recent
+                    </span>
+                    <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
+                      {displayRecent.map((b, idx) => {
+                        const code = (b.code || '').trim();
+                        const lowerCode = code.toLowerCase();
+                        const isSix = lowerCode === '6';
+                        const isFour = lowerCode === '4';
+                        const isWkt =
+                          lowerCode === 'w' || (lowerCode.includes('w') && !lowerCode.includes('wd'));
+                        const isExtra = lowerCode.includes('wd') || lowerCode.includes('nb');
+                        const isDot = lowerCode === '0';
 
-                      return (
-                        <span
-                          key={idx}
-                          className={`flex h-7 w-7 items-center justify-center rounded-md font-mono text-xs font-bold shadow-sm sm:h-8 sm:w-8 ${
-                            isSix
-                              ? 'border border-[#581c87] bg-[#2e1065] text-[#d8b4fe]'
-                              : isFour
-                              ? 'border border-[#1e3a8a] bg-[#1e1b4b] text-[#93c5fd]'
-                              : isWkt
-                              ? 'border border-[#991b1b] bg-[#7f1d1d] text-[#fca5a5]'
-                              : isExtra
-                              ? 'border border-[#78350f] bg-[#451a03] text-[#fcd34d]'
-                              : isDot
-                              ? 'border border-slate-800 bg-[#161c28] text-slate-400'
-                              : 'border border-slate-700/60 bg-[#1e2433] text-slate-200'
-                          }`}
-                        >
-                          {code}
-                        </span>
-                      );
-                    })}
+                        return (
+                          <span
+                            key={idx}
+                            className={`flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-md font-mono text-xs font-semibold ${
+                              isSix
+                                ? 'bg-lime text-lime-ink font-bold shadow-sm'
+                                : isFour
+                                ? 'border border-line-strong bg-ink-600 text-fg font-semibold'
+                                : isWkt
+                                ? 'bg-red-500 text-white font-bold animate-pulse'
+                                : isExtra
+                                ? 'border border-amber-500/40 bg-amber-500/20 text-amber-400 font-semibold'
+                                : isDot
+                                ? 'bg-ink-700 text-fg-3'
+                                : 'bg-ink-700 text-fg'
+                            }`}
+                          >
+                            {code}
+                          </span>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             );
           })()}
@@ -1414,35 +1450,63 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
 
             {/* Tab 3: Points Table */}
             {activeHubTab === 'standings' && (
-              <div className="overflow-x-auto p-5">
+              <div className="overflow-x-auto p-4 sm:p-5">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="eyebrow">Nepal Premier League 2026 Standings</span>
+                  <span className="text-xs font-mono text-fg-3">Top 4 qualify for playoffs</span>
+                </div>
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="meta border-b border-line">
+                      <th className="h-9 px-3 font-normal">#</th>
                       <th className="h-9 px-3 font-normal">Team</th>
                       <th className="h-9 px-3 text-right font-normal">P</th>
                       <th className="h-9 px-3 text-right font-normal">W</th>
                       <th className="h-9 px-3 text-right font-normal">L</th>
+                      <th className="h-9 px-3 text-right font-normal">NR</th>
                       <th className="h-9 px-3 text-right font-normal">Pts</th>
                       <th className="h-9 px-3 text-right font-normal">NRR</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line">
                     {nplStandings.map((team, idx) => (
-                      <tr key={team.name} className="transition-colors duration-fast ease-out hover:bg-ink-700/60">
+                      <tr
+                        key={team.name}
+                        className={`transition-colors duration-fast ease-out hover:bg-ink-700/60 ${
+                          idx < 4 ? 'bg-ink-800/40' : ''
+                        }`}
+                      >
+                        <td className="clock h-10 px-3 text-xs text-fg-3">
+                          <div className="flex items-center gap-1.5">
+                            {idx < 4 && <span className="h-1.5 w-1.5 rounded-full bg-lime" />}
+                            <span>{team.rank || idx + 1}</span>
+                          </div>
+                        </td>
                         <td className="h-10 px-3">
                           <div className="flex items-center gap-2">
-                            <span className="clock w-4 text-right text-xs text-fg-3">{idx + 1}</span>
-                            {NPL_TEAMS[team.name]?.logo && (
-                              <img src={NPL_TEAMS[team.name].logo} alt="" className="h-5 w-5 object-contain" />
+                            {(team.logo || NPL_TEAMS[team.name]?.logo) && (
+                              <img
+                                src={team.logo || NPL_TEAMS[team.name]?.logo}
+                                alt=""
+                                className="h-5 w-5 object-contain"
+                              />
                             )}
                             <span className="font-medium text-fg">{team.name}</span>
+                            {team.short && (
+                              <span className="text-xs font-mono text-fg-3">({team.short})</span>
+                            )}
                           </div>
                         </td>
                         <td className="clock h-10 px-3 text-right text-fg-2">{team.p}</td>
-                        <td className="clock h-10 px-3 text-right text-fg-2">{team.w}</td>
-                        <td className="clock h-10 px-3 text-right text-fg-2">{team.l}</td>
-                        <td className="clock h-10 px-3 text-right font-medium text-fg">{team.pts}</td>
-                        <td className={`clock h-10 px-3 text-right ${team.nrr.startsWith('+') ? 'text-up' : 'text-fg-2'}`}>
+                        <td className="clock h-10 px-3 text-right font-medium text-lime">{team.w}</td>
+                        <td className="clock h-10 px-3 text-right text-fg-3">{team.l}</td>
+                        <td className="clock h-10 px-3 text-right text-fg-3">{team.nr ?? 0}</td>
+                        <td className="clock h-10 px-3 text-right font-bold text-lime">{team.pts}</td>
+                        <td
+                          className={`clock h-10 px-3 text-right font-mono text-xs ${
+                            String(team.nrr).startsWith('+') ? 'text-lime' : 'text-fg-3'
+                          }`}
+                        >
                           {team.nrr}
                         </td>
                       </tr>

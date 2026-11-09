@@ -198,13 +198,14 @@ export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> 
     const state = JSON.parse(jsonStr);
 
     const sv3 = state['https://api.goscorer.com/api/v3/getSV3'] || {};
-    const feeds = state['https://content.crickapi.com/commentary/v2/getBallFeeds'] || [];
+    const feedsKey = Object.keys(state).find((k) => k.includes('getBallFeeds'));
+    const feeds = feedsKey && Array.isArray(state[feedsKey]) ? state[feedsKey] : [];
 
     const score = (sv3.score1 || '').replace('-', '/');
     const overs = sv3.over1 || '';
     const crr = sv3.crr || '';
 
-    // Extract structured commentary from getBallFeeds
+    // Extract structured commentary from getBallFeeds (handling all versions v1/v2/v3)
     const commentary: CommentaryLine[] = [];
     if (Array.isArray(feeds)) {
       for (const item of feeds) {
@@ -215,12 +216,12 @@ export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> 
           const rawC2 = item.c2 || '';
           const lowerC2 = rawC2.toLowerCase();
 
-          const isFour = lowerCode === '4' || lowerC2.includes('four');
+          const isFour = lowerCode === '4' || (lowerC2.includes('four') && !lowerC2.includes('four balls'));
           const isSix = lowerCode === '6' || lowerC2.includes('six');
           const isWkt =
             lowerCode === 'w' ||
-            (lowerCode.includes('w') && !lowerCode.includes('wd')) ||
-            lowerC2.includes('wicket');
+            (lowerCode.includes('w') && !lowerCode.includes('wd') && !lowerCode.includes('wide')) ||
+            (/\b(out|bowled|caught|lbw|stumped|run out)\b/i.test(lowerC2) && !lowerC2.includes('not out'));
           const cleanText = cleanCricketText(rawC2);
           const cleanBowler = cleanCricketText(item.c1 || '');
 
@@ -232,11 +233,18 @@ export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> 
             isBoundary: isFour || isSix,
             isWicket: isWkt,
           });
-        } else if (item.type === 't' && item.c) {
+        } else if (item.type === 't' && (item.c || item.tsl)) {
           commentary.push({
             ball: 'Info',
             bowlerToBatsman: 'Match Update',
-            text: cleanCricketText(item.c),
+            text: cleanCricketText(item.c || item.tsl),
+          });
+        } else if (item.type === 'o') {
+          commentary.push({
+            ball: `Ov ${item.o || ''}`,
+            bowlerToBatsman: cleanCricketText(item.bowler || 'End of Over'),
+            text: cleanCricketText(item.tsl || `${item.runs || 0} runs off the over`),
+            outcome: `${item.runs || 0}r`,
           });
         }
       }
@@ -394,19 +402,24 @@ export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> 
     );
     const tossNote = cleanCricketText(sv3.comment1 || '');
 
-    const t1Short = sv3.team2short || sv3.team2 || 'KNY';
-    const t1Name = sv3.team2_f_n || 'Karnali Yaks';
-    const t1ScoreRaw = sv3.score2 ? String(sv3.score2).replace('-', '/') : '';
-    const t1Overs = sv3.over2 ? `${sv3.over2} ov` : '';
+    const currentInning = Number(sv3.inning || 1);
+    const team1Short = sv3.team1short || sv3.team1 || 'PKA';
+    const team1Name = sv3.team1_f_n || 'Pokhara Avengers';
+    const team1Score = score || (sv3.score1 ? String(sv3.score1).replace('-', '/') : '');
+    const team1Overs = overs ? `${overs} ov` : (sv3.over1 ? `${sv3.over1} ov` : '');
 
-    const t2Short = sv3.team1short || sv3.team1 || 'PKA';
-    const t2Name = sv3.team1_f_n || 'Pokhara Avengers';
-    const t2ScoreRaw = sv3.score1 ? String(sv3.score1).replace('-', '/') : '';
-    const t2Overs = sv3.over1 ? `${sv3.over1} ov` : '';
+    const team2Short = sv3.team2short || sv3.team2 || 'KNY';
+    const team2Name = sv3.team2_f_n || 'Karnali Yaks';
+    const team2Score = sv3.score2
+      ? String(sv3.score2).replace('-', '/')
+      : currentInning === 1
+      ? 'Yet to Bat'
+      : '';
+    const team2Overs = sv3.over2 ? `${sv3.over2} ov` : '';
 
     let target = '';
-    if (t1ScoreRaw) {
-      const runsMatch = t1ScoreRaw.match(/^(\d+)/);
+    if (currentInning >= 2 && team1Score) {
+      const runsMatch = team1Score.match(/^(\d+)/);
       if (runsMatch) {
         target = `Target ${parseInt(runsMatch[1], 10) + 1}`;
       }
@@ -417,15 +430,15 @@ export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> 
       matchTitle: `Match ${matchNumber} • NPL 2026`,
       venue,
       tossNote,
-      team1Short: t1Short,
-      team1Name: t1Name,
-      team1Score: t1ScoreRaw,
-      team1Overs: t1Overs,
-      team2Short: t2Short,
-      team2Name: t2Name,
-      team2Score: t2ScoreRaw || score,
-      team2Overs: t2Overs || (overs ? `${overs} ov` : ''),
-      activeTeam: 2,
+      team1Short,
+      team1Name,
+      team1Score,
+      team1Overs,
+      team2Short,
+      team2Name,
+      team2Score,
+      team2Overs,
+      activeTeam: (currentInning === 2 ? 2 : 1) as 1 | 2,
       target,
       crr: sv3.crr || crr,
       rrr: sv3.rrr || '--',
