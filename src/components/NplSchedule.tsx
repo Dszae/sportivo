@@ -133,7 +133,7 @@ export default function NplSchedule() {
     };
   }, []);
 
-  // Real-time live ball ground-scorer telemetry (every 5 seconds)
+  // Real-time live ball ground-scorer telemetry (every 3 seconds)
   useEffect(() => {
     let timer: any = null;
     let isMounted = true;
@@ -143,7 +143,7 @@ export default function NplSchedule() {
         const res = await fetch(`/api/npl/live-moments/?_t=${Date.now()}`);
         if (res.ok) {
           const data = await res.json();
-          if (isMounted && data && (data.score || data.overs)) {
+          if (isMounted && data && (data.score || data.overs || data.header)) {
             setLiveTelemetry(data);
           }
         }
@@ -153,10 +153,8 @@ export default function NplSchedule() {
     pollLiveTelemetry();
 
     timer = setInterval(() => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        pollLiveTelemetry();
-      }
-    }, 5000);
+      pollLiveTelemetry();
+    }, 3000);
 
     return () => {
       isMounted = false;
@@ -255,6 +253,55 @@ export default function NplSchedule() {
   const shortVenue = (venue: string) => venue.replace('Tribhuvan University International Cricket Ground', 'TU Cricket Ground');
   const shortDate = (ts: number) => formatKathmanduDate(ts).replace(/,\s*\d{4}$/, '');
 
+  const getTeamLiveScore = (teamName: string, teamShort: string) => {
+    if (!liveTelemetry?.header) {
+      return null;
+    }
+    const h = liveTelemetry.header;
+    const norm = (s?: string) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const tNorm = norm(teamName);
+    const sNorm = norm(teamShort);
+
+    const t1Name = norm(h.team1Name);
+    const t1Short = norm(h.team1Short);
+    const t2Name = norm(h.team2Name);
+    const t2Short = norm(h.team2Short);
+
+    const isTeam1 =
+      Boolean(t1Name && (tNorm.includes(t1Name) || t1Name.includes(tNorm))) ||
+      Boolean(t1Short && (sNorm === t1Short || tNorm.includes(t1Short) || sNorm.includes(t1Short)));
+
+    const isTeam2 =
+      Boolean(t2Name && (tNorm.includes(t2Name) || t2Name.includes(tNorm))) ||
+      Boolean(t2Short && (sNorm === t2Short || tNorm.includes(t2Short) || sNorm.includes(t2Short)));
+
+    if (isTeam1) {
+      const score = h.team1Score || '';
+      const overs = h.team1Overs ? (h.team1Overs.includes('ov') ? h.team1Overs : `${h.team1Overs} ov`) : '';
+      const display = score ? (overs && !score.includes('ov') && !score.includes('(') ? `${score} (${overs})` : score) : '';
+      return {
+        score,
+        overs,
+        display,
+        isBatting: h.activeTeam === 1,
+      };
+    }
+
+    if (isTeam2) {
+      const score = h.team2Score || '';
+      const overs = h.team2Overs ? (h.team2Overs.includes('ov') ? h.team2Overs : `${h.team2Overs} ov`) : '';
+      const display = score ? (overs && !score.includes('ov') && !score.includes('(') ? `${score} (${overs})` : score) : '';
+      return {
+        score,
+        overs,
+        display,
+        isBatting: h.activeTeam === 2,
+      };
+    }
+
+    return null;
+  };
+
   const renderMatchCard = (m: NplMatch) => {
     const matchSlug = slugify(`${m.homeTeam} vs ${m.awayTeam}`);
     const detailUrl = `/cricket/match/${encodeURIComponent(matchSlug)}/`;
@@ -267,6 +314,9 @@ export default function NplSchedule() {
       prefs.favoriteTeams.some(
         (t) => t.toLowerCase() === m.homeTeam.toLowerCase() || t.toLowerCase() === m.awayTeam.toLowerCase()
       );
+
+    const cardHomeScore = isLive ? getTeamLiveScore(m.homeTeam, m.homeTeamShort) : null;
+    const cardAwayScore = isLive ? getTeamLiveScore(m.awayTeam, m.awayTeamShort) : null;
 
     return (
       <div key={m.id} className={`card flex flex-col w-full max-w-full overflow-hidden transition-colors duration-fast ease-out hover:border-line-strong ${isLive ? 'border-line-strong' : ''} ${isCompleted ? 'opacity-80' : ''}`}>
@@ -291,9 +341,9 @@ export default function NplSchedule() {
                 <Crest logo={m.homeTeamLogo} name={m.homeTeam} short={m.homeTeamShort} color={m.homeTeamColor} />
                 <span className="truncate text-[15px] text-fg">{m.homeTeam}</span>
               </div>
-              {(m.homeScore || (isLive && liveTelemetry?.score)) && (
-                <span className={`clock shrink-0 text-[15px] font-semibold ${isLive ? 'text-lime' : 'text-fg'}`}>
-                  {m.homeScore || `${liveTelemetry?.score} (${liveTelemetry?.overs} ov)`}
+              {(cardHomeScore?.display || m.homeScore) && (
+                <span className={`clock shrink-0 text-[15px] font-semibold ${cardHomeScore?.isBatting ? 'text-lime font-bold' : 'text-fg'}`}>
+                  {cardHomeScore?.display || m.homeScore}
                 </span>
               )}
             </div>
@@ -302,14 +352,20 @@ export default function NplSchedule() {
                 <Crest logo={m.awayTeamLogo} name={m.awayTeam} short={m.awayTeamShort} color={m.awayTeamColor} />
                 <span className="truncate text-[15px] text-fg">{m.awayTeam}</span>
               </div>
-              {m.awayScore && <span className="clock shrink-0 text-[15px] text-fg">{m.awayScore}</span>}
+              {(cardAwayScore?.display || m.awayScore) && (
+                <span className={`clock shrink-0 text-[15px] font-semibold ${cardAwayScore?.isBatting ? 'text-lime font-bold' : 'text-fg'}`}>
+                  {cardAwayScore?.display || m.awayScore}
+                </span>
+              )}
             </div>
           </div>
 
           {m.summary ? (
             <p className="mt-4 text-sm leading-5 text-fg-2">{m.summary}</p>
-          ) : isLive && liveTelemetry?.crr ? (
-            <p className="mt-4 text-sm leading-5 text-lime">CRR: {liveTelemetry.crr} • Live at TU Cricket Ground</p>
+          ) : isLive && (liveTelemetry?.header?.tossNote || liveTelemetry?.target || liveTelemetry?.crr) ? (
+            <p className="mt-4 text-sm leading-5 text-lime truncate">
+              {liveTelemetry?.header?.tossNote || `${liveTelemetry?.target || ''} • CRR: ${liveTelemetry?.crr || ''}`}
+            </p>
           ) : null}
 
           <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-3">
@@ -386,126 +442,91 @@ export default function NplSchedule() {
 
   return (
     <div className="w-full max-w-full overflow-hidden">
-      {liveFixture && (
-        <section className="panel mb-6 sm:mb-10 overflow-hidden border-line-strong" aria-label="Live now">
-          <div className="flex h-10 sm:h-12 items-center justify-between border-b border-line px-3.5 sm:px-5">
-            <span className="live-tag text-xs sm:text-sm">
-              <span className="live-dot" />
-              Live now
-            </span>
-            <span className="meta text-xs">
-              Match <span className="clock">{liveFixture.matchNumber}</span>
-              <span className="hidden sm:inline">, {shortVenue(liveFixture.venue || 'TU Cricket Ground')}</span>
-            </span>
-          </div>
+      {liveFixture && (() => {
+        const liveHomeScore = getTeamLiveScore(liveFixture.homeTeam, liveFixture.homeTeamShort);
+        const liveAwayScore = getTeamLiveScore(liveFixture.awayTeam, liveFixture.awayTeamShort);
 
-          <div className="grid gap-4 sm:gap-6 p-3.5 sm:p-6 lg:grid-cols-12 lg:items-center">
-            <div className="space-y-3 sm:space-y-4 lg:col-span-8">
-              {/* Home Team */}
-              <div className="flex items-center justify-between gap-2 sm:gap-4">
-                <div className="flex min-w-0 items-center gap-2.5 sm:gap-4">
-                  <Crest logo={liveFixture.homeTeamLogo} name={liveFixture.homeTeam} short={liveFixture.homeTeamShort} color={liveFixture.homeTeamColor} size={32} />
-                  <span className="truncate text-base font-semibold tracking-tight text-fg sm:text-2xl sm:font-medium sm:tracking-[-0.01em]">
-                    {liveFixture.homeTeam}
-                  </span>
-                </div>
-                {(liveFixture.homeScore || liveTelemetry?.score) && (
-                  <div className="flex flex-col items-end shrink-0">
-                    <span className="clock text-lg font-bold text-lime sm:text-2xl sm:font-semibold">
-                      {liveFixture.homeScore || `${liveTelemetry?.score} (${liveTelemetry?.overs} ov)`}
+        return (
+          <section className="panel mb-6 sm:mb-10 overflow-hidden border-line-strong" aria-label="Live now">
+            <div className="flex h-10 sm:h-12 items-center justify-between border-b border-line px-3.5 sm:px-5">
+              <span className="live-tag text-xs sm:text-sm">
+                <span className="live-dot" />
+                Live now
+              </span>
+              <span className="meta text-xs">
+                Match <span className="clock">{liveFixture.matchNumber}</span>
+                <span className="hidden sm:inline">, {shortVenue(liveFixture.venue || 'TU Cricket Ground')}</span>
+              </span>
+            </div>
+
+            <div className="grid gap-4 sm:gap-6 p-3.5 sm:p-6 lg:grid-cols-12 lg:items-center">
+              <div className="space-y-3 sm:space-y-4 lg:col-span-8">
+                {/* Home Team */}
+                <div className="flex items-center justify-between gap-2 sm:gap-4">
+                  <div className="flex min-w-0 items-center gap-2.5 sm:gap-4">
+                    <Crest logo={liveFixture.homeTeamLogo} name={liveFixture.homeTeam} short={liveFixture.homeTeamShort} color={liveFixture.homeTeamColor} size={32} />
+                    <span className="truncate text-base font-semibold tracking-tight text-fg sm:text-2xl sm:font-medium sm:tracking-[-0.01em]">
+                      {liveFixture.homeTeam}
                     </span>
-                    {liveTelemetry?.crr && (
-                      <span className="text-[11px] font-mono text-fg-3 sm:text-xs">CRR {liveTelemetry.crr}</span>
+                  </div>
+                  {(liveHomeScore?.display || liveFixture.homeScore) && (
+                    <div className="flex flex-col items-end shrink-0">
+                      <span className={`clock text-lg font-bold sm:text-2xl ${liveHomeScore?.isBatting ? 'text-lime font-bold' : 'text-fg'}`}>
+                        {liveHomeScore?.display || liveFixture.homeScore}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Away Team */}
+                <div className="flex items-center justify-between gap-2 sm:gap-4">
+                  <div className="flex min-w-0 items-center gap-2.5 sm:gap-4">
+                    <Crest logo={liveFixture.awayTeamLogo} name={liveFixture.awayTeam} short={liveFixture.awayTeamShort} color={liveFixture.awayTeamColor} size={32} />
+                    <span className="truncate text-base font-semibold tracking-tight text-fg sm:text-2xl sm:font-medium sm:tracking-[-0.01em]">
+                      {liveFixture.awayTeam}
+                    </span>
+                  </div>
+                  {(liveAwayScore?.display || liveFixture.awayScore) && (
+                    <div className="flex flex-col items-end shrink-0">
+                      <span className={`clock text-lg font-bold sm:text-2xl ${liveAwayScore?.isBatting ? 'text-lime font-bold' : 'text-fg'}`}>
+                        {liveAwayScore?.display || liveFixture.awayScore}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Match Equation / Target note */}
+                {(liveTelemetry?.header?.tossNote || liveTelemetry?.target || liveTelemetry?.crr) && (
+                  <div className="pt-2 border-t border-line/60 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
+                    <span className="text-lime font-medium">
+                      {liveTelemetry.header?.tossNote || liveTelemetry.target}
+                    </span>
+                    {(liveTelemetry.crr || liveTelemetry.rrr) && (
+                      <span className="text-fg-3 font-mono text-[11px] sm:text-xs">
+                        {liveTelemetry.crr ? `CRR: ${liveTelemetry.crr}` : ''}
+                        {liveTelemetry.crr && liveTelemetry.rrr && liveTelemetry.rrr !== '--' ? ' • ' : ''}
+                        {liveTelemetry.rrr && liveTelemetry.rrr !== '--' ? `RRR: ${liveTelemetry.rrr}` : ''}
+                      </span>
                     )}
                   </div>
                 )}
               </div>
 
-              {/* Away Team */}
-              <div className="flex items-center justify-between gap-2 sm:gap-4">
-                <div className="flex min-w-0 items-center gap-2.5 sm:gap-4">
-                  <Crest logo={liveFixture.awayTeamLogo} name={liveFixture.awayTeam} short={liveFixture.awayTeamShort} color={liveFixture.awayTeamColor} size={32} />
-                  <span className="truncate text-base font-semibold tracking-tight text-fg sm:text-2xl sm:font-medium sm:tracking-[-0.01em]">
-                    {liveFixture.awayTeam}
-                  </span>
-                </div>
-                <div className="flex flex-col items-end shrink-0">
-                  <span className={`clock text-lg sm:text-2xl ${liveFixture.awayScore ? 'font-bold text-fg' : 'text-fg-3 text-sm sm:text-lg'}`}>
-                    {liveFixture.awayScore || (liveTelemetry?.currentInning === 1 ? 'Yet to Bat' : '')}
-                  </span>
-                </div>
-              </div>
-
-              {/* Real-time Over Deliveries Ticker */}
-              {liveTelemetry?.recentBalls && liveTelemetry.recentBalls.length > 0 && (
-                <div className="flex items-center gap-2 pt-2 border-t border-line/60 overflow-hidden">
-                  <span className="text-[11px] font-mono text-fg-3 shrink-0">This Over:</span>
-                  <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-                    {liveTelemetry.recentBalls.slice(-8).map((b, idx) => {
-                      const code = b.code.trim();
-                      const isSix = code === '6';
-                      const isFour = code === '4';
-                      const isWkt = b.isWicket;
-                      const isExt = b.isExtra;
-                      return (
-                        <span
-                          key={idx}
-                          className={`inline-flex items-center justify-center min-w-[24px] h-6 px-1 text-[11px] font-mono font-bold rounded-md shrink-0 ${
-                            isSix
-                              ? 'bg-lime text-lime-ink'
-                              : isFour
-                              ? 'border border-line-strong bg-ink-600 text-fg'
-                              : isWkt
-                              ? 'bg-red-500 text-white animate-pulse'
-                              : isExt
-                              ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-                              : code === '0'
-                              ? 'bg-ink-800 text-fg-3'
-                              : 'bg-ink-700 text-fg'
-                          }`}
-                          title={`Over ${b.over}.${b.delivery}: ${code}`}
-                        >
-                          {code}
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Latest commentary line if available */}
-              {liveTelemetry?.commentary && liveTelemetry.commentary.length > 0 && liveTelemetry.commentary[0].text && (
-                <div className="rounded-lg bg-ink-800/60 p-2.5 sm:p-3 border border-line/40">
-                  <div className="flex items-center gap-2 text-[11px] sm:text-xs text-fg-3 font-mono">
-                    <span className="font-semibold text-lime">{liveTelemetry.commentary[0].ball}</span>
-                    <span>•</span>
-                    <span className="text-fg-2 truncate">{liveTelemetry.commentary[0].bowlerToBatsman}</span>
-                  </div>
-                  <p className="mt-1 text-xs text-fg leading-relaxed line-clamp-2">
-                    {liveTelemetry.commentary[0].text}
+              <div className="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end justify-between gap-3 lg:col-span-4 border-t border-line/60 pt-3 lg:border-t-0 lg:pt-0">
+                <div className="text-xs sm:text-sm text-fg-2">
+                  <p>
+                    Started <span className="clock text-fg">{formatKathmanduTime(liveFixture.timestamp)}</span>
                   </p>
+                  <p className="mt-0.5 meta text-[11px] sm:text-xs">Action Sports HD, NetTV and DishHome</p>
                 </div>
-              )}
-
-              {liveFixture.summary && (!liveTelemetry?.commentary?.length || !liveTelemetry.commentary[0]?.text) && (
-                <p className="text-xs sm:text-sm text-fg-2">{liveFixture.summary}</p>
-              )}
-            </div>
-
-            <div className="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end justify-between gap-3 lg:col-span-4 border-t border-line/60 pt-3 lg:border-t-0 lg:pt-0">
-              <div className="text-xs sm:text-sm text-fg-2">
-                <p>
-                  Started <span className="clock text-fg">{formatKathmanduTime(liveFixture.timestamp)}</span>
-                </p>
-                <p className="mt-0.5 meta text-[11px] sm:text-xs">Action Sports HD, NetTV and DishHome</p>
+                <a href={liveStreamUrl} className="btn btn-live btn-md sm:btn-lg w-full sm:w-auto text-center justify-center">
+                  Watch live
+                </a>
               </div>
-              <a href={liveStreamUrl} className="btn btn-live btn-md sm:btn-lg w-full sm:w-auto text-center justify-center">
-                Watch live
-              </a>
             </div>
-          </div>
-        </section>
-      )}
+          </section>
+        );
+      })()}
 
       {!liveFixture && featuredUpcoming && (
         <section className="panel mb-10 overflow-hidden border-line" aria-label="Up next">

@@ -63,8 +63,7 @@ export function cleanCricketText(raw: string | undefined | null): string {
     .replace(/Â/g, '');
 
   // 2. Strip pseudo-HTML tags like &l;b&g;, &l;/b&g;, &l;span&g;, &l;/span&g;
-  str = str.replace(/&l;\/?[a-z0-9_-]+[^&]*&g;/gi, '');
-  str = str.replace(/&l;[^&]*&g;/gi, '');
+  str = str.replace(/&l;[\s\S]*?&g;/gi, '');
 
   // 3. Strip standard HTML tags
   str = str.replace(/<\/?[a-z0-9_-]+[^>]*>/gi, '');
@@ -403,13 +402,13 @@ export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> 
     const tossNote = cleanCricketText(sv3.comment1 || '');
 
     const currentInning = Number(sv3.inning || 1);
-    const team1Short = sv3.team1short || sv3.team1 || 'PKA';
-    const team1Name = sv3.team1_f_n || 'Pokhara Avengers';
-    const team1Score = score || (sv3.score1 ? String(sv3.score1).replace('-', '/') : '');
-    const team1Overs = overs ? `${overs} ov` : (sv3.over1 ? `${sv3.over1} ov` : '');
+    const team1Short = sv3.team1short || sv3.team1 || 'KNY';
+    const team1Name = sv3.team1_f_n || 'Karnali Yaks';
+    const team1Score = sv3.score1 ? String(sv3.score1).replace('-', '/') : score;
+    const team1Overs = sv3.over1 ? `${sv3.over1} ov` : (overs ? `${overs} ov` : '');
 
-    const team2Short = sv3.team2short || sv3.team2 || 'KNY';
-    const team2Name = sv3.team2_f_n || 'Karnali Yaks';
+    const team2Short = sv3.team2short || sv3.team2 || 'PKA';
+    const team2Name = sv3.team2_f_n || 'Pokhara Avengers';
     const team2Score = sv3.score2
       ? String(sv3.score2).replace('-', '/')
       : currentInning === 1
@@ -418,8 +417,10 @@ export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> 
     const team2Overs = sv3.over2 ? `${sv3.over2} ov` : '';
 
     let target = '';
-    if (currentInning >= 2 && team1Score) {
-      const runsMatch = team1Score.match(/^(\d+)/);
+    if (sv3.target) {
+      target = `Target ${sv3.target}`;
+    } else if (currentInning >= 2 && team2Score) {
+      const runsMatch = team2Score.match(/^(\d+)/);
       if (runsMatch) {
         target = `Target ${parseInt(runsMatch[1], 10) + 1}`;
       }
@@ -438,7 +439,7 @@ export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> 
       team2Name,
       team2Score,
       team2Overs,
-      activeTeam: (currentInning === 2 ? 2 : 1) as 1 | 2,
+      activeTeam: 1,
       target,
       crr: sv3.crr || crr,
       rrr: sv3.rrr || '--',
