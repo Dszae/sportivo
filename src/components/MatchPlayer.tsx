@@ -248,6 +248,24 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Check if iOS (iPhone/iPad) where Widevine DRM is unsupported by WebKit
+  useEffect(() => {
+    if (typeof navigator === 'undefined') return;
+    const isIOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    if (isIOS && streams.length > 0) {
+      // Find the first iOS-compatible stream (iframe or non-Widevine)
+      const iosCompatible = streams.find(
+        (s) => !s.embedUrl.includes('.mpd') || s.isSandboxedIframe
+      );
+      if (iosCompatible && activeStream?.embedUrl.includes('.mpd') && !activeStream.isSandboxedIframe) {
+        setActiveStream(iosCompatible);
+      }
+    }
+  }, [streams]);
+
   // Poll Ground Scorer Ball Commentary & Moments (every 4s) - strictly for NPL matches in NPL Live section only
   useEffect(() => {
     if (!showNplHub || !isNplMatch) return;
@@ -352,83 +370,113 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
     // 1. DASH (.mpd) Stream Engine via Shaka Player (NetTV 1080p Zero-Delay Cluster)
     if (streamUrl.includes('.mpd')) {
       getShaka()
-        .then((shaka) => {
-          if (!shaka || !shaka.Player || !shaka.Player.isBrowserSupported()) {
+        .then(async (shaka) => {
+          if (!shaka || !shaka.Player) {
             failoverToNext();
             return;
           }
 
+          // Install all polyfills BEFORE checking browser support
           shaka.polyfill.installAll();
+
+          if (!shaka.Player.isBrowserSupported()) {
+            console.warn('[Shaka] Device/browser does not support Shaka MediaSource');
+            failoverToNext();
+            return;
+          }
+
+          // Check if Widevine DRM is required and supported by this device
+          const isWidevine =
+            streamUrl.includes('nettv.com.np') || Boolean(activeStream?.licenseUrl);
+          if (isWidevine && typeof navigator !== 'undefined' && navigator.requestMediaKeySystemAccess) {
+            try {
+              await navigator.requestMediaKeySystemAccess('com.widevine.alpha', [
+                {
+                  initDataTypes: ['cenc'],
+                  videoCapabilities: [{ contentType: 'video/mp4; codecs="avc1.42E01E"' }],
+                },
+              ]);
+            } catch (err: any) {
+              console.warn('[Shaka] Widevine DRM not supported on this device/browser:', err?.message || err);
+              failoverToNext();
+              return;
+            }
+          }
+
           const player = new shaka.Player();
           shakaPlayer = player;
           shakaInstanceRef.current = player;
 
+          // Only trigger failover on CRITICAL severity (2), not recoverable warnings (1)
           player.addEventListener('error', (event: any) => {
-            console.warn('[Shaka] Runtime error:', event?.detail);
-            failoverToNext();
+            const detail = event?.detail;
+            console.warn('[Shaka] Runtime notice:', detail);
+            if (detail && detail.severity === 2) {
+              failoverToNext();
+            }
           });
 
-          player
-            .attach(video)
-            .then(() => {
-              player.configure({
-                streaming: {
-                  lowLatencyMode: true,
-                  inaccurateManifestTolerance: 0,
-                  rebufferingGoal: 0.5,
-                  bufferingGoal: 2,
-                  bufferBehind: 10,
-                  retryParameters: {
-                    maxAttempts: 3,
-                    baseDelay: 500,
-                    backoffFactor: 1.5,
-                    fuzzFactor: 0.5,
-                    timeout: 5000,
-                  },
-                },
-              });
+          await player.attach(video);
 
-              // DRM decryption (Widevine or ClearKey)
-              try {
-                const urlObj = new URL(streamUrl, 'https://sportivo.internal');
-                const keyId = urlObj.searchParams.get('keyid');
-                const key = urlObj.searchParams.get('key');
-                const licenseParam = urlObj.searchParams.get('license') || urlObj.searchParams.get('widevine');
-                const widevineLicense =
-                  activeStream?.licenseUrl ||
-                  licenseParam ||
-                  (streamUrl.includes('nettv.com.np')
-                    ? 'https://widevine-dash.ezdrm.com/proxy?pX=196792&user_id=M2ZhNWI0YzAtNzgxNy00MjRlLWFlODMtZWFmYWJmNDRmMjU1&CustomData=eyJyZXNlbGxlcl9pZCI6IjEwNyIsInN1YnNjcmliZXJfaWQiOiIxMDc3NDk3NiIsInNlcmlhbCI6ImdsXzExMTUwMTQwMDk4MTM0NDk0MDcxMi0xMDciLCJtYXRjaF9rZXkiOiJhLXJ6LS1jcmlja2V0LS1wODIxMDMxNjQ3MDA5NzA4NzY5NzYiLCJleHAiOjE3OTQyMDgyNDUsInNpZCI6ImIwNTQ5MzYzZDE5MzNhZGIyMmQwYzE1NTk1NWZjMTIyIiwicGxhdGZvcm0iOiJ3ZWIiLCJlbnRpdGxlZF91bnRpbCI6MTc5NDIyMTc0NSwibWF4X2NvbmN1cnJlbnQiOjEsInN1YnNjcmliZXJfc3RiX2lkIjoiMTM3Mzg1NTAiLCJ1YmJfZ3VpZCI6IjNmYTViNGMwLTc4MTctNDI0ZS1hZTgzLWVhZmFiZjQ0ZjI1NSJ9.0WmvaLJI7I_8734LxcSxUoityWDgrh8bqJoYVwzJDz0'
-                    : undefined);
+          // Configure robust mobile buffering parameters:
+          player.configure({
+            streaming: {
+              lowLatencyMode: false, // Prevents mobile network packet jitter from causing instant stalls
+              inaccurateManifestTolerance: 1,
+              rebufferingGoal: 2, // 2s minimum buffer before resuming
+              bufferingGoal: 6, // 6s buffer ahead on mobile
+              bufferBehind: 15,
+              retryParameters: {
+                maxAttempts: 4,
+                baseDelay: 1000,
+                backoffFactor: 1.5,
+                fuzzFactor: 0.5,
+                timeout: 10000,
+              },
+            },
+          });
 
-                const drmConfig: any = {};
-                if (keyId && key) {
-                  drmConfig.clearKeys = { [keyId]: key };
-                }
-                if (widevineLicense) {
-                  drmConfig.servers = {
-                    'com.widevine.alpha': widevineLicense,
-                  };
-                }
+          // DRM decryption (Widevine or ClearKey)
+          try {
+            const urlObj = new URL(streamUrl, 'https://sportivo.internal');
+            const keyId = urlObj.searchParams.get('keyid');
+            const key = urlObj.searchParams.get('key');
+            const licenseParam = urlObj.searchParams.get('license') || urlObj.searchParams.get('widevine');
+            const widevineLicense =
+              activeStream?.licenseUrl ||
+              licenseParam ||
+              (streamUrl.includes('nettv.com.np')
+                ? 'https://widevine-dash.ezdrm.com/proxy?pX=196792&user_id=M2ZhNWI0YzAtNzgxNy00MjRlLWFlODMtZWFmYWJmNDRmMjU1&CustomData=eyJyZXNlbGxlcl9pZCI6IjEwNyIsInN1YnNjcmliZXJfaWQiOiIxMDc3NDk3NiIsInNlcmlhbCI6ImdsXzExMTUwMTQwMDk4MTM0NDk0MDcxMi0xMDciLCJtYXRjaF9rZXkiOiJhLXJ6LS1jcmlja2V0LS1wODIxMDMxNjQ3MDA5NzA4NzY5NzYiLCJleHAiOjE3OTQyMDgyNDUsInNpZCI6ImIwNTQ5MzYzZDE5MzNhZGIyMmQwYzE1NTk1NWZjMTIyIiwicGxhdGZvcm0iOiJ3ZWIiLCJlbnRpdGxlZF91bnRpbCI6MTc5NDIyMTc0NSwibWF4X2NvbmN1cnJlbnQiOjEsInN1YnNjcmliZXJfc3RiX2lkIjoiMTM3Mzg1NTAiLCJ1YmJfZ3VpZCI6IjNmYTViNGMwLTc4MTctNDI0ZS1hZTgzLWVhZmFiZjQ0ZjI1NSJ9.0WmvaLJI7I_8734LxcSxUoityWDgrh8bqJoYVwzJDz0'
+                : undefined);
 
-                if (Object.keys(drmConfig).length > 0) {
-                  player.configure({ drm: drmConfig });
-                }
-              } catch {}
+            const drmConfig: any = {};
+            if (keyId && key) {
+              drmConfig.clearKeys = { [keyId]: key };
+            }
+            if (widevineLicense) {
+              drmConfig.servers = {
+                'com.widevine.alpha': widevineLicense,
+              };
+            }
 
-              return player.load(streamUrl);
-            })
-            .then(() => {
-              setPlayerState('playing');
-              video.play().catch(() => {
-                video.muted = true;
-                video.play().catch(() => {});
-              });
-            })
-            .catch((err: any) => {
-              console.warn('[Shaka] Playback notice:', err?.message || err);
-              failoverToNext();
-            });
+            if (Object.keys(drmConfig).length > 0) {
+              player.configure({ drm: drmConfig });
+            }
+          } catch {}
+
+          await player.load(streamUrl);
+
+          setPlayerState('playing');
+          // For mobile browsers: ensure muted is true and playsinline is set before play()
+          video.muted = true;
+          video.playsInline = true;
+          video.setAttribute('playsinline', 'true');
+          video.setAttribute('webkit-playsinline', 'true');
+          try {
+            await video.play();
+          } catch {
+            // Autoplay with muted is allowed on modern browsers
+          }
         })
         .catch((err: any) => {
           console.warn('[Shaka] Init failure:', err);
@@ -1056,14 +1104,14 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
 
         {/* Server Selection & Latency Toolbar - hidden in fullscreen mode */}
         {streams.length > 0 && !isFullscreen && (
-          <div className="player-server-bar flex flex-wrap items-center gap-1 border-t border-line bg-ink-950 p-3">
-            <span className="meta mr-1">Servers</span>
+          <div className="player-server-bar flex items-center gap-1.5 border-t border-line bg-ink-950 p-2 sm:p-3 overflow-x-auto no-scrollbar">
+            <span className="meta mr-1 shrink-0 text-xs">Servers</span>
             {streams.map((stream, index) => (
               <button
                 key={index}
                 type="button"
                 onClick={() => handleServerSelect(stream)}
-                className={`chip ${activeStream === stream ? 'chip-active' : ''}`}
+                className={`chip shrink-0 text-xs ${activeStream === stream ? 'chip-active' : ''}`}
               >
                 Server <span className="clock">{index + 1}</span>
                 {stream.hd && <span className="chip-count">HD</span>}
@@ -1073,11 +1121,12 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
             <button
               type="button"
               onClick={jumpToLiveEdge}
-              className="btn btn-sm btn-secondary ml-auto"
+              className="btn btn-sm btn-secondary ml-auto shrink-0 text-xs"
               title="Sync playback directly to live broadcast edge"
             >
               {isLive && <span className="live-dot"></span>}
-              <span>Live edge</span>
+              <span className="hidden sm:inline">Live edge</span>
+              <span className="sm:hidden">Live</span>
             </button>
           </div>
         )}
@@ -1125,24 +1174,110 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
               recentBalls && recentBalls.length > 0 ? recentBalls.slice(-8) : [];
 
             return (
-              <div className="card p-4 sm:p-5 shadow-panel">
+              <div className="card p-3 sm:p-5 shadow-panel">
                 {/* Top Match Header Bar */}
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-3">
-                  <div className="flex items-center gap-2 text-xs sm:text-sm">
-                    <span className="live-dot" />
-                    <span className="font-semibold text-fg">{matchTitle}</span>
-                    <span className="text-fg-3">|</span>
-                    <span className="truncate text-fg-2">{venue}</span>
+                <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-line pb-2.5 sm:pb-3">
+                  <div className="flex min-w-0 items-center gap-1.5 text-xs sm:text-sm">
+                    <span className="live-dot shrink-0" />
+                    <span className="font-semibold text-fg shrink-0">{matchTitle}</span>
+                    <span className="text-fg-3 hidden sm:inline">|</span>
+                    <span className="truncate text-fg-2 text-xs sm:text-sm">{venue}</span>
                   </div>
                   {tossNote && (
-                    <span className="chip text-xs">
+                    <span className="chip text-[11px] sm:text-xs shrink-0 py-0.5 px-2">
                       {tossNote}
                     </span>
                   )}
                 </div>
 
-                {/* Teams & Scores Row */}
-                <div className="grid grid-cols-1 gap-4 py-4 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+                {/* Mobile View (< sm): High-Density 2-Row Match Scoreboard */}
+                <div className="sm:hidden py-3 space-y-2.5">
+                  {/* Row 1: Team 1 */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="rounded bg-ink-700 border border-line px-1.5 py-0.5 font-mono text-[11px] font-semibold text-fg shrink-0">
+                        {t1Short}
+                      </span>
+                      <span className="truncate text-sm font-semibold text-fg">
+                        {t1Name}
+                      </span>
+                      {t1IsBatting && (
+                        <span className="live-dot shrink-0" title="Currently Batting" />
+                      )}
+                    </div>
+                    <div className="flex items-baseline gap-1.5 shrink-0">
+                      <span className="font-mono text-xl font-bold tracking-tight text-fg">
+                        {t1Score}
+                      </span>
+                      {t1Overs && (
+                        <span className="font-mono text-xs text-fg-3">
+                          {t1Overs.startsWith('(') ? t1Overs : `(${t1Overs})`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Row 2: Team 2 */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="rounded bg-ink-700 border border-line px-1.5 py-0.5 font-mono text-[11px] font-semibold text-fg shrink-0">
+                        {t2Short}
+                      </span>
+                      <span className="truncate text-sm font-semibold text-fg">
+                        {t2Name}
+                      </span>
+                      {t2IsBatting && (
+                        <span className="live-dot shrink-0" title="Currently Batting" />
+                      )}
+                    </div>
+                    <div className="flex items-baseline gap-1.5 shrink-0">
+                      <span
+                        className={`font-mono text-xl font-bold tracking-tight ${
+                          t2Score === 'Yet to Bat' ? 'text-fg-3 text-sm' : 'text-fg'
+                        }`}
+                      >
+                        {t2Score}
+                      </span>
+                      {t2Overs && (
+                        <span className="font-mono text-xs text-fg-3">
+                          {t2Overs.startsWith('(') ? t2Overs : `(${t2Overs})`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Mobile Match Meta Strip: Target / CRR / RRR */}
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1 text-xs border-t border-line/40">
+                    <div className="flex items-center gap-1.5">
+                      {displayTarget ? (
+                        <span className="chip text-[11px] text-lime border-lime/30 py-0.5 px-2">
+                          {displayTarget}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-mono text-fg-3">
+                          Innings 1
+                        </span>
+                      )}
+                    </div>
+                    {(displayCrr || displayRrr) && (
+                      <div className="flex items-center gap-1.5">
+                        {displayCrr && (
+                          <span className="chip text-[11px] font-mono py-0.5 px-2">
+                            CRR: {displayCrr}
+                          </span>
+                        )}
+                        {displayRrr && (
+                          <span className="chip text-[11px] font-mono text-lime border-lime/30 py-0.5 px-2">
+                            RRR: {displayRrr}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Desktop View (>= sm): Broadcast 3-Column Scoreboard */}
+                <div className="hidden sm:grid sm:grid-cols-[1fr_auto_1fr] sm:items-center gap-4 py-4">
                   {/* Team 1 (Left) */}
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
@@ -1169,7 +1304,7 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
                   </div>
 
                   {/* Center: VS & Target */}
-                  <div className="flex flex-row items-center justify-center gap-3 sm:flex-col sm:gap-1.5 py-1 sm:py-0">
+                  <div className="flex flex-col items-center justify-center gap-1.5">
                     <span className="text-xs font-bold uppercase tracking-wider text-fg-3">
                       VS
                     </span>
@@ -1185,8 +1320,8 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
                   </div>
 
                   {/* Team 2 (Right) */}
-                  <div className="flex flex-col sm:items-end sm:text-right">
-                    <div className="flex items-center gap-2 sm:flex-row-reverse">
+                  <div className="flex flex-col items-end text-right">
+                    <div className="flex items-center gap-2 flex-row-reverse">
                       {t2IsBatting && (
                         <span className="live-dot" title="Currently Batting" />
                       )}
@@ -1197,7 +1332,7 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
                         {t2Short}
                       </span>
                     </div>
-                    <div className="mt-1.5 flex items-baseline gap-2 sm:flex-row-reverse">
+                    <div className="mt-1.5 flex items-baseline gap-2 flex-row-reverse">
                       <span
                         className={`font-mono text-2xl sm:text-3xl font-bold tracking-tight ${
                           t2Score === 'Yet to Bat' ? 'text-fg-3 text-lg sm:text-xl' : 'text-fg'
@@ -1213,7 +1348,7 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
                     </div>
                     {/* Telemetry CRR & RRR badges */}
                     {(displayCrr || displayRrr) && (
-                      <div className="mt-1.5 flex items-center gap-1.5 sm:justify-end">
+                      <div className="mt-1.5 flex items-center gap-1.5 justify-end">
                         {displayCrr && (
                           <span className="chip text-[11px] font-mono">
                             CRR: {displayCrr}
@@ -1231,23 +1366,23 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
 
                 {/* Batters & Active Bowler Row */}
                 {(activeBatters.length > 0 || activeBowler?.name) && (
-                  <div className="mt-2 grid grid-cols-1 gap-6 border-t border-line pt-4 md:grid-cols-2">
+                  <div className="mt-2 grid grid-cols-1 gap-3 border-t border-line pt-3 sm:gap-6 sm:pt-4 md:grid-cols-2">
                     {/* Batters */}
                     <div>
-                      <div className="eyebrow mb-2">
+                      <div className="eyebrow mb-1.5 text-[11px] sm:text-xs">
                         Batters
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="space-y-1 sm:space-y-1.5">
                         {activeBatters.slice(0, 2).map((bat, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-sm">
-                            <span className="flex items-center gap-1.5 font-semibold text-fg">
-                              {bat.name}
-                              {bat.isOnStrike && <span className="text-lime font-bold">*</span>}
+                          <div key={idx} className="flex items-center justify-between text-xs sm:text-sm">
+                            <span className="flex min-w-0 items-center gap-1 font-semibold text-fg truncate">
+                              <span className="truncate">{bat.name}</span>
+                              {bat.isOnStrike && <span className="text-lime font-bold shrink-0">*</span>}
                             </span>
-                            <span className="font-mono text-fg-2">
-                              {bat.runs}{' '}
-                              <span className="text-xs text-fg-3">
-                                ({bat.balls}b, {bat.fours}x4, {bat.sixes}x6)
+                            <span className="font-mono text-fg-2 shrink-0 ml-2">
+                              <span className="font-bold text-fg">{bat.runs}</span>{' '}
+                              <span className="text-[11px] sm:text-xs text-fg-3">
+                                ({bat.balls}b{bat.fours ? `, ${bat.fours}x4` : ''}{bat.sixes ? `, ${bat.sixes}x6` : ''})
                               </span>
                             </span>
                           </div>
@@ -1258,17 +1393,17 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
                     {/* Active Bowler */}
                     {activeBowler?.name && (
                       <div>
-                        <div className="eyebrow mb-2">
+                        <div className="eyebrow mb-1.5 text-[11px] sm:text-xs">
                           Active Bowler
                         </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="font-semibold text-fg">
+                        <div className="flex items-center justify-between text-xs sm:text-sm">
+                          <span className="font-semibold text-fg truncate mr-2">
                             {activeBowler.name}
                           </span>
-                          <span className="font-mono text-base font-bold text-fg">
+                          <span className="font-mono text-xs sm:text-base font-bold text-fg shrink-0">
                             {activeBowler.figures}
                             {activeBowler.overs && (
-                              <span className="ml-1.5 text-xs text-fg-3">
+                              <span className="ml-1 text-[11px] sm:text-xs text-fg-3 font-normal">
                                 ({activeBowler.overs})
                               </span>
                             )}
@@ -1281,11 +1416,11 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
 
                 {/* Recent Deliveries Bar */}
                 {displayRecent.length > 0 && (
-                  <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-3">
-                    <span className="eyebrow mr-1 shrink-0">
+                  <div className="mt-3 flex items-center gap-2 border-t border-line pt-2.5 overflow-hidden">
+                    <span className="eyebrow shrink-0 text-[11px] sm:text-xs">
                       Recent
                     </span>
-                    <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
+                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
                       {displayRecent.map((b, idx) => {
                         const code = (b.code || '').trim();
                         const lowerCode = code.toLowerCase();
@@ -1299,7 +1434,7 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
                         return (
                           <span
                             key={idx}
-                            className={`flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-md font-mono text-xs font-semibold ${
+                            className={`flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-md font-mono text-[11px] sm:text-xs font-semibold ${
                               isSix
                                 ? 'bg-lime text-lime-ink font-bold shadow-sm'
                                 : isFour
@@ -1309,9 +1444,10 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
                                 : isExtra
                                 ? 'border border-amber-500/40 bg-amber-500/20 text-amber-400 font-semibold'
                                 : isDot
-                                ? 'bg-ink-700 text-fg-3'
+                                ? 'bg-ink-700/60 text-fg-3'
                                 : 'bg-ink-700 text-fg'
                             }`}
+                            title={`Delivery: ${code}`}
                           >
                             {code}
                           </span>
@@ -1327,11 +1463,11 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
           {/* Interactive Match Hub: Tabs for Commentary, Upcoming Fixtures & Points Table */}
           <div className="card overflow-hidden">
             {/* Hub Tabs Header */}
-            <div className="flex items-center gap-1 border-b border-line bg-ink-950 p-2">
+            <div className="flex items-center gap-1.5 border-b border-line bg-ink-950 p-2 overflow-x-auto no-scrollbar">
               <button
                 type="button"
                 onClick={() => setActiveHubTab('commentary')}
-                className={`chip ${activeHubTab === 'commentary' ? 'chip-active' : ''}`}
+                className={`chip shrink-0 text-xs ${activeHubTab === 'commentary' ? 'chip-active' : ''}`}
               >
                 <span>Commentary</span>
                 {commentaryList.length > 0 && <span className="chip-count">{commentaryList.length}</span>}
@@ -1340,7 +1476,7 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
               <button
                 type="button"
                 onClick={() => setActiveHubTab('upcoming')}
-                className={`chip ${activeHubTab === 'upcoming' ? 'chip-active' : ''}`}
+                className={`chip shrink-0 text-xs ${activeHubTab === 'upcoming' ? 'chip-active' : ''}`}
               >
                 <span>Upcoming</span>
               </button>
@@ -1348,7 +1484,7 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
               <button
                 type="button"
                 onClick={() => setActiveHubTab('standings')}
-                className={`chip ${activeHubTab === 'standings' ? 'chip-active' : ''}`}
+                className={`chip shrink-0 text-xs ${activeHubTab === 'standings' ? 'chip-active' : ''}`}
               >
                 <span>Points table</span>
               </button>

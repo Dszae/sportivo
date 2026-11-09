@@ -387,48 +387,60 @@ export default function NplSchedule() {
   return (
     <div className="w-full">
       {liveFixture && (
-        <section className="panel mb-10 overflow-hidden border-line-strong" aria-label="Live now">
-          <div className="flex h-12 items-center justify-between border-b border-line px-5">
-            <span className="live-tag text-sm">
+        <section className="panel mb-6 sm:mb-10 overflow-hidden border-line-strong" aria-label="Live now">
+          <div className="flex h-10 sm:h-12 items-center justify-between border-b border-line px-3.5 sm:px-5">
+            <span className="live-tag text-xs sm:text-sm">
               <span className="live-dot" />
               Live now
             </span>
-            <span className="meta hidden sm:inline">
-              Match <span className="clock">{liveFixture.matchNumber}</span>, {shortVenue(liveFixture.venue || 'TU Cricket Ground')}
+            <span className="meta text-xs">
+              Match <span className="clock">{liveFixture.matchNumber}</span>
+              <span className="hidden sm:inline">, {shortVenue(liveFixture.venue || 'TU Cricket Ground')}</span>
             </span>
           </div>
 
-          <div className="grid gap-8 p-5 sm:p-6 lg:grid-cols-12 lg:items-center">
-            <div className="space-y-4 lg:col-span-8">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex min-w-0 items-center gap-4">
-                  <Crest logo={liveFixture.homeTeamLogo} name={liveFixture.homeTeam} short={liveFixture.homeTeamShort} color={liveFixture.homeTeamColor} size={44} />
-                  <span className="truncate text-2xl font-medium tracking-[-0.01em] text-fg sm:text-[28px]">{liveFixture.homeTeam}</span>
+          <div className="grid gap-4 sm:gap-6 p-3.5 sm:p-6 lg:grid-cols-12 lg:items-center">
+            <div className="space-y-3 sm:space-y-4 lg:col-span-8">
+              {/* Home Team */}
+              <div className="flex items-center justify-between gap-2 sm:gap-4">
+                <div className="flex min-w-0 items-center gap-2.5 sm:gap-4">
+                  <Crest logo={liveFixture.homeTeamLogo} name={liveFixture.homeTeam} short={liveFixture.homeTeamShort} color={liveFixture.homeTeamColor} size={32} />
+                  <span className="truncate text-base font-semibold tracking-tight text-fg sm:text-2xl sm:font-medium sm:tracking-[-0.01em]">
+                    {liveFixture.homeTeam}
+                  </span>
                 </div>
                 {(liveFixture.homeScore || liveTelemetry?.score) && (
                   <div className="flex flex-col items-end shrink-0">
-                    <span className="clock text-2xl font-semibold text-lime sm:text-[28px]">
+                    <span className="clock text-lg font-bold text-lime sm:text-2xl sm:font-semibold">
                       {liveFixture.homeScore || `${liveTelemetry?.score} (${liveTelemetry?.overs} ov)`}
                     </span>
                     {liveTelemetry?.crr && (
-                      <span className="text-xs font-mono text-fg-3">CRR {liveTelemetry.crr}</span>
+                      <span className="text-[11px] font-mono text-fg-3 sm:text-xs">CRR {liveTelemetry.crr}</span>
                     )}
                   </div>
                 )}
               </div>
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex min-w-0 items-center gap-4">
-                  <Crest logo={liveFixture.awayTeamLogo} name={liveFixture.awayTeam} short={liveFixture.awayTeamShort} color={liveFixture.awayTeamColor} size={44} />
-                  <span className="truncate text-2xl font-medium tracking-[-0.01em] text-fg sm:text-[28px]">{liveFixture.awayTeam}</span>
+
+              {/* Away Team */}
+              <div className="flex items-center justify-between gap-2 sm:gap-4">
+                <div className="flex min-w-0 items-center gap-2.5 sm:gap-4">
+                  <Crest logo={liveFixture.awayTeamLogo} name={liveFixture.awayTeam} short={liveFixture.awayTeamShort} color={liveFixture.awayTeamColor} size={32} />
+                  <span className="truncate text-base font-semibold tracking-tight text-fg sm:text-2xl sm:font-medium sm:tracking-[-0.01em]">
+                    {liveFixture.awayTeam}
+                  </span>
                 </div>
-                {liveFixture.awayScore && <span className="clock shrink-0 text-2xl text-fg sm:text-[28px]">{liveFixture.awayScore}</span>}
+                <div className="flex flex-col items-end shrink-0">
+                  <span className={`clock text-lg sm:text-2xl ${liveFixture.awayScore ? 'font-bold text-fg' : 'text-fg-3 text-sm sm:text-lg'}`}>
+                    {liveFixture.awayScore || (liveTelemetry?.currentInning === 1 ? 'Yet to Bat' : '')}
+                  </span>
+                </div>
               </div>
 
               {/* Real-time Over Deliveries Ticker */}
               {liveTelemetry?.recentBalls && liveTelemetry.recentBalls.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-line/60">
-                  <span className="text-xs font-mono text-fg-3">This Over:</span>
-                  <div className="flex items-center gap-1.5 overflow-x-auto py-1">
+                <div className="flex items-center gap-2 pt-2 border-t border-line/60 overflow-hidden">
+                  <span className="text-[11px] font-mono text-fg-3 shrink-0">This Over:</span>
+                  <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
                     {liveTelemetry.recentBalls.slice(-8).map((b, idx) => {
                       const code = b.code.trim();
                       const isSix = code === '6';
@@ -438,13 +450,13 @@ export default function NplSchedule() {
                       return (
                         <span
                           key={idx}
-                          className={`inline-flex items-center justify-center min-w-[26px] h-6 px-1.5 text-xs font-mono font-bold rounded-full ${
+                          className={`inline-flex items-center justify-center min-w-[24px] h-6 px-1 text-[11px] font-mono font-bold rounded-md shrink-0 ${
                             isSix
-                              ? 'bg-purple-600 text-white shadow-sm'
+                              ? 'bg-lime text-lime-ink'
                               : isFour
-                              ? 'bg-blue-600 text-white shadow-sm'
+                              ? 'border border-line-strong bg-ink-600 text-fg'
                               : isWkt
-                              ? 'bg-red-600 text-white animate-pulse'
+                              ? 'bg-red-500 text-white animate-pulse'
                               : isExt
                               ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
                               : code === '0'
@@ -463,11 +475,11 @@ export default function NplSchedule() {
 
               {/* Latest commentary line if available */}
               {liveTelemetry?.commentary && liveTelemetry.commentary.length > 0 && liveTelemetry.commentary[0].text && (
-                <div className="rounded-lg bg-ink-800/60 p-3 border border-line/40">
-                  <div className="flex items-center gap-2 text-xs text-fg-3 font-mono">
+                <div className="rounded-lg bg-ink-800/60 p-2.5 sm:p-3 border border-line/40">
+                  <div className="flex items-center gap-2 text-[11px] sm:text-xs text-fg-3 font-mono">
                     <span className="font-semibold text-lime">{liveTelemetry.commentary[0].ball}</span>
                     <span>•</span>
-                    <span className="text-fg-2">{liveTelemetry.commentary[0].bowlerToBatsman}</span>
+                    <span className="text-fg-2 truncate">{liveTelemetry.commentary[0].bowlerToBatsman}</span>
                   </div>
                   <p className="mt-1 text-xs text-fg leading-relaxed line-clamp-2">
                     {liveTelemetry.commentary[0].text}
@@ -476,18 +488,18 @@ export default function NplSchedule() {
               )}
 
               {liveFixture.summary && (!liveTelemetry?.commentary?.length || !liveTelemetry.commentary[0]?.text) && (
-                <p className="text-sm text-fg-2">{liveFixture.summary}</p>
+                <p className="text-xs sm:text-sm text-fg-2">{liveFixture.summary}</p>
               )}
             </div>
 
-            <div className="flex flex-col gap-4 lg:col-span-4 lg:items-end">
-              <div className="text-sm text-fg-2 lg:text-right">
+            <div className="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end justify-between gap-3 lg:col-span-4 border-t border-line/60 pt-3 lg:border-t-0 lg:pt-0">
+              <div className="text-xs sm:text-sm text-fg-2">
                 <p>
                   Started <span className="clock text-fg">{formatKathmanduTime(liveFixture.timestamp)}</span>
                 </p>
-                <p className="mt-1 meta">Action Sports HD, NetTV and DishHome</p>
+                <p className="mt-0.5 meta text-[11px] sm:text-xs">Action Sports HD, NetTV and DishHome</p>
               </div>
-              <a href={liveStreamUrl} className="btn btn-live btn-lg w-full sm:w-auto">
+              <a href={liveStreamUrl} className="btn btn-live btn-md sm:btn-lg w-full sm:w-auto text-center justify-center">
                 Watch live
               </a>
             </div>
