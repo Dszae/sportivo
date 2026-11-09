@@ -55,7 +55,7 @@ jobs:
         run: |
           cd mobile/android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug assembleRelease --no-daemon --stacktrace || ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload Native Sportivo APK Artifact
         if: always()
@@ -79,8 +79,10 @@ jobs:
             - **Developer**: Dipesh Sapkota
             - **Features**: Native ExoPlayer streaming, NPL 2026 live scores, Nepal Standard Time (NST) kickoff alerts.
             
-            Tap `app-debug.apk` below to download directly onto your Android device.
-          files: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+            Tap `app-debug.apk` or `app-release.apk` below to download directly onto your Android device.
+          files: |
+            mobile/android/app/build/outputs/apk/debug/app-debug.apk
+            mobile/android/app/build/outputs/apk/release/app-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true

@@ -2,13 +2,13 @@
   "expo": {
     "name": "Sportivo",
     "slug": "sportivo",
-    "version": "1.1.5",
+    "version": "1.1.6",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "scheme": "sportivo",
     "androidStatusBar": {
-      "backgroundColor": "#080a0b",
+      "backgroundColor": "transparent",
       "barStyle": "light-content",
       "translucent": true
     },
@@ -23,7 +23,7 @@
     },
     "android": {
       "package": "np.com.dipeshsapkota7.sportivo",
-      "versionCode": 16,
+      "versionCode": 17,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#080a0b"

@@ -25,11 +25,11 @@ export const colors = {
 } as const;
 
 export const fonts = {
-  sans: 'Manrope_400Regular',
-  sansMedium: 'Manrope_500Medium',
-  sansSemibold: 'Manrope_600SemiBold',
-  mono: 'JetBrainsMono_400Regular',
-  monoMedium: 'JetBrainsMono_500Medium',
+  sans: Platform.select({ ios: 'System', default: 'sans-serif' }),
+  sansMedium: Platform.select({ ios: 'System', default: 'sans-serif-medium' }),
+  sansSemibold: Platform.select({ ios: 'System', default: 'sans-serif-medium' }),
+  mono: Platform.select({ ios: 'Menlo', default: 'monospace' }),
+  monoMedium: Platform.select({ ios: 'Menlo', default: 'monospace' }),
 } as const;
 
 export const space = {

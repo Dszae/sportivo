@@ -1,11 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Component, ReactNode } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
-import { useFonts, Manrope_400Regular, Manrope_500Medium, Manrope_600SemiBold } from '@expo-google-fonts/manrope';
-import { JetBrainsMono_400Regular, JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
 import RootNavigator from './src/navigation/RootNavigator';
 import {
   setupNotificationChannels,
@@ -13,6 +12,100 @@ import {
 } from './src/services/notifications';
 import { startGroundScorePoller } from './src/services/scoreService';
 import { colors } from './src/theme';
+
+// Ensure splash screen is hidden immediately even before first render tick
+try {
+  SplashScreen.hideAsync().catch(() => {});
+} catch {}
+
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class AppErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.warn('[AppErrorBoundary] Unhandled error:', error, errorInfo);
+    try {
+      SplashScreen.hideAsync().catch(() => {});
+    } catch {}
+  }
+
+  handleReload = () => {
+    this.setState({ hasError: false, error: null });
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={errorStyles.container}>
+          <Text style={errorStyles.icon}>⚡</Text>
+          <Text style={errorStyles.title}>Sportivo Encountered a Notice</Text>
+          <Text style={errorStyles.message}>
+            {this.state.error?.message || 'The application recovered from an unexpected state.'}
+          </Text>
+          <TouchableOpacity style={errorStyles.button} onPress={this.handleReload} activeOpacity={0.8}>
+            <Text style={errorStyles.buttonText}>Restart Sportivo</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+const errorStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0b0e0d',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  icon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#edf0ee',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  message: {
+    fontSize: 14,
+    color: '#a4aca8',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  button: {
+    backgroundColor: '#c9f36b',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: '#0f130c',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+});
 
 const SportivoDarkTheme = {
   ...DarkTheme,
@@ -28,14 +121,6 @@ const SportivoDarkTheme = {
 };
 
 export default function App() {
-  const [fontsLoaded, fontError] = useFonts({
-    Manrope_400Regular,
-    Manrope_500Medium,
-    Manrope_600SemiBold,
-    JetBrainsMono_400Regular,
-    JetBrainsMono_500Medium,
-  });
-
   useEffect(() => {
     // Unconditionally hide splash screen immediately on mount so the app opens instantly
     SplashScreen.hideAsync().catch(() => {});
@@ -66,10 +151,12 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer theme={SportivoDarkTheme}>
-        <StatusBar style="light" backgroundColor="#080a0b" translucent />
-        <RootNavigator />
-      </NavigationContainer>
+      <AppErrorBoundary>
+        <NavigationContainer theme={SportivoDarkTheme}>
+          <StatusBar style="light" backgroundColor="transparent" translucent />
+          <RootNavigator />
+        </NavigationContainer>
+      </AppErrorBoundary>
     </SafeAreaProvider>
   );
 }

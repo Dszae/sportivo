@@ -161,28 +161,39 @@ export async function discoverActiveMatchUrl(preferredMatch?: string): Promise<s
     });
     if (!res.ok) return activeMatchUrl;
     const html = await res.text();
-    const matchRegex = /"https:\/\/crex\.com\/cricket-live-score\/([^"]*(?:nepal|npl|pka|spr|ktg|kmg|cwr|btr|jkb|kry|kny|lbl)[^"]*)"/gi;
-    const matches = [...html.matchAll(matchRegex)].map((m) => m[0].replace(/"/g, ''));
+    const eventRegex = /"startDate":"([^"]+)"[\s\S]*?"url":"(https:\/\/crex\.com\/cricket-live-score\/[^"]+)"/g;
+    const candidates: Array<{ startDate: string; startMs: number; url: string; matchNum: number }> = [];
+    let m;
+    while ((m = eventRegex.exec(html)) !== null) {
+      const startDate = m[1];
+      const url = m[2];
+      if (/nepal|npl|pka|spr|ktg|kmg|cwr|btr|jkb|kry|kny|lbl/i.test(url)) {
+        const startMs = Date.parse(startDate);
+        const matchNum = parseInt(url.match(/(\d+)(?:st|nd|rd|th)/i)?.[1] || '0', 10);
+        candidates.push({ startDate, startMs, url, matchNum });
+      }
+    }
 
-    if (matches.length > 0) {
+    if (candidates.length > 0) {
       if (preferredMatch) {
         const pLower = preferredMatch.toLowerCase();
-        const found = matches.find((m) => m.toLowerCase().includes(pLower));
+        const found = candidates.find((c) => c.url.toLowerCase().includes(pLower));
         if (found) {
-          activeMatchUrl = found;
+          activeMatchUrl = found.url;
           lastDiscoveryTime = now;
           return activeMatchUrl;
         }
       }
 
-      // Sort matches descending by T20 match number so the latest ongoing match today takes precedence
-      matches.sort((a, b) => {
-        const na = parseInt(a.match(/(\d+)(?:st|nd|rd|th)/i)?.[1] || '0', 10);
-        const nb = parseInt(b.match(/(\d+)(?:st|nd|rd|th)/i)?.[1] || '0', 10);
-        return nb - na;
-      });
+      // Active match must have started or starting soon (<= now + 30m), but not from past days (>= now - 12h)
+      const activeCandidates = candidates.filter(
+        (c) => c.startMs <= now + 30 * 60 * 1000 && c.startMs >= now - 12 * 3600 * 1000
+      );
 
-      activeMatchUrl = matches[0];
+      // Sort by newest startMs today descending so the live match takes precedence
+      activeCandidates.sort((a, b) => b.startMs - a.startMs);
+      const chosen = activeCandidates[0] || candidates[0];
+      activeMatchUrl = chosen.url;
       lastDiscoveryTime = now;
       return activeMatchUrl;
     }
