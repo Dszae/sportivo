@@ -393,7 +393,12 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
               await navigator.requestMediaKeySystemAccess('com.widevine.alpha', [
                 {
                   initDataTypes: ['cenc'],
-                  videoCapabilities: [{ contentType: 'video/mp4; codecs="avc1.42E01E"' }],
+                  videoCapabilities: [
+                    { contentType: 'video/mp4; codecs="avc1.4d4028"' },
+                    { contentType: 'video/mp4; codecs="avc1.4d401f"' },
+                    { contentType: 'video/mp4; codecs="avc1.42E01E"' },
+                    { contentType: 'video/mp4' },
+                  ],
                 },
               ]);
             } catch (err: any) {
