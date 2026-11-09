@@ -102,8 +102,22 @@ export async function downloadAndInstallUpdate(
     );
 
     const result = await downloadResumable.downloadAsync();
-    if (!result || !result.uri) {
-      return { success: false, error: 'Download failed' };
+    if (!result || !result.uri || (result.status && result.status !== 200)) {
+      await FileSystem.deleteAsync(destination, { idempotent: true });
+      return {
+        success: false,
+        error: 'Update package is still being generated or server returned an error. Please try again in a moment.',
+      };
+    }
+
+    // Verify APK file integrity (must be a valid binary > 5MB, not an HTML error page)
+    const fileInfo = await FileSystem.getInfoAsync(result.uri);
+    if (!fileInfo.exists || (fileInfo.size && fileInfo.size < 5 * 1024 * 1024)) {
+      await FileSystem.deleteAsync(result.uri, { idempotent: true });
+      return {
+        success: false,
+        error: 'Downloaded package was incomplete or invalid. Please retry.',
+      };
     }
 
     onProgress?.(100);
