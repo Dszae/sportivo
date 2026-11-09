@@ -209,9 +209,9 @@ export default function MatchPlayerScreen() {
   const fallbackStream: StreamSource = {
     id: 'server-1',
     source: 'npl',
-    label: 'NetTV Action Sports HD (1080p Master)',
-    embedUrl: 'https://ott-lb.nettv.com.np/npl/live_match/index.mpd',
-    streamUrl: 'https://ott-lb.nettv.com.np/npl/live_match/index.mpd',
+    label: 'NetTV Action Sports HD (Edge MTDC Live 3)',
+    embedUrl: 'https://ott-edge-mtdc.nettv.com.np/npl/live_match3/index.mpd?CMCD=br%3D4194%2Cot%3Dm%2Cmtp%3D4194%2Csu%2Ccid%3D%22a-rz--cricket--p82103164700970876976%22%2Csf%3Dd%2Csid%3D%2272e4fbbc-1164-432c-a971-e66e1720d965%22%2Cst%3Dv',
+    streamUrl: 'https://ott-edge-mtdc.nettv.com.np/npl/live_match3/index.mpd?CMCD=br%3D4194%2Cot%3Dm%2Cmtp%3D4194%2Csu%2Ccid%3D%22a-rz--cricket--p82103164700970876976%22%2Csf%3Dd%2Csid%3D%2272e4fbbc-1164-432c-a971-e66e1720d965%22%2Cst%3Dv',
     isDirectStream: true,
     hd: true,
   };

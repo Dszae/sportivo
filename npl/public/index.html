@@ -1575,7 +1575,7 @@
       } catch (err) {
         console.warn('[Player] Auto-discovery notice, using fallback:', err);
       }
-      await loadDashStream('https://ott-lb.nettv.com.np/npl/live_match/index.mpd');
+      await loadDashStream('https://ott-edge-mtdc.nettv.com.np/npl/live_match3/index.mpd?CMCD=br%3D4194%2Cot%3Dm%2Cmtp%3D4194%2Csu%2Ccid%3D%22a-rz--cricket--p82103164700970876976%22%2Csf%3Dd%2Csid%3D%2272e4fbbc-1164-432c-a971-e66e1720d965%22%2Cst%3Dv');
     }
 
     async function loadDashStream(url, keyId, key) {
@@ -1791,7 +1791,7 @@
       const unmuteB = document.getElementById('unmuteBanner');
 
       if (type === 'nettv-dash') {
-        loadDashStream(customUrl || 'https://ott-lb.nettv.com.np/npl/live_match/index.mpd');
+        loadDashStream(customUrl || 'https://ott-edge-mtdc.nettv.com.np/npl/live_match3/index.mpd?CMCD=br%3D4194%2Cot%3Dm%2Cmtp%3D4194%2Csu%2Ccid%3D%22a-rz--cricket--p82103164700970876976%22%2Csf%3Dd%2Csid%3D%2272e4fbbc-1164-432c-a971-e66e1720d965%22%2Cst%3Dv');
         const sq = document.getElementById('streamQuality');
         if (sq) sq.textContent = 'Stream: NetTV 1080p (Live Edge)';
         triggerToast({ type: 'FOUR', title: '⚡ NetTV 1080p Live', message: 'Connected to NetTV zero-delay master broadcast!' });

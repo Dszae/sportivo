@@ -245,32 +245,39 @@ async function discoverAndProbeNplStreams(signal?: AbortSignal) {
   if (formattedStreams.length === 0) {
     formattedStreams.push(
       {
+        embedUrl: 'https://ott-edge-mtdc.nettv.com.np/npl/live_match3/index.mpd?CMCD=br%3D4194%2Cot%3Dm%2Cmtp%3D4194%2Csu%2Ccid%3D%22a-rz--cricket--p82103164700970876976%22%2Csf%3Dd%2Csid%3D%2272e4fbbc-1164-432c-a971-e66e1720d965%22%2Cst%3Dv',
+        hd: true,
+        isNativeVideo: true,
+        isSandboxedIframe: false,
+        language: 'Server DSZ1 (NetTV Edge MTDC Live 3)',
+      },
+      {
+        embedUrl: 'https://ott-lb.nettv.com.np/npl/live_match3/index.mpd?CMCD=br%3D4194%2Cot%3Dm%2Cmtp%3D4194%2Csu%2Ccid%3D%22a-rz--cricket--p82103164700970876976%22%2Csf%3Dd%2Csid%3D%2272e4fbbc-1164-432c-a971-e66e1720d965%22%2Cst%3Dv',
+        hd: true,
+        isNativeVideo: true,
+        isSandboxedIframe: false,
+        language: 'Server DSZ2 (NetTV Load Balancer Live 3)',
+      },
+      {
         embedUrl: 'https://lb-ottnp.nettvstreamz.com/npl/live_match6/playlist.m3u8',
         hd: true,
         isNativeVideo: true,
         isSandboxedIframe: false,
-        language: 'Server DSZ1 (TU Ground Direct HLS)',
+        language: 'Server DSZ3 (TU Ground Direct HLS)',
       },
       {
         embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/pdx-nitro/live/clients/dash/enc/3qvpw810gz/out/v1/e4b320f9ef924fe59188752dcf9c7fbf/cenc.mpd&keyid=5d52529b6ff19eca2315013244513b68&key=ba5c7dfad287aab538463d9da6811a8c',
         hd: true,
         isNativeVideo: false,
         isSandboxedIframe: true,
-        language: 'Server DSZ2 (Action Sports Akamai Master)',
+        language: 'Server DSZ4 (Action Sports Akamai Master)',
       },
       {
         embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/q4skycp0em/out/v1/ff0967ee82ad427abee362dc40a4f60f/cenc.mpd&keyid=5d52529b6ff19eca2315013244513b68&key=ba5c7dfad287aab538463d9da6811a8c',
         hd: true,
         isNativeVideo: false,
         isSandboxedIframe: true,
-        language: 'Server DSZ3 (Action Sports Akamai Backup)',
-      },
-      {
-        embedUrl: 'https://ott-lb.nettv.com.np/npl/live_match/index.mpd',
-        hd: true,
-        isNativeVideo: true,
-        isSandboxedIframe: false,
-        language: 'Server DSZ4 (NetTV Master DASH)',
+        language: 'Server DSZ5 (Action Sports Akamai Backup)',
       }
     );
   }
@@ -458,39 +465,39 @@ export const nplAdapter: ProviderAdapter = {
       provider: 'NetTV Action Sports HD (Zero Lag)',
       streams: [
         {
-          embedUrl: 'https://ott-lb.nettv.com.np/npl/live_match/index.mpd',
+          embedUrl: 'https://ott-edge-mtdc.nettv.com.np/npl/live_match3/index.mpd?CMCD=br%3D4194%2Cot%3Dm%2Cmtp%3D4194%2Csu%2Ccid%3D%22a-rz--cricket--p82103164700970876976%22%2Csf%3Dd%2Csid%3D%2272e4fbbc-1164-432c-a971-e66e1720d965%22%2Cst%3Dv',
           hd: true,
           isNativeVideo: true,
           isSandboxedIframe: false,
-          language: 'Server DSZ1 (1080p Master DASH)',
+          language: 'Server DSZ1 (NetTV Edge MTDC Live 3)',
+        },
+        {
+          embedUrl: 'https://ott-lb.nettv.com.np/npl/live_match3/index.mpd?CMCD=br%3D4194%2Cot%3Dm%2Cmtp%3D4194%2Csu%2Ccid%3D%22a-rz--cricket--p82103164700970876976%22%2Csf%3Dd%2Csid%3D%2272e4fbbc-1164-432c-a971-e66e1720d965%22%2Cst%3Dv',
+          hd: true,
+          isNativeVideo: true,
+          isSandboxedIframe: false,
+          language: 'Server DSZ2 (NetTV Load Balancer Live 3)',
         },
         {
           embedUrl: 'https://lb-ottnp.nettvstreamz.com/npl/live_match6/playlist.m3u8',
           hd: true,
           isNativeVideo: true,
           isSandboxedIframe: false,
-          language: 'Server DSZ2 (TU Ground Direct HLS)',
+          language: 'Server DSZ3 (TU Ground Direct HLS)',
         },
         {
-          embedUrl: 'https://ott-edge-mtdc03.nettv.com.np/npl/live_match/index.mpd',
+          embedUrl: 'https://ott-edge-mtdc.nettv.com.np/npl/live_match3/index.mpd',
           hd: true,
           isNativeVideo: true,
           isSandboxedIframe: false,
-          language: 'Server DSZ3 (NetTV Edge MTDC03 DASH)',
+          language: 'Server DSZ4 (NetTV Direct DASH)',
         },
         {
           embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/pdx-nitro/live/clients/dash/enc/3qvpw810gz/out/v1/e4b320f9ef924fe59188752dcf9c7fbf/cenc.mpd&keyid=5d52529b6ff19eca2315013244513b68&key=ba5c7dfad287aab538463d9da6811a8c',
           hd: true,
           isNativeVideo: false,
           isSandboxedIframe: true,
-          language: 'Server DSZ4 (Action Sports Akamai Master)',
-        },
-        {
-          embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/q4skycp0em/out/v1/ff0967ee82ad427abee362dc40a4f60f/cenc.mpd&keyid=5d52529b6ff19eca2315013244513b68&key=ba5c7dfad287aab538463d9da6811a8c',
-          hd: true,
-          isNativeVideo: false,
-          isSandboxedIframe: true,
-          language: 'Server DSZ5 (Action Sports Akamai Backup)',
+          language: 'Server DSZ5 (Action Sports Akamai Master)',
         },
       ],
     };

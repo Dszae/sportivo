@@ -61,23 +61,34 @@ class StreamService {
   async ingestCandidateFeeds() {
     const feeds = [];
 
-    // 1. NetTV Unencrypted 1080p DASH Cluster (Zero-Delay Real-Time Live Edge)
+    // 1. NetTV Live Match 3 - Edge MTDC (Ultra Low-Latency Edge)
     feeds.push({
-      id: 'NETTV-DASH-LB',
-      name: 'NetTV 1080p Master (Zero Lag)',
-      url: 'https://ott-lb.nettv.com.np/npl/live_match/index.mpd',
+      id: 'NETTV-DASH-EDGE-MTDC3',
+      name: 'NetTV Action Sports HD (Edge MTDC Live 3)',
+      url: 'https://ott-edge-mtdc.nettv.com.np/npl/live_match3/index.mpd?CMCD=br%3D4194%2Cot%3Dm%2Cmtp%3D4194%2Csu%2Ccid%3D%22a-rz--cricket--p82103164700970876976%22%2Csf%3Dd%2Csid%3D%2272e4fbbc-1164-432c-a971-e66e1720d965%22%2Cst%3Dv',
       type: 'dash',
       isEmbed: false,
       priority: 1,
     });
 
+    // 2. NetTV Live Match 3 - Load Balancer (Auto-Scaling Live 3)
     feeds.push({
-      id: 'NETTV-DASH-EDGE3',
-      name: 'NetTV Edge 03 (1080p Direct)',
-      url: 'https://ott-edge-mtdc03.nettv.com.np/npl/live_match/index.mpd',
+      id: 'NETTV-DASH-LB3',
+      name: 'NetTV Action Sports HD (LB Live 3)',
+      url: 'https://ott-lb.nettv.com.np/npl/live_match3/index.mpd?CMCD=br%3D4194%2Cot%3Dm%2Cmtp%3D4194%2Csu%2Ccid%3D%22a-rz--cricket--p82103164700970876976%22%2Csf%3Dd%2Csid%3D%2272e4fbbc-1164-432c-a971-e66e1720d965%22%2Cst%3Dv',
       type: 'dash',
       isEmbed: false,
       priority: 2,
+    });
+
+    // 3. NetTV Edge MTDC Live Match 3 Clean DASH
+    feeds.push({
+      id: 'NETTV-DASH-EDGE3-CLEAN',
+      name: 'NetTV Edge MTDC (1080p Direct)',
+      url: 'https://ott-edge-mtdc.nettv.com.np/npl/live_match3/index.mpd',
+      type: 'dash',
+      isEmbed: false,
+      priority: 3,
     });
 
     feeds.push({
@@ -203,9 +214,9 @@ class StreamService {
     }
 
     const fallback = {
-      id: 'NETTV-DASH-LB',
-      name: 'NetTV 1080p Master (Zero Lag)',
-      url: 'https://ott-lb.nettv.com.np/npl/live_match/index.mpd',
+      id: 'NETTV-DASH-EDGE-MTDC3',
+      name: 'NetTV Action Sports HD (Edge MTDC Live 3)',
+      url: 'https://ott-edge-mtdc.nettv.com.np/npl/live_match3/index.mpd?CMCD=br%3D4194%2Cot%3Dm%2Cmtp%3D4194%2Csu%2Ccid%3D%22a-rz--cricket--p82103164700970876976%22%2Csf%3Dd%2Csid%3D%2272e4fbbc-1164-432c-a971-e66e1720d965%22%2Cst%3Dv',
       type: 'dash',
       isEmbed: false,
       cached: false,
