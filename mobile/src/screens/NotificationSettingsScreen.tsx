@@ -23,7 +23,7 @@ import {
 
 export default function NotificationSettingsScreen() {
   const insets = useSafeAreaInsets();
-  const topPadding = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0) + 8;
+  const topPadding = insets.top || (Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0);
   const [prefs, setPrefs] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [hasPermission, setHasPermission] = useState(false);
 

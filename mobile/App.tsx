@@ -65,7 +65,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <NavigationContainer theme={SportivoDarkTheme}>
-        <StatusBar style="light" backgroundColor={colors.ink950} translucent={false} />
+        <StatusBar style="light" backgroundColor="transparent" translucent />
         <RootNavigator />
       </NavigationContainer>
     </SafeAreaProvider>

@@ -88,7 +88,7 @@ function shortVenue(venue: string = '') {
 export default function NplScreen() {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
-  const topPadding = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0) + 8;
+  const topPadding = insets.top || (Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0);
 
   const [fixtures, setFixtures] = useState<NplMatch[]>([]);
   const [activeTab, setActiveTab] = useState<Tab>('today');

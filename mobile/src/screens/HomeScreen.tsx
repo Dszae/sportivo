@@ -51,7 +51,7 @@ function nstClock() {
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
-  const topPadding = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0) + 8;
+  const topPadding = insets.top || (Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0);
 
   const [refreshing, setRefreshing] = useState(false);
   const [watchlistCount, setWatchlistCount] = useState(0);
@@ -175,11 +175,9 @@ export default function HomeScreen() {
   }, [cricketMatches, footballMatches, nplFixtures]);
 
   return (
-    <View style={[styles.container, { paddingTop: topPadding }]}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.ink950} translucent={false} />
-
+    <View style={styles.container}>
       {/* Top Header (Matches web SiteHeader) */}
-      <View style={styles.siteHeader}>
+      <View style={[styles.siteHeader, { paddingTop: topPadding + 4 }]}>
         <View style={styles.brandRow}>
           <View style={styles.brandDot} />
           <Text style={styles.brandText}>Sportivo</Text>
@@ -437,11 +435,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ink900,
   },
   siteHeader: {
-    height: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
+    paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: colors.line,
     backgroundColor: colors.ink950,

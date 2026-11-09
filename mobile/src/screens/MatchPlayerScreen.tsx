@@ -61,7 +61,7 @@ export default function MatchPlayerScreen() {
   const insets = useSafeAreaInsets();
   const { match } = route.params;
 
-  const topPadding = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0) + 8;
+  const topPadding = insets.top || (Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0);
 
   const isNplMatch =
     match.category === 'cricket' &&

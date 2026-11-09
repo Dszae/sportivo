@@ -45,7 +45,7 @@ const POPULAR_FOOTBALL_TEAMS = [
 export default function WatchlistScreen() {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
-  const topPadding = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0) + 8;
+  const topPadding = insets.top || (Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0);
   const [favoriteTeams, setFavoriteTeams] = useState<string[]>([]);
   const [starredMatches, setStarredMatches] = useState<string[]>([]);
   const [matchedFixtures, setMatchedFixtures] = useState<Match[]>([]);

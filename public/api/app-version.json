@@ -1,7 +1,7 @@
 {
-  "version": "1.1.3",
-  "versionCode": 14,
+  "version": "1.1.4",
+  "versionCode": 15,
   "downloadUrl": "https://sportivo.dipeshsapkota7.com.np/download/sportivo.apk",
-  "releaseNotes": "NPL 2026 real-time live score updates for both teams, simplified live card, zero-delay mobile streaming with multi-device Server 1, and mobile layout optimizations.",
+  "releaseNotes": "Edge-to-edge full screen: eliminated black gap above navbar, placed Sportivo at the absolute top, transparent status bar, and real-time live score updates.",
   "publishedAt": "2026-11-09"
 }

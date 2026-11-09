@@ -40,7 +40,7 @@ function teamParts(title: string) {
 export default function FootballScreen() {
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
-  const topPadding = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0) + 8;
+  const topPadding = insets.top || (Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0);
   const [matches, setMatches] = useState<Match[]>([]);
   const [selectedLeague, setSelectedLeague] = useState('All');
   const [loading, setLoading] = useState(true);

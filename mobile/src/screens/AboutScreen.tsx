@@ -19,7 +19,7 @@ import { checkForAppUpdate, downloadAndInstallUpdate, CURRENT_VERSION } from '..
 export default function AboutScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const topPadding = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0) + 12;
+  const topPadding = insets.top || (Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<string | null>(null);
 
