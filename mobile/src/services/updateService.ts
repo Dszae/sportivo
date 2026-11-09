@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { Platform, Linking } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as IntentLauncher from 'expo-intent-launcher';
 import Constants from 'expo-constants';
@@ -15,6 +15,7 @@ export interface AppVersionInfo {
 export const CURRENT_VERSION = Constants.expoConfig?.version || '1.1.7';
 export const CURRENT_VERSION_CODE = Constants.expoConfig?.android?.versionCode || 18;
 const VERSION_CHECK_URL = 'https://sportivo.dipeshsapkota7.com.np/api/app-version.json';
+export const UPDATE_APK_PATH = `${FileSystem.cacheDirectory}sportivo-update.apk`;
 
 export async function checkForAppUpdate(): Promise<AppVersionInfo | null> {
   try {
@@ -40,7 +41,32 @@ export async function checkForAppUpdate(): Promise<AppVersionInfo | null> {
 }
 
 /**
- * Downloads the APK directly inside the app with real-time percentage progress,
+ * Triggers Android's package installer for a cached APK
+ */
+export async function installCachedApk(fileUri: string = UPDATE_APK_PATH): Promise<{ success: boolean; error?: string }> {
+  try {
+    const info = await FileSystem.getInfoAsync(fileUri);
+    if (!info.exists) {
+      return { success: false, error: 'Update file not found on device' };
+    }
+
+    const contentUri = await FileSystem.getContentUriAsync(fileUri);
+
+    await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
+      data: contentUri,
+      flags: 1 | 268435456, // FLAG_GRANT_READ_URI_PERMISSION | FLAG_ACTIVITY_NEW_TASK
+      type: 'application/vnd.android.package-archive',
+    });
+
+    return { success: true };
+  } catch (err: any) {
+    console.warn('Native installer notice:', err);
+    return { success: false, error: err?.message || 'Installer launch notice' };
+  }
+}
+
+/**
+ * Downloads the APK directly inside the app in the background with percentage progress,
  * then triggers Android's native package installer immediately.
  * Zero browser involvement!
  */
@@ -49,7 +75,7 @@ export async function downloadAndInstallUpdate(
   onProgress?: (progressPercent: number) => void
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const destination = `${FileSystem.cacheDirectory}sportivo-update.apk`;
+    const destination = UPDATE_APK_PATH;
 
     // Remove old downloaded update if present
     const existing = await FileSystem.getInfoAsync(destination);
@@ -82,19 +108,12 @@ export async function downloadAndInstallUpdate(
 
     onProgress?.(100);
 
-    // Convert file path to secure Android content URI
-    const contentUri = await FileSystem.getContentUriAsync(result.uri);
-
-    // Launch Android Package Installer activity
-    await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
-      data: contentUri,
-      flags: 1, // FLAG_GRANT_READ_URI_PERMISSION
-      type: 'application/vnd.android.package-archive',
-    });
-
-    return { success: true };
+    return await installCachedApk(result.uri);
   } catch (err: any) {
     console.error('Failed to download and install update in-app:', err);
+    try {
+      await Linking.openURL(apkUrl);
+    } catch {}
     return { success: false, error: err?.message || 'Installation failed' };
   }
 }

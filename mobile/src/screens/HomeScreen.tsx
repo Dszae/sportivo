@@ -26,7 +26,7 @@ import { Match, NplMatch, RootStackParamList } from '../types';
 import { fetchMatches, fetchNplFixtures, formatKathmanduTime, formatKathmanduDate } from '../services/api';
 import { loadPreferences } from '../services/storage';
 import { triggerButtonHaptic } from '../services/notifications';
-import { checkForAppUpdate, downloadAndInstallUpdate, AppVersionInfo } from '../services/updateService';
+import { checkForAppUpdate, downloadAndInstallUpdate, installCachedApk, AppVersionInfo } from '../services/updateService';
 import { LiveDot } from '../components/Live';
 import { colors, fonts, radius } from '../theme';
 
@@ -58,6 +58,7 @@ export default function HomeScreen() {
   const [updateInfo, setUpdateInfo] = useState<AppVersionInfo | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const [isReadyToInstall, setIsReadyToInstall] = useState(false);
 
   const [currentTime, setCurrentTime] = useState(nstClock());
   const [footballMatches, setFootballMatches] = useState<Match[]>([]);
@@ -74,12 +75,23 @@ export default function HomeScreen() {
     if (!updateInfo) return;
     setIsDownloading(true);
     setDownloadProgress(0);
+    setIsReadyToInstall(false);
     const res = await downloadAndInstallUpdate(updateInfo.downloadUrl, (pct) => {
       setDownloadProgress(pct);
+      if (pct >= 100) {
+        setIsReadyToInstall(true);
+      }
     });
     setIsDownloading(false);
     if (!res.success) {
-      Alert.alert('Update Failed', res.error || 'Could not complete update.');
+      Alert.alert('Update Notice', res.error || 'Could not complete update.');
+    }
+  };
+
+  const handleInstallNow = async () => {
+    const res = await installCachedApk();
+    if (!res.success) {
+      Alert.alert('Install Notice', res.error || 'Please allow installing unknown apps in Android Settings.');
     }
   };
 
@@ -244,9 +256,13 @@ export default function HomeScreen() {
                   Downloading update in background... {downloadProgress}%
                 </Text>
               </View>
+            ) : isReadyToInstall ? (
+              <TouchableOpacity style={styles.updateActionBtn} onPress={handleInstallNow}>
+                <Text style={styles.updateActionText}>Install Update v{updateInfo.version} Now ⚡</Text>
+              </TouchableOpacity>
             ) : (
               <TouchableOpacity style={styles.updateActionBtn} onPress={handleStartUpdate}>
-                <Text style={styles.updateActionText}>Download &amp; Install v{updateInfo.version} →</Text>
+                <Text style={styles.updateActionText}>Update in Background (v{updateInfo.version}) →</Text>
               </TouchableOpacity>
             )}
           </View>

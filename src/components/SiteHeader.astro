@@ -3,6 +3,7 @@ import type { Category } from '../lib/sportivo';
 import NotificationCenter from './NotificationCenter';
 import MobileNav from './MobileNav.astro';
 import DownloadApkButton from './InstallPrompt';
+import MobileAppBanner from './MobileAppBanner';
 import ThemeToggle from './ThemeToggle';
 
 interface Props {
@@ -62,6 +63,8 @@ const links: { href: string; label: string; key: string; live?: boolean }[] = [
     </div>
   </div>
 </header>
+
+<MobileAppBanner client:load />
 
 <MobileNav activeCategory={activeCategory} />
 
