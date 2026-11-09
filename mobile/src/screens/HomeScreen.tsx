@@ -21,6 +21,7 @@ import {
   CricketIcon,
   TrophyIcon,
   ChevronForwardIcon,
+  BasketballIcon,
 } from '../components/Icons';
 import { Match, NplMatch, RootStackParamList } from '../types';
 import { fetchMatches, fetchNplFixtures, formatKathmanduTime, formatKathmanduDate } from '../services/api';
@@ -63,6 +64,7 @@ export default function HomeScreen() {
   const [currentTime, setCurrentTime] = useState(nstClock());
   const [footballMatches, setFootballMatches] = useState<Match[]>([]);
   const [cricketMatches, setCricketMatches] = useState<Match[]>([]);
+  const [basketballMatches, setBasketballMatches] = useState<Match[]>([]);
   const [nplFixtures, setNplFixtures] = useState<NplMatch[]>([]);
 
   // Update clock every 15s
@@ -97,9 +99,10 @@ export default function HomeScreen() {
 
   const loadData = useCallback(async () => {
     try {
-      const [fb, cr, npl, prefs, update] = await Promise.all([
+      const [fb, cr, bb, npl, prefs, update] = await Promise.all([
         fetchMatches('football').catch(() => []),
         fetchMatches('cricket').catch(() => []),
+        fetchMatches('basketball').catch(() => []),
         fetchNplFixtures().catch(() => []),
         loadPreferences().catch(() => ({ starredMatches: [], favoriteTeams: [] })),
         checkForAppUpdate().catch(() => null),
@@ -107,6 +110,7 @@ export default function HomeScreen() {
 
       setFootballMatches(fb);
       setCricketMatches(cr);
+      setBasketballMatches(bb);
       setNplFixtures(npl);
       setWatchlistCount(prefs.starredMatches.length + prefs.favoriteTeams.length);
       if (update && update.hasUpdate) {
@@ -132,12 +136,15 @@ export default function HomeScreen() {
 
   // Up Next match preview: Live matches first, then upcoming
   const heroMatches = useMemo(() => {
-    const combined: Array<{ match: Match; category: string; isLive: boolean; time: string }> = [];
+    const combined: Array<{ match: Match; category: string; isLive: boolean; time: string; sortTime: number }> = [];
 
     // Add NPL matches
     for (const m of nplFixtures) {
       if (m.status === 'COMPLETED') continue;
-      const isLive = m.status === 'LIVE';
+      const isLive = Boolean(
+        m.status === 'LIVE' ||
+        (m.timestamp && Date.now() >= m.timestamp - 15 * 60 * 1000 && Date.now() <= m.timestamp + 3.75 * 3600 * 1000)
+      );
       combined.push({
         match: {
           id: m.id,
@@ -146,45 +153,80 @@ export default function HomeScreen() {
           status: isLive ? 'Live' : 'Upcoming',
           timestamp: m.timestamp,
           venue: m.venue,
+          sources: [
+            { source: 'npl', id: m.id, label: 'Action Sports HD / NPL Live' },
+          ],
         },
         category: 'NPL',
         isLive,
         time: formatKathmanduTime(m.timestamp),
+        sortTime: m.timestamp,
       });
     }
 
     // Add Football matches
     for (const m of footballMatches) {
-      if (m.status === 'Final') continue;
-      const isLive = m.status === 'Live';
+      if (m.status?.toLowerCase() === 'final') continue;
+      const matchTime = typeof m.date === 'number' ? m.date : (m.timestamp || (m.date ? new Date(m.date).getTime() : 0));
+      const isLive = Boolean(
+        m.status?.toLowerCase() === 'live' ||
+        m.status?.toLowerCase() === 'in' ||
+        (matchTime > 0 && Date.now() >= matchTime - 5 * 60 * 1000 && Date.now() <= matchTime + 115 * 60 * 1000)
+      );
       combined.push({
         match: m,
         category: 'Football',
         isLive,
-        time: formatKathmanduTime(m.timestamp || m.startTime || Date.now()),
+        time: matchTime > 0 ? formatKathmanduTime(matchTime) : (isLive ? 'Live' : 'Upcoming'),
+        sortTime: matchTime || Date.now(),
       });
     }
 
     // Add Cricket matches
     for (const m of cricketMatches) {
-      if (m.status === 'Final') continue;
-      const isLive = m.status === 'Live';
+      if (m.status?.toLowerCase() === 'final') continue;
+      if (m.id && m.id.startsWith('npl26-') && nplFixtures.length > 0) continue;
+      const matchTime = typeof m.date === 'number' ? m.date : (m.timestamp || (m.date ? new Date(m.date).getTime() : 0));
+      const isLive = Boolean(
+        m.status?.toLowerCase() === 'live' ||
+        m.status?.toLowerCase() === 'in' ||
+        (matchTime > 0 && Date.now() >= matchTime - 15 * 60 * 1000 && Date.now() <= matchTime + 3.5 * 3600 * 1000)
+      );
       combined.push({
         match: m,
         category: 'Cricket',
         isLive,
-        time: formatKathmanduTime(m.timestamp || m.startTime || Date.now()),
+        time: matchTime > 0 ? formatKathmanduTime(matchTime) : (isLive ? 'Live' : 'Upcoming'),
+        sortTime: matchTime || Date.now(),
+      });
+    }
+
+    // Add Basketball matches
+    for (const m of basketballMatches) {
+      if (m.status?.toLowerCase() === 'final') continue;
+      const matchTime = typeof m.date === 'number' ? m.date : (m.timestamp || (m.date ? new Date(m.date).getTime() : 0));
+      const isLive = Boolean(
+        m.status?.toLowerCase() === 'live' ||
+        m.status?.toLowerCase() === 'in' ||
+        (matchTime > 0 && Date.now() >= matchTime - 10 * 60 * 1000 && Date.now() <= matchTime + 150 * 60 * 1000)
+      );
+      combined.push({
+        match: m,
+        category: 'Basketball',
+        isLive,
+        time: matchTime > 0 ? formatKathmanduTime(matchTime) : (isLive ? 'Live' : 'Upcoming'),
+        sortTime: matchTime || Date.now(),
       });
     }
 
     // Sort: live first, then chronological
     combined.sort((a, b) => {
       if (a.isLive !== b.isLive) return b.isLive ? 1 : -1;
-      return (a.match.timestamp || 0) - (b.match.timestamp || 0);
+      return a.sortTime - b.sortTime;
     });
 
-    return combined.slice(0, 5);
-  }, [cricketMatches, footballMatches, nplFixtures]);
+    return combined.slice(0, 6);
+  }, [basketballMatches, cricketMatches, footballMatches, nplFixtures]);
 
   return (
     <View style={styles.container}>
@@ -396,6 +438,21 @@ export default function HomeScreen() {
             <View style={styles.deskInfo}>
               <Text style={styles.deskTitle}>Cricket Desk</Text>
               <Text style={styles.deskSubtitle}>ICC Tournaments, IPL, Bilateral Series</Text>
+            </View>
+            <ChevronForwardIcon size={16} color={colors.fg3} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.deskRow}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('BasketballTab' as any)}
+          >
+            <View style={styles.deskIconCircle}>
+              <BasketballIcon size={20} color={colors.lime} />
+            </View>
+            <View style={styles.deskInfo}>
+              <Text style={styles.deskTitle}>Basketball Desk</Text>
+              <Text style={styles.deskSubtitle}>NBA, EuroLeague, NCAA Regular &amp; Playoffs</Text>
             </View>
             <ChevronForwardIcon size={16} color={colors.fg3} />
           </TouchableOpacity>

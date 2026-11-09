@@ -235,7 +235,11 @@ export default function MatchPlayerScreen() {
   const activeStream = streams.length > 0 ? streams[selectedServer] || streams[0] : fallbackStream;
 
   const getWebViewSource = useCallback((stream: StreamSource) => {
-    const rawUrl = stream.embedUrl || stream.streamUrl || '';
+    const rawUrl = (stream.embedUrl || stream.streamUrl || '').trim();
+    if (!rawUrl) {
+      return { html: '<body style="background:#000;"></body>' };
+    }
+
     if (rawUrl.includes('.mpd')) {
       const activeLicense =
         stream.licenseUrl ||
@@ -284,10 +288,39 @@ export default function MatchPlayerScreen() {
   </script>
 </body>
 </html>`,
-        baseUrl: 'https://sportivo.internal',
+        baseUrl: 'https://sportivo.dipeshsapkota7.com.np',
       };
     }
-    return { uri: rawUrl };
+
+    // For third-party embed streams (DaddyLive, PPV, StrmFree, YonoTV, etc.):
+    // Embed inside an iframe hosted from Sportivo's domain so window.top !== window.self,
+    // which completely satisfies the "This player only works when embedded" requirement.
+    const escapedUrl = rawUrl.replace(/"/g, '&quot;');
+    return {
+      html: `<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="referrer" content="no-referrer-when-downgrade">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
+    iframe { width: 100%; height: 100%; border: 0; display: block; }
+  </style>
+</head>
+<body>
+  <iframe
+    src="${escapedUrl}"
+    allow="autoplay; fullscreen; picture-in-picture; encrypted-media; clipboard-write; display-capture"
+    allowfullscreen="true"
+    webkitallowfullscreen="true"
+    mozallowfullscreen="true"
+    referrerpolicy="no-referrer-when-downgrade"
+  ></iframe>
+</body>
+</html>`,
+      baseUrl: 'https://sportivo.dipeshsapkota7.com.np',
+    };
   }, []);
 
   const isDirectVideo = Boolean(

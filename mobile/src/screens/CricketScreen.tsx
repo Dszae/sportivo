@@ -63,8 +63,13 @@ export default function CricketScreen() {
   const renderMatchCard = ({ item }: { item: Match }) => {
     const slug = item.slug || item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     const isStarred = starredSlugs.includes(slug);
-    const isLive = item.status === 'LIVE' || item.status === 'Live';
-    const kickoff = item.timestamp ? formatKathmanduTime(item.timestamp) : 'Live';
+    const matchTime = typeof item.date === 'number' ? item.date : (item.timestamp || (item.date ? new Date(item.date).getTime() : 0));
+    const isLive = Boolean(
+      item.status?.toLowerCase() === 'live' ||
+      item.status?.toLowerCase() === 'in' ||
+      (matchTime > 0 && Date.now() >= matchTime - 15 * 60 * 1000 && Date.now() <= matchTime + 3.5 * 3600 * 1000 && item.status?.toLowerCase() !== 'final')
+    );
+    const kickoff = matchTime > 0 ? formatKathmanduTime(matchTime) : (isLive ? 'Live' : 'Upcoming');
 
     return (
       <TouchableOpacity

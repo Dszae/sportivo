@@ -1,7 +1,7 @@
 {
-  "version": "1.1.7",
-  "versionCode": 18,
-  "downloadUrl": "https://github.com/Dszae/sportivo/releases/download/v1.1.7-apk/app-release.apk",
-  "releaseNotes": "In-app Shaka Player integration for NetTV Edge & LB DASH streams with Widevine DRM, updated live match servers, and offline stability fixes.",
+  "version": "1.1.8",
+  "versionCode": 19,
+  "downloadUrl": "https://github.com/Dszae/sportivo/releases/download/v1.1.8-apk/app-release.apk",
+  "releaseNotes": "Fixed 'This player only works when embedded' on mobile, added dedicated Basketball Desk & fixtures, prioritized non-expiring Action Sports feeds, and updated live status detection.",
   "publishedAt": "2026-11-09"
 }

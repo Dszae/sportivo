@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { GridIcon, FootballIcon, TrophyIcon, CricketIcon, BookmarkIcon } from '../components/Icons';
+import { GridIcon, FootballIcon, TrophyIcon, CricketIcon, BookmarkIcon, BasketballIcon } from '../components/Icons';
 import { RootStackParamList } from '../types';
 import { colors, fonts } from '../theme';
 
@@ -10,6 +10,7 @@ import HomeScreen from '../screens/HomeScreen';
 import FootballScreen from '../screens/FootballScreen';
 import NplScreen from '../screens/NplScreen';
 import CricketScreen from '../screens/CricketScreen';
+import BasketballScreen from '../screens/BasketballScreen';
 import WatchlistScreen from '../screens/WatchlistScreen';
 import MatchPlayerScreen from '../screens/MatchPlayerScreen';
 import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
@@ -35,7 +36,7 @@ function BottomTabs() {
         tabBarInactiveTintColor: colors.fg3,
         tabBarLabelStyle: {
           fontFamily: fonts.sansMedium,
-          fontSize: 11,
+          fontSize: 10,
         },
       }}
     >
@@ -45,15 +46,6 @@ function BottomTabs() {
         options={{
           tabBarLabel: 'Home',
           tabBarIcon: ({ color }) => <GridIcon size={20} color={color} />,
-        }}
-      />
-
-      <Tab.Screen
-        name="FootballTab"
-        component={FootballScreen}
-        options={{
-          tabBarLabel: 'Football',
-          tabBarIcon: ({ color }) => <FootballIcon size={20} color={color} />,
         }}
       />
 
@@ -72,6 +64,15 @@ function BottomTabs() {
       />
 
       <Tab.Screen
+        name="FootballTab"
+        component={FootballScreen}
+        options={{
+          tabBarLabel: 'Football',
+          tabBarIcon: ({ color }) => <FootballIcon size={20} color={color} />,
+        }}
+      />
+
+      <Tab.Screen
         name="CricketTab"
         component={CricketScreen}
         options={{
@@ -81,11 +82,11 @@ function BottomTabs() {
       />
 
       <Tab.Screen
-        name="WatchlistTab"
-        component={WatchlistScreen}
+        name="BasketballTab"
+        component={BasketballScreen}
         options={{
-          tabBarLabel: 'Watchlist',
-          tabBarIcon: ({ color, focused }) => <BookmarkIcon size={20} color={color} fill={focused ? color : undefined} />,
+          tabBarLabel: 'Basketball',
+          tabBarIcon: ({ color }) => <BasketballIcon size={20} color={color} />,
         }}
       />
     </Tab.Navigator>
@@ -105,6 +106,11 @@ export default function RootNavigator() {
     >
       <Stack.Screen name="MainTabs" component={BottomTabs} options={{ headerShown: false }} />
       <Stack.Screen name="MatchPlayer" component={MatchPlayerScreen} options={{ headerShown: false }} />
+      <Stack.Screen
+        name="WatchlistTab"
+        component={WatchlistScreen}
+        options={{ title: 'Watchlist', headerBackTitle: 'Back' }}
+      />
       <Stack.Screen
         name="NotificationSettings"
         component={NotificationSettingsScreen}

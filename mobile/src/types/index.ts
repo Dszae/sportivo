@@ -88,6 +88,7 @@ export type RootStackParamList = {
   MatchPlayer: {
     match: Match;
   };
+  WatchlistTab: undefined;
   NotificationSettings: undefined;
   AboutCreator: undefined;
 };

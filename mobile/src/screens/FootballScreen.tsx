@@ -87,8 +87,13 @@ export default function FootballScreen() {
   const renderMatchCard = ({ item }: { item: Match }) => {
     const slug = item.slug || item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     const isStarred = starredSlugs.includes(slug);
-    const isLive = item.status === 'Live';
-    const kickoff = formatKathmanduTime(item.timestamp || item.startTime || Date.now());
+    const matchTime = typeof item.date === 'number' ? item.date : (item.timestamp || (item.date ? new Date(item.date).getTime() : 0));
+    const isLive = Boolean(
+      item.status?.toLowerCase() === 'live' ||
+      item.status?.toLowerCase() === 'in' ||
+      (matchTime > 0 && Date.now() >= matchTime - 5 * 60 * 1000 && Date.now() <= matchTime + 115 * 60 * 1000 && item.status?.toLowerCase() !== 'final')
+    );
+    const kickoff = matchTime > 0 ? formatKathmanduTime(matchTime) : (isLive ? 'Live' : 'Upcoming');
     const { first, second } = teamParts(item.title);
     const homeTeam = item.teams?.home?.name || first || 'Home';
     const awayTeam = item.teams?.away?.name || second || 'Away';

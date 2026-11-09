@@ -43,6 +43,18 @@ export function FootballIcon({ size = 20, color = colors.fg2, style }: IconProps
   );
 }
 
+export function BasketballIcon({ size = 20, color = colors.fg2, style }: IconProps) {
+  return (
+    <ViewWrapper style={style}>
+      <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+        <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.5" />
+        <Path d="M12 3v18M3 12h18" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+        <Path d="M5.5 5.5c3.5 3.5 3.5 9.5 0 13M18.5 5.5c-3.5 3.5-3.5 9.5 0 13" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      </Svg>
+    </ViewWrapper>
+  );
+}
+
 export function TrophyIcon({ size = 20, color = colors.fg2, style }: IconProps) {
   return (
     <ViewWrapper style={style}>
