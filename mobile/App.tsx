@@ -14,8 +14,6 @@ import {
 import { startGroundScorePoller } from './src/services/scoreService';
 import { colors } from './src/theme';
 
-SplashScreen.preventAutoHideAsync().catch(() => {});
-
 const SportivoDarkTheme = {
   ...DarkTheme,
   colors: {
@@ -39,33 +37,37 @@ export default function App() {
   });
 
   useEffect(() => {
+    // Unconditionally hide splash screen immediately on mount so the app opens instantly
+    SplashScreen.hideAsync().catch(() => {});
+
+    // Initialize notification channels safely in background
     (async () => {
-      await setupNotificationChannels();
-      await requestNativeNotificationPermission();
-      // Purge all legacy / phantom scheduled notifications completely
       try {
+        await setupNotificationChannels();
+        await requestNativeNotificationPermission();
         await Notifications.cancelAllScheduledNotificationsAsync();
-      } catch {}
+      } catch (err) {
+        console.warn('[App] Notification initialization notice:', err);
+      }
     })();
 
-    // Start real-time ground scorer poller (3.5s ball-by-ball 4s, 6s, wickets, wides, no-balls)
-    const stopPoller = startGroundScorePoller();
+    // Start real-time ground scorer poller safely
+    let stopPoller: (() => void) | null = null;
+    try {
+      stopPoller = startGroundScorePoller();
+    } catch (err) {
+      console.warn('[App] Scorer poller notice:', err);
+    }
+
     return () => {
-      stopPoller();
+      if (stopPoller) stopPoller();
     };
   }, []);
-
-  useEffect(() => {
-    if (fontsLoaded || fontError) SplashScreen.hideAsync().catch(() => {});
-  }, [fontsLoaded, fontError]);
-
-  // Render with system fonts if loading fails rather than blocking the app.
-  if (!fontsLoaded && !fontError) return null;
 
   return (
     <SafeAreaProvider>
       <NavigationContainer theme={SportivoDarkTheme}>
-        <StatusBar style="light" backgroundColor="transparent" translucent />
+        <StatusBar style="light" backgroundColor="#080a0b" translucent />
         <RootNavigator />
       </NavigationContainer>
     </SafeAreaProvider>
