@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # Fast, asynchronous Python FastAPI Backend
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sportivo_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME=Sportivo API
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql+asyncpg://sportivo:sportivo_secret@postgres:5432/sportivo_db
+      - REDIS_URL=redis://redis:6379/0
+      - CORS_ORIGINS=*
+      - PORT=8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sportivo_network
+
+  # Relational Database: PostgreSQL 16
+  postgres:
+    image: postgres:16-alpine
+    container_name: sportivo_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sportivo
+      POSTGRES_PASSWORD: sportivo_secret
+      POSTGRES_DB: sportivo_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sportivo -d sportivo_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sportivo_network
+
+  # High-Speed In-Memory Cache: Redis 7
+  redis:
+    image: redis:7-alpine
+    container_name: sportivo_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sportivo_network
+
+networks:
+  sportivo_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

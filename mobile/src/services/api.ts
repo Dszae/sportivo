@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Match, NplMatch, Category, StreamSource } from '../types';
 
-export const API_BASE_URL = 'https://sportivo.dipeshsapkota7.com.np/api';
+export const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL || 'https://sportivo.dipeshsapkota7.com.np/api';
 
 const CACHE_KEYS = {
   FOOTBALL: 'cache_matches_football',

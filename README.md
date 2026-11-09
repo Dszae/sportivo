@@ -12,11 +12,13 @@
 
 [![Astro 5](https://img.shields.io/badge/Astro%205-Server--Side%20Rendered-ff5d01?style=flat-square&logo=astro&logoColor=white)](https://astro.build/)
 [![React 19](https://img.shields.io/badge/React%2019-UI%20Islands-61dafb?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
-[![React Native](https://img.shields.io/badge/React%20Native-Expo%20ExoPlayer-000000?style=flat-square&logo=react&logoColor=white)](https://reactnative.dev/)
+[![React Native](https://img.shields.io/badge/React%20Native-Expo%20SDK%2052-000000?style=flat-square&logo=react&logoColor=white)](https://reactnative.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-Dark%20Theme-38bdf8?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![Vercel Edge](https://img.shields.io/badge/Vercel-Edge%20Deployed-000000?style=flat-square&logo=vercel&logoColor=white)](https://vercel.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Python%203.12-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169e1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-7%20Cache-dc382d?style=flat-square&logo=redis&logoColor=white)](https://redis.io/)
+[![Docker](https://img.shields.io/badge/Docker-Compose%20Ready-2496ed?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+[![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI%2FCD-2088ff?style=flat-square&logo=githubactions&logoColor=white)](https://github.com/features/actions)
 
 <br />
 
@@ -153,19 +155,24 @@ The repository includes a production-grade native Android mobile application loc
 
 ## 🛠 Full Tech Stack
 
-### Web Platform
-- **Framework**: [Astro 5](https://astro.build/) (Server-Side Rendering on Vercel Edge)
-- **UI Islands**: React 19 + TypeScript
-- **Styling**: Tailwind CSS (Dark Sports Theme `#080a0b` with Neon Lime `#c9f36b`)
-- **Player**: `Hls.js` with customized Low-Latency configuration & drift watchdog
-- **Audio**: Web Audio API oscillator synthesis
-- **PWA**: Service Worker caching (`sw.js`) with Web App Manifest
+### 1. Mobile Application (`/mobile`)
+- **Language**: **TypeScript** (100% strict type safety)
+- **Framework**: **React Native** (React 18 / New Architecture ready)
+- **Tooling & SDK**: **Expo SDK 52** (Expo AV, Expo Notifications, Expo Haptics, Expo System UI)
+- **Video Engine**: Native Android ExoPlayer / Shaka Player WebView for multi-device live streaming
+- **Build & CI**: Android Gradle Plugin 8.3 + JDK 17 with automated GitHub Actions native APK releases
 
-### Mobile App (`/mobile`)
-- **Framework**: React Native + [Expo SDK 52](https://expo.dev/)
-- **Video Engine**: Expo AV with native Android ExoPlayer
-- **Notifications**: Expo Notifications with Android `AlarmManager` integration
-- **Build System**: Android Gradle Plugin 8.3 + JDK 17
+### 2. Backend Services (`/backend`)
+- **Language**: **Python 3.12**
+- **Web Framework**: **FastAPI** (High-throughput async ASGI with Pydantic v2 & automatic Swagger `/docs`)
+- **Database**: **PostgreSQL 16** via **SQLAlchemy 2.0** (`asyncpg` async driver)
+- **In-Memory Cache**: **Redis 7** (3-second live match telemetry caching, stream probe cache, rate-limiting)
+- **Containerization**: **Docker** multi-stage builds & **Docker Compose** orchestration (`docker compose up`)
+
+### 3. Web Platform & Delivery
+- **Framework**: Astro 5 (Server-Side Rendered on Edge) + React 19 UI Islands
+- **Styling**: Tailwind CSS (Dark Sports Theme `#080a0b` with Neon Lime `#c9f36b`)
+- **Version Control & CI/CD**: **Git & GitHub** with **GitHub Actions** (`ci.yml`, `cd.yml`, `build-native-apk.yml`, `backend-ci.yml`)
 
 ---
 
