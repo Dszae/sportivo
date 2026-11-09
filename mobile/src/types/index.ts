@@ -9,6 +9,7 @@ export interface StreamSource {
   isDirectStream?: boolean;
   hd?: boolean;
   language?: string;
+  licenseUrl?: string;
 }
 
 export interface MatchTeams {

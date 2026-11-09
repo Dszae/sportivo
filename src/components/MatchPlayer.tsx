@@ -24,6 +24,7 @@ interface StreamItem {
   language?: string;
   isNativeVideo?: boolean;
   isSandboxedIframe?: boolean;
+  licenseUrl?: string;
 }
 
 type Props = {
@@ -344,17 +345,31 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
                 },
               });
 
-              // ClearKey DRM decryption if key credentials are present in URL params
+              // DRM decryption (Widevine or ClearKey)
               try {
                 const urlObj = new URL(streamUrl, 'https://sportivo.internal');
                 const keyId = urlObj.searchParams.get('keyid');
                 const key = urlObj.searchParams.get('key');
+                const licenseParam = urlObj.searchParams.get('license') || urlObj.searchParams.get('widevine');
+                const widevineLicense =
+                  activeStream?.licenseUrl ||
+                  licenseParam ||
+                  (streamUrl.includes('nettv.com.np')
+                    ? 'https://widevine-dash.ezdrm.com/proxy?pX=196792&user_id=M2ZhNWI0YzAtNzgxNy00MjRlLWFlODMtZWFmYWJmNDRmMjU1&CustomData=eyJyZXNlbGxlcl9pZCI6IjEwNyIsInN1YnNjcmliZXJfaWQiOiIxMDc3NDk3NiIsInNlcmlhbCI6ImdsXzExMTUwMTQwMDk4MTM0NDk0MDcxMi0xMDciLCJtYXRjaF9rZXkiOiJhLXJ6LS1jcmlja2V0LS1wODIxMDMxNjQ3MDA5NzA4NzY5NzYiLCJleHAiOjE3OTQyMDgyNDUsInNpZCI6ImIwNTQ5MzYzZDE5MzNhZGIyMmQwYzE1NTk1NWZjMTIyIiwicGxhdGZvcm0iOiJ3ZWIiLCJlbnRpdGxlZF91bnRpbCI6MTc5NDIyMTc0NSwibWF4X2NvbmN1cnJlbnQiOjEsInN1YnNjcmliZXJfc3RiX2lkIjoiMTM3Mzg1NTAiLCJ1YmJfZ3VpZCI6IjNmYTViNGMwLTc4MTctNDI0ZS1hZTgzLWVhZmFiZjQ0ZjI1NSJ9.0WmvaLJI7I_8734LxcSxUoityWDgrh8bqJoYVwzJDz0'
+                    : undefined);
+
+                const drmConfig: any = {};
                 if (keyId && key) {
-                  player.configure({
-                    drm: {
-                      clearKeys: { [keyId]: key },
-                    },
-                  });
+                  drmConfig.clearKeys = { [keyId]: key };
+                }
+                if (widevineLicense) {
+                  drmConfig.servers = {
+                    'com.widevine.alpha': widevineLicense,
+                  };
+                }
+
+                if (Object.keys(drmConfig).length > 0) {
+                  player.configure({ drm: drmConfig });
                 }
               } catch {}
 

@@ -1578,7 +1578,7 @@
       await loadDashStream('https://ott-edge-mtdc.nettv.com.np/npl/live_match3/index.mpd?CMCD=br%3D4194%2Cot%3Dm%2Cmtp%3D4194%2Csu%2Ccid%3D%22a-rz--cricket--p82103164700970876976%22%2Csf%3Dd%2Csid%3D%2272e4fbbc-1164-432c-a971-e66e1720d965%22%2Cst%3Dv');
     }
 
-    async function loadDashStream(url, keyId, key) {
+    async function loadDashStream(url, keyId, key, licenseUrl) {
       const videoEl = document.getElementById('videoPlayer');
       const iframeEl = document.getElementById('embedPlayer');
 
@@ -1599,7 +1599,7 @@
       iframeEl.src = '';
       videoEl.style.display = 'block';
 
-      // 1. Google Shaka Player (Handles CENC ClearKey DRM & Unencrypted Live Edge)
+      // 1. Google Shaka Player (Handles Widevine & ClearKey CENC DRM)
       if (typeof shaka !== 'undefined' && shaka.Player.isBrowserSupported()) {
         shaka.polyfill.installAll();
         shakaPlayer = new shaka.Player();
@@ -1618,13 +1618,18 @@
           },
         });
 
-        // ClearKey CENC DRM decryption for encrypted feeds (e.g. FanCode)
+        // DRM decryption for encrypted feeds (Widevine or ClearKey)
+        const defaultWidevine = 'https://widevine-dash.ezdrm.com/proxy?pX=196792&user_id=M2ZhNWI0YzAtNzgxNy00MjRlLWFlODMtZWFmYWJmNDRmMjU1&CustomData=eyJyZXNlbGxlcl9pZCI6IjEwNyIsInN1YnNjcmliZXJfaWQiOiIxMDc3NDk3NiIsInNlcmlhbCI6ImdsXzExMTUwMTQwMDk4MTM0NDk0MDcxMi0xMDciLCJtYXRjaF9rZXkiOiJhLXJ6LS1jcmlja2V0LS1wODIxMDMxNjQ3MDA5NzA4NzY5NzYiLCJleHAiOjE3OTQyMDgyNDUsInNpZCI6ImIwNTQ5MzYzZDE5MzNhZGIyMmQwYzE1NTk1NWZjMTIyIiwicGxhdGZvcm0iOiJ3ZWIiLCJlbnRpdGxlZF91bnRpbCI6MTc5NDIyMTc0NSwibWF4X2NvbmN1cnJlbnQiOjEsInN1YnNjcmliZXJfc3RiX2lkIjoiMTM3Mzg1NTAiLCJ1YmJfZ3VpZCI6IjNmYTViNGMwLTc4MTctNDI0ZS1hZTgzLWVhZmFiZjQ0ZjI1NSJ9.0WmvaLJI7I_8734LxcSxUoityWDgrh8bqJoYVwzJDz0';
+        const widevineServer = licenseUrl || (url.includes('nettv.com.np') ? defaultWidevine : undefined);
+        const drmConfig = {};
         if (keyId && key) {
-          shakaPlayer.configure({
-            drm: {
-              clearKeys: { [keyId]: key },
-            },
-          });
+          drmConfig.clearKeys = { [keyId]: key };
+        }
+        if (widevineServer) {
+          drmConfig.servers = { 'com.widevine.alpha': widevineServer };
+        }
+        if (Object.keys(drmConfig).length > 0) {
+          shakaPlayer.configure({ drm: drmConfig });
         }
 
         shakaPlayer.addEventListener('error', (event) => {

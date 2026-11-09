@@ -25,6 +25,7 @@ export const APPROVED_PLAYBACK_DOMAINS = [
   'youtube-nocookie.com',
   'nettvstreamz.com',
   'nettv.com.np',
+  'ezdrm.com',
   'embedindia.st',
   'pages.dev',
   'rumble.com',

@@ -42,6 +42,7 @@ export interface PlaybackStream {
   language?: string;
   isNativeVideo?: boolean;
   isSandboxedIframe?: boolean;
+  licenseUrl?: string;
 }
 
 export interface PlaybackResolution {
