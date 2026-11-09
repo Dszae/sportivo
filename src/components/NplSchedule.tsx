@@ -269,7 +269,7 @@ export default function NplSchedule() {
       );
 
     return (
-      <div key={m.id} className={`card flex flex-col transition-colors duration-fast ease-out hover:border-line-strong ${isLive ? 'border-line-strong' : ''} ${isCompleted ? 'opacity-80' : ''}`}>
+      <div key={m.id} className={`card flex flex-col w-full max-w-full overflow-hidden transition-colors duration-fast ease-out hover:border-line-strong ${isLive ? 'border-line-strong' : ''} ${isCompleted ? 'opacity-80' : ''}`}>
         <div className="flex h-10 items-center justify-between border-b border-line px-4">
           <span className="meta">
             Match <span className="clock">{m.matchNumber}</span>, {m.round}
@@ -385,7 +385,7 @@ export default function NplSchedule() {
   ];
 
   return (
-    <div className="w-full">
+    <div className="w-full max-w-full overflow-hidden">
       {liveFixture && (
         <section className="panel mb-6 sm:mb-10 overflow-hidden border-line-strong" aria-label="Live now">
           <div className="flex h-10 sm:h-12 items-center justify-between border-b border-line px-3.5 sm:px-5">

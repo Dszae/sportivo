@@ -761,7 +761,7 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
   const categoryLabel = match.category || 'Sports';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-hidden">
       {/* Toast notifications for hotkeys and auto-failover */}
       {failoverToast && (
         <div className="animate-fade-in fixed top-20 right-6 z-50 flex items-center gap-2 rounded-lg border border-line bg-ink-800 px-4 py-2 text-sm text-fg shadow-float">
@@ -786,29 +786,29 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
       >
         {/* Player Top Navigation & Live Telemetry Bar - completely hidden in fullscreen mode */}
         {!isFullscreen && (
-          <div className="player-top-bar flex flex-wrap items-center justify-between gap-3 border-b border-line bg-ink-950 p-4">
-            <div>
-              <div className="flex items-center gap-3">
+          <div className="player-top-bar flex items-center justify-between gap-2 border-b border-line bg-ink-950 p-2.5 sm:p-4 overflow-hidden">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
                 {isLive ? (
-                  <span className="live-tag">
+                  <span className="live-tag text-xs sm:text-sm shrink-0">
                     <span className="live-dot"></span>
                     Live
                   </span>
                 ) : (
-                  <span className="meta">{status === 'Final' ? 'Final' : 'Scheduled'}</span>
+                  <span className="meta shrink-0 text-xs">{status === 'Final' ? 'Final' : 'Scheduled'}</span>
                 )}
-                <h2 className="text-base font-medium text-fg">{title}</h2>
+                <h2 className="text-xs sm:text-base font-medium text-fg truncate">{title}</h2>
               </div>
 
               {sources.length > 1 && (
-                <div className="mt-2 flex flex-wrap items-center gap-1">
-                  <span className="meta mr-1">Servers</span>
+                <div className="mt-1.5 flex items-center gap-1 overflow-x-auto no-scrollbar">
+                  <span className="meta mr-1 shrink-0 text-xs">Servers</span>
                   {sources.map((_s, idx) => (
                     <button
                       key={idx}
                       type="button"
                       onClick={() => handleSourceChange(idx)}
-                      className={`chip ${selectedSourceIndex === idx ? 'chip-active' : ''}`}
+                      className={`chip shrink-0 text-xs ${selectedSourceIndex === idx ? 'chip-active' : ''}`}
                     >
                       Server <span className="clock">{idx + 1}</span>
                     </button>
@@ -817,21 +817,22 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
               )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               {/* Live Edge Sync Button */}
               <button
                 type="button"
                 onClick={jumpToLiveEdge}
-                className="btn btn-secondary"
+                className="btn btn-secondary btn-sm text-xs"
                 title="Press 'L' key to jump directly to live broadcast edge"
               >
                 {isLive && <span className="live-dot"></span>}
-                <span>Live edge</span>
+                <span className="hidden sm:inline">Live edge</span>
+                <span className="sm:hidden">Live</span>
               </button>
 
               {/* Keyboard Shortcuts Guide Pill */}
               <div
-                className="hidden h-9 items-center gap-1 rounded-lg border border-line bg-ink-800 px-2 sm:flex"
+                className="hidden h-9 items-center gap-1 rounded-lg border border-line bg-ink-800 px-2 lg:flex"
                 title="Hotkeys: Space (Play/Pause), M (Mute), F (Fullscreen), L (Live Edge), N (Alerts)"
               >
                 <span className="clock rounded-md bg-ink-700 px-1 text-xs text-fg-2">Space</span>
@@ -1174,17 +1175,17 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
               recentBalls && recentBalls.length > 0 ? recentBalls.slice(-8) : [];
 
             return (
-              <div className="card p-3 sm:p-5 shadow-panel">
+              <div className="card p-3 sm:p-5 shadow-panel w-full max-w-full overflow-hidden">
                 {/* Top Match Header Bar */}
-                <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-line pb-2.5 sm:pb-3">
-                  <div className="flex min-w-0 items-center gap-1.5 text-xs sm:text-sm">
+                <div className="flex items-center justify-between gap-2 border-b border-line pb-2.5 sm:pb-3 overflow-hidden">
+                  <div className="flex min-w-0 items-center gap-1.5 text-xs sm:text-sm overflow-hidden">
                     <span className="live-dot shrink-0" />
                     <span className="font-semibold text-fg shrink-0">{matchTitle}</span>
                     <span className="text-fg-3 hidden sm:inline">|</span>
                     <span className="truncate text-fg-2 text-xs sm:text-sm">{venue}</span>
                   </div>
                   {tossNote && (
-                    <span className="chip text-[11px] sm:text-xs shrink-0 py-0.5 px-2">
+                    <span className="chip text-[11px] sm:text-xs shrink-0 py-0.5 px-2 max-w-[130px] truncate">
                       {tossNote}
                     </span>
                   )}
@@ -1461,7 +1462,7 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
           })()}
 
           {/* Interactive Match Hub: Tabs for Commentary, Upcoming Fixtures & Points Table */}
-          <div className="card overflow-hidden">
+          <div className="card overflow-hidden w-full max-w-full">
             {/* Hub Tabs Header */}
             <div className="flex items-center gap-1.5 border-b border-line bg-ink-950 p-2 overflow-x-auto no-scrollbar">
               <button
@@ -1522,9 +1523,9 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
                         )}
                       </div>
 
-                      <div className="flex-1">
-                        <p className="text-sm text-fg-2">{cleanCricketText(comm.bowlerToBatsman)}</p>
-                        <p className="mt-1 text-sm leading-relaxed text-fg">{cleanCricketText(comm.text)}</p>
+                      <div className="flex-1 min-w-0 overflow-hidden break-words">
+                        <p className="text-xs sm:text-sm text-fg-2 truncate">{cleanCricketText(comm.bowlerToBatsman)}</p>
+                        <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm leading-relaxed text-fg break-words">{cleanCricketText(comm.text)}</p>
                       </div>
                     </div>
                   ))
@@ -1547,14 +1548,14 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
                       </div>
 
                       <div className="my-3 flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <img src={m.homeTeamLogo} alt="" className="h-6 w-6 object-contain" />
-                          <span className="text-sm font-medium text-fg">{m.homeTeam}</span>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <img src={m.homeTeamLogo} alt="" className="h-5 w-5 sm:h-6 sm:w-6 object-contain shrink-0" />
+                          <span className="text-xs sm:text-sm font-medium text-fg truncate">{m.homeTeam}</span>
                         </div>
-                        <span className="meta">v</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-fg">{m.awayTeam}</span>
-                          <img src={m.awayTeamLogo} alt="" className="h-6 w-6 object-contain" />
+                        <span className="meta shrink-0">v</span>
+                        <div className="flex min-w-0 items-center gap-2 justify-end">
+                          <span className="text-xs sm:text-sm font-medium text-fg truncate">{m.awayTeam}</span>
+                          <img src={m.awayTeamLogo} alt="" className="h-5 w-5 sm:h-6 sm:w-6 object-contain shrink-0" />
                         </div>
                       </div>
 
@@ -1586,69 +1587,71 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
 
             {/* Tab 3: Points Table */}
             {activeHubTab === 'standings' && (
-              <div className="overflow-x-auto p-4 sm:p-5">
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="eyebrow">Nepal Premier League 2026 Standings</span>
-                  <span className="text-xs font-mono text-fg-3">Top 4 qualify for playoffs</span>
+              <div className="w-full max-w-full overflow-hidden p-3 sm:p-5">
+                <div className="mb-2 sm:mb-3 flex items-center justify-between">
+                  <span className="eyebrow text-xs sm:text-sm">NPL 2026 Standings</span>
+                  <span className="text-[11px] sm:text-xs font-mono text-fg-3">Top 4 qualify</span>
                 </div>
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="meta border-b border-line">
-                      <th className="h-9 px-3 font-normal">#</th>
-                      <th className="h-9 px-3 font-normal">Team</th>
-                      <th className="h-9 px-3 text-right font-normal">P</th>
-                      <th className="h-9 px-3 text-right font-normal">W</th>
-                      <th className="h-9 px-3 text-right font-normal">L</th>
-                      <th className="h-9 px-3 text-right font-normal">NR</th>
-                      <th className="h-9 px-3 text-right font-normal">Pts</th>
-                      <th className="h-9 px-3 text-right font-normal">NRR</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-line">
-                    {nplStandings.map((team, idx) => (
-                      <tr
-                        key={team.name}
-                        className={`transition-colors duration-fast ease-out hover:bg-ink-700/60 ${
-                          idx < 4 ? 'bg-ink-800/40' : ''
-                        }`}
-                      >
-                        <td className="clock h-10 px-3 text-xs text-fg-3">
-                          <div className="flex items-center gap-1.5">
-                            {idx < 4 && <span className="h-1.5 w-1.5 rounded-full bg-lime" />}
-                            <span>{team.rank || idx + 1}</span>
-                          </div>
-                        </td>
-                        <td className="h-10 px-3">
-                          <div className="flex items-center gap-2">
-                            {(team.logo || NPL_TEAMS[team.name]?.logo) && (
-                              <img
-                                src={team.logo || NPL_TEAMS[team.name]?.logo}
-                                alt=""
-                                className="h-5 w-5 object-contain"
-                              />
-                            )}
-                            <span className="font-medium text-fg">{team.name}</span>
-                            {team.short && (
-                              <span className="text-xs font-mono text-fg-3">({team.short})</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="clock h-10 px-3 text-right text-fg-2">{team.p}</td>
-                        <td className="clock h-10 px-3 text-right font-medium text-lime">{team.w}</td>
-                        <td className="clock h-10 px-3 text-right text-fg-3">{team.l}</td>
-                        <td className="clock h-10 px-3 text-right text-fg-3">{team.nr ?? 0}</td>
-                        <td className="clock h-10 px-3 text-right font-bold text-lime">{team.pts}</td>
-                        <td
-                          className={`clock h-10 px-3 text-right font-mono text-xs ${
-                            String(team.nrr).startsWith('+') ? 'text-lime' : 'text-fg-3'
+                <div className="w-full max-w-full overflow-x-auto no-scrollbar">
+                  <table className="w-full text-left text-xs sm:text-sm">
+                    <thead>
+                      <tr className="meta border-b border-line text-[11px] sm:text-xs">
+                        <th className="h-8 sm:h-9 px-1.5 sm:px-3 font-normal">#</th>
+                        <th className="h-8 sm:h-9 px-1.5 sm:px-3 font-normal">Team</th>
+                        <th className="h-8 sm:h-9 px-1.5 sm:px-3 text-right font-normal">P</th>
+                        <th className="h-8 sm:h-9 px-1.5 sm:px-3 text-right font-normal">W</th>
+                        <th className="h-8 sm:h-9 px-1.5 sm:px-3 text-right font-normal hidden sm:table-cell">L</th>
+                        <th className="h-8 sm:h-9 px-1.5 sm:px-3 text-right font-normal hidden sm:table-cell">NR</th>
+                        <th className="h-8 sm:h-9 px-1.5 sm:px-3 text-right font-normal">Pts</th>
+                        <th className="h-8 sm:h-9 px-1.5 sm:px-3 text-right font-normal">NRR</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {nplStandings.map((team, idx) => (
+                        <tr
+                          key={team.name}
+                          className={`transition-colors duration-fast ease-out hover:bg-ink-700/60 ${
+                            idx < 4 ? 'bg-ink-800/40' : ''
                           }`}
                         >
-                          {team.nrr}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          <td className="clock h-8 sm:h-10 px-1.5 sm:px-3 text-[11px] sm:text-xs text-fg-3">
+                            <div className="flex items-center gap-1">
+                              {idx < 4 && <span className="h-1.5 w-1.5 rounded-full bg-lime shrink-0" />}
+                              <span>{team.rank || idx + 1}</span>
+                            </div>
+                          </td>
+                          <td className="h-8 sm:h-10 px-1.5 sm:px-3 min-w-0">
+                            <div className="flex items-center gap-1.5 sm:gap-2">
+                              {(team.logo || NPL_TEAMS[team.name]?.logo) && (
+                                <img
+                                  src={team.logo || NPL_TEAMS[team.name]?.logo}
+                                  alt=""
+                                  className="h-4 w-4 sm:h-5 sm:w-5 object-contain shrink-0"
+                                />
+                              )}
+                              <span className="font-medium text-fg truncate text-xs sm:text-sm">
+                                <span className="sm:hidden">{team.short || team.name.slice(0, 3).toUpperCase()}</span>
+                                <span className="hidden sm:inline">{team.name}</span>
+                              </span>
+                            </div>
+                          </td>
+                          <td className="clock h-8 sm:h-10 px-1.5 sm:px-3 text-right text-fg-2">{team.p}</td>
+                          <td className="clock h-8 sm:h-10 px-1.5 sm:px-3 text-right font-medium text-lime">{team.w}</td>
+                          <td className="clock h-8 sm:h-10 px-1.5 sm:px-3 text-right text-fg-3 hidden sm:table-cell">{team.l}</td>
+                          <td className="clock h-8 sm:h-10 px-1.5 sm:px-3 text-right text-fg-3 hidden sm:table-cell">{team.nr ?? 0}</td>
+                          <td className="clock h-8 sm:h-10 px-1.5 sm:px-3 text-right font-bold text-lime">{team.pts}</td>
+                          <td
+                            className={`clock h-8 sm:h-10 px-1.5 sm:px-3 text-right font-mono text-[11px] sm:text-xs ${
+                              String(team.nrr).startsWith('+') ? 'text-lime' : 'text-fg-3'
+                            }`}
+                          >
+                            {team.nrr}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>

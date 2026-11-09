@@ -222,12 +222,10 @@ async function discoverAndProbeNplStreams(signal?: AbortSignal) {
     })
   );
 
-  // Auto-rank: verified healthy feeds first, prioritizing NetTV DASH zero-lag cluster and genuine Action Sports
+  // Auto-rank: verified healthy feeds first, prioritizing universally working multi-device feeds
   probed.sort((a, b) => {
-    if (a.url.includes('nettvstreamz') && !b.url.includes('nettvstreamz')) return -1;
-    if (!a.url.includes('nettvstreamz') && b.url.includes('nettvstreamz')) return 1;
-    if (a.url.includes('nettv.com.np') && !b.url.includes('nettv.com.np')) return -1;
-    if (!a.url.includes('nettv.com.np') && b.url.includes('nettv.com.np')) return 1;
+    if (a.url.includes('pages.dev') && !b.url.includes('pages.dev')) return -1;
+    if (!a.url.includes('pages.dev') && b.url.includes('pages.dev')) return 1;
     if (a.isAlive && !b.isAlive) return -1;
     if (!a.isAlive && b.isAlive) return 1;
     return a.latency - b.latency;
@@ -236,7 +234,7 @@ async function discoverAndProbeNplStreams(signal?: AbortSignal) {
   const formattedStreams = probed.map((s, idx) => ({
     embedUrl: s.url,
     hd: true,
-    isNativeVideo: s.url.includes('.mpd') || s.url.includes('.m3u8') || s.url.includes('.mp4'),
+    isNativeVideo: !s.url.includes('plyrr') && !s.url.includes('pages.dev') && (s.url.includes('.mpd') || s.url.includes('.m3u8') || s.url.includes('.mp4')),
     isSandboxedIframe: s.url.includes('plyrr') || s.url.includes('pages.dev'),
     language: `Server DSZ${idx + 1}`,
   }));
@@ -245,11 +243,25 @@ async function discoverAndProbeNplStreams(signal?: AbortSignal) {
   if (formattedStreams.length === 0) {
     formattedStreams.push(
       {
+        embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/8wxsmuwvra/out/v1/06f2368f16e8470b8593cb77dcad31fe/cenc.mpd&keyid=f638f10e9bee65a698926a527722e332&key=a9f519367caf419607f6705e3d767935',
+        hd: true,
+        isNativeVideo: false,
+        isSandboxedIframe: true,
+        language: 'Server DSZ1 (Action Sports 1080p HD - Multi-Device Direct)',
+      },
+      {
+        embedUrl: 'https://yonotv-now.pages.dev/plyrr?src=https://hugh.cdn.rumble.cloud/live/hd37fm8g/live-hls/yjkj-u9ug/chunklist_i1_DVR.m3u8',
+        hd: true,
+        isNativeVideo: false,
+        isSandboxedIframe: true,
+        language: 'Server DSZ2 (Action Sports Direct HLS)',
+      },
+      {
         embedUrl: 'https://ott-edge-mtdc.nettv.com.np/npl/live_match3/index.mpd?CMCD=br%3D4194%2Cot%3Dm%2Cmtp%3D4194%2Csu%2Ccid%3D%22a-rz--cricket--p82103164700970876976%22%2Csf%3Dd%2Csid%3D%2272e4fbbc-1164-432c-a971-e66e1720d965%22%2Cst%3Dv',
         hd: true,
         isNativeVideo: true,
         isSandboxedIframe: false,
-        language: 'Server DSZ1 (NetTV Edge MTDC Live 3)',
+        language: 'Server DSZ3 (NetTV Edge MTDC Live 3)',
         licenseUrl: 'https://widevine-dash.ezdrm.com/proxy?pX=196792&user_id=M2ZhNWI0YzAtNzgxNy00MjRlLWFlODMtZWFmYWJmNDRmMjU1&CustomData=eyJyZXNlbGxlcl9pZCI6IjEwNyIsInN1YnNjcmliZXJfaWQiOiIxMDc3NDk3NiIsInNlcmlhbCI6ImdsXzExMTUwMTQwMDk4MTM0NDk0MDcxMi0xMDciLCJtYXRjaF9rZXkiOiJhLXJ6LS1jcmlja2V0LS1wODIxMDMxNjQ3MDA5NzA4NzY5NzYiLCJleHAiOjE3OTQyMDgyNDUsInNpZCI6ImIwNTQ5MzYzZDE5MzNhZGIyMmQwYzE1NTk1NWZjMTIyIiwicGxhdGZvcm0iOiJ3ZWIiLCJlbnRpdGxlZF91bnRpbCI6MTc5NDIyMTc0NSwibWF4X2NvbmN1cnJlbnQiOjEsInN1YnNjcmliZXJfc3RiX2lkIjoiMTM3Mzg1NTAiLCJ1YmJfZ3VpZCI6IjNmYTViNGMwLTc4MTctNDI0ZS1hZTgzLWVhZmFiZjQ0ZjI1NSJ9.0WmvaLJI7I_8734LxcSxUoityWDgrh8bqJoYVwzJDz0',
       },
       {
@@ -257,29 +269,15 @@ async function discoverAndProbeNplStreams(signal?: AbortSignal) {
         hd: true,
         isNativeVideo: true,
         isSandboxedIframe: false,
-        language: 'Server DSZ2 (NetTV Load Balancer Live 3)',
+        language: 'Server DSZ4 (NetTV Load Balancer Live 3)',
         licenseUrl: 'https://widevine-dash.ezdrm.com/proxy?pX=196792&user_id=M2ZhNWI0YzAtNzgxNy00MjRlLWFlODMtZWFmYWJmNDRmMjU1&CustomData=eyJyZXNlbGxlcl9pZCI6IjEwNyIsInN1YnNjcmliZXJfaWQiOiIxMDc3NDk3NiIsInNlcmlhbCI6ImdsXzExMTUwMTQwMDk4MTM0NDk0MDcxMi0xMDciLCJtYXRjaF9rZXkiOiJhLXJ6LS1jcmlja2V0LS1wODIxMDMxNjQ3MDA5NzA4NzY5NzYiLCJleHAiOjE3OTQyMDgyNDUsInNpZCI6ImIwNTQ5MzYzZDE5MzNhZGIyMmQwYzE1NTk1NWZjMTIyIiwicGxhdGZvcm0iOiJ3ZWIiLCJlbnRpdGxlZF91bnRpbCI6MTc5NDIyMTc0NSwibWF4X2NvbmN1cnJlbnQiOjEsInN1YnNjcmliZXJfc3RiX2lkIjoiMTM3Mzg1NTAiLCJ1YmJfZ3VpZCI6IjNmYTViNGMwLTc4MTctNDI0ZS1hZTgzLWVhZmFiZjQ0ZjI1NSJ9.0WmvaLJI7I_8734LxcSxUoityWDgrh8bqJoYVwzJDz0',
       },
       {
-        embedUrl: 'https://lb-ottnp.nettvstreamz.com/npl/live_match6/playlist.m3u8',
+        embedUrl: 'https://ott-edge-mtdc.nettv.com.np/npl/live_match3/index.mpd',
         hd: true,
         isNativeVideo: true,
         isSandboxedIframe: false,
-        language: 'Server DSZ3 (TU Ground Direct HLS)',
-      },
-      {
-        embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/pdx-nitro/live/clients/dash/enc/3qvpw810gz/out/v1/e4b320f9ef924fe59188752dcf9c7fbf/cenc.mpd&keyid=5d52529b6ff19eca2315013244513b68&key=ba5c7dfad287aab538463d9da6811a8c',
-        hd: true,
-        isNativeVideo: false,
-        isSandboxedIframe: true,
-        language: 'Server DSZ4 (Action Sports Akamai Master)',
-      },
-      {
-        embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/q4skycp0em/out/v1/ff0967ee82ad427abee362dc40a4f60f/cenc.mpd&keyid=5d52529b6ff19eca2315013244513b68&key=ba5c7dfad287aab538463d9da6811a8c',
-        hd: true,
-        isNativeVideo: false,
-        isSandboxedIframe: true,
-        language: 'Server DSZ5 (Action Sports Akamai Backup)',
+        language: 'Server DSZ5 (NetTV Direct DASH)',
       }
     );
   }
@@ -464,14 +462,28 @@ export const nplAdapter: ProviderAdapter = {
     // Step 3: Fallback to verified broadcast configuration with multi-server failover
     return {
       status: 'ready',
-      provider: 'NetTV Action Sports HD (Zero Lag)',
+      provider: 'Action Sports HD (Verified Direct)',
       streams: [
+        {
+          embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/8wxsmuwvra/out/v1/06f2368f16e8470b8593cb77dcad31fe/cenc.mpd&keyid=f638f10e9bee65a698926a527722e332&key=a9f519367caf419607f6705e3d767935',
+          hd: true,
+          isNativeVideo: false,
+          isSandboxedIframe: true,
+          language: 'Server DSZ1 (Action Sports 1080p HD - Multi-Device Direct)',
+        },
+        {
+          embedUrl: 'https://yonotv-now.pages.dev/plyrr?src=https://hugh.cdn.rumble.cloud/live/hd37fm8g/live-hls/yjkj-u9ug/chunklist_i1_DVR.m3u8',
+          hd: true,
+          isNativeVideo: false,
+          isSandboxedIframe: true,
+          language: 'Server DSZ2 (Action Sports Direct HLS)',
+        },
         {
           embedUrl: 'https://ott-edge-mtdc.nettv.com.np/npl/live_match3/index.mpd?CMCD=br%3D4194%2Cot%3Dm%2Cmtp%3D4194%2Csu%2Ccid%3D%22a-rz--cricket--p82103164700970876976%22%2Csf%3Dd%2Csid%3D%2272e4fbbc-1164-432c-a971-e66e1720d965%22%2Cst%3Dv',
           hd: true,
           isNativeVideo: true,
           isSandboxedIframe: false,
-          language: 'Server DSZ1 (NetTV Edge MTDC Live 3)',
+          language: 'Server DSZ3 (NetTV Edge MTDC Live 3)',
           licenseUrl: 'https://widevine-dash.ezdrm.com/proxy?pX=196792&user_id=M2ZhNWI0YzAtNzgxNy00MjRlLWFlODMtZWFmYWJmNDRmMjU1&CustomData=eyJyZXNlbGxlcl9pZCI6IjEwNyIsInN1YnNjcmliZXJfaWQiOiIxMDc3NDk3NiIsInNlcmlhbCI6ImdsXzExMTUwMTQwMDk4MTM0NDk0MDcxMi0xMDciLCJtYXRjaF9rZXkiOiJhLXJ6LS1jcmlja2V0LS1wODIxMDMxNjQ3MDA5NzA4NzY5NzYiLCJleHAiOjE3OTQyMDgyNDUsInNpZCI6ImIwNTQ5MzYzZDE5MzNhZGIyMmQwYzE1NTk1NWZjMTIyIiwicGxhdGZvcm0iOiJ3ZWIiLCJlbnRpdGxlZF91bnRpbCI6MTc5NDIyMTc0NSwibWF4X2NvbmN1cnJlbnQiOjEsInN1YnNjcmliZXJfc3RiX2lkIjoiMTM3Mzg1NTAiLCJ1YmJfZ3VpZCI6IjNmYTViNGMwLTc4MTctNDI0ZS1hZTgzLWVhZmFiZjQ0ZjI1NSJ9.0WmvaLJI7I_8734LxcSxUoityWDgrh8bqJoYVwzJDz0',
         },
         {
@@ -479,22 +491,8 @@ export const nplAdapter: ProviderAdapter = {
           hd: true,
           isNativeVideo: true,
           isSandboxedIframe: false,
-          language: 'Server DSZ2 (NetTV Load Balancer Live 3)',
+          language: 'Server DSZ4 (NetTV Load Balancer Live 3)',
           licenseUrl: 'https://widevine-dash.ezdrm.com/proxy?pX=196792&user_id=M2ZhNWI0YzAtNzgxNy00MjRlLWFlODMtZWFmYWJmNDRmMjU1&CustomData=eyJyZXNlbGxlcl9pZCI6IjEwNyIsInN1YnNjcmliZXJfaWQiOiIxMDc3NDk3NiIsInNlcmlhbCI6ImdsXzExMTUwMTQwMDk4MTM0NDk0MDcxMi0xMDciLCJtYXRjaF9rZXkiOiJhLXJ6LS1jcmlja2V0LS1wODIxMDMxNjQ3MDA5NzA4NzY5NzYiLCJleHAiOjE3OTQyMDgyNDUsInNpZCI6ImIwNTQ5MzYzZDE5MzNhZGIyMmQwYzE1NTk1NWZjMTIyIiwicGxhdGZvcm0iOiJ3ZWIiLCJlbnRpdGxlZF91bnRpbCI6MTc5NDIyMTc0NSwibWF4X2NvbmN1cnJlbnQiOjEsInN1YnNjcmliZXJfc3RiX2lkIjoiMTM3Mzg1NTAiLCJ1YmJfZ3VpZCI6IjNmYTViNGMwLTc4MTctNDI0ZS1hZTgzLWVhZmFiZjQ0ZjI1NSJ9.0WmvaLJI7I_8734LxcSxUoityWDgrh8bqJoYVwzJDz0',
-        },
-        {
-          embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/8wxsmuwvra/out/v1/06f2368f16e8470b8593cb77dcad31fe/cenc.mpd&keyid=f638f10e9bee65a698926a527722e332&key=a9f519367caf419607f6705e3d767935',
-          hd: true,
-          isNativeVideo: false,
-          isSandboxedIframe: true,
-          language: 'Server DSZ3 (Action Sports Web Stream HD)',
-        },
-        {
-          embedUrl: 'https://yonotv-now.pages.dev/plyrr?src=https://hugh.cdn.rumble.cloud/live/hd37fm8g/live-hls/yjkj-u9ug/chunklist_i1_DVR.m3u8',
-          hd: true,
-          isNativeVideo: false,
-          isSandboxedIframe: true,
-          language: 'Server DSZ4 (Action Sports Rumble Live HLS)',
         },
         {
           embedUrl: 'https://ott-edge-mtdc.nettv.com.np/npl/live_match3/index.mpd',

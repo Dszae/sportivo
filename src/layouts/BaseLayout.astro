@@ -163,7 +163,7 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     
     <slot name="head" />
   </head>
-  <body class="pb-20 sm:pb-0 min-h-screen flex flex-col bg-ink-900 text-fg antialiased">
+  <body class="pb-20 sm:pb-0 min-h-screen flex flex-col bg-ink-900 text-fg antialiased overflow-x-hidden max-w-full w-full">
     <slot />
 
     <button
