@@ -526,7 +526,10 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "startTime": "2026-11-09T12:30:00+05:45",
     "timestamp": 1794206700000,
     "venue": "TU International Cricket Ground, Kirtipur",
-    "status": "UPCOMING",
+    "status": "COMPLETED",
+    "homeScore": "177/2 (17.3 ov)",
+    "awayScore": "176/6 (20.0 ov)",
+    "summary": "Pokhara Avengers won by 8 wickets",
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-19"
   },
   {
@@ -546,7 +549,8 @@ export const NPL_FIXTURES_2026: NplMatch[] = [
     "startTime": "2026-11-09T17:00:00+05:45",
     "timestamp": 1794222900000,
     "venue": "TU International Cricket Ground, Kirtipur",
-    "status": "UPCOMING",
+    "status": "LIVE",
+    "summary": "Match 20 • Live from TU International Cricket Ground, Kirtipur",
     "sourceUrl": "https://nepalpremierleague.org/matches/npl26-20"
   },
   {

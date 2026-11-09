@@ -34,9 +34,9 @@ OFFICIAL_FIXTURES_2026 = [
         "timestamp": 1794208800000,
         "venue": "TU Cricket Ground, Kirtipur",
         "status": "COMPLETED",
-        "homeScore": "164/2",
+        "homeScore": "177/2",
         "awayScore": "176/6",
-        "summary": "Pokhara Avengers won by 8 wickets (DLS)"
+        "summary": "Pokhara Avengers won by 8 wickets"
     },
     {
         "id": "npl26-20",
@@ -50,10 +50,10 @@ OFFICIAL_FIXTURES_2026 = [
         "awayTeamShort": "KTG",
         "awayTeamLogo": "https://nepalpremierleague.org/uploads/teams/kathmandu-gurkhas.png",
         "awayTeamColor": "#1B5E20",
-        "timestamp": 1794225000000,
+        "timestamp": 1794222900000,
         "venue": "TU Cricket Ground, Kirtipur",
-        "status": "UPCOMING",
-        "summary": "Match 20, TU International Cricket Ground, Kirtipur"
+        "status": "LIVE",
+        "summary": "Match 20 • Live from TU International Cricket Ground, Kirtipur"
     }
 ]
 

@@ -5,7 +5,9 @@ import { getSafeCorsHeaders } from '../../../../lib/security';
 export const prerender = false;
 
 export const GET: APIRoute = async ({ request }) => {
-  const result = await fetchLiveBallMoments();
+  const url = new URL(request.url);
+  const preferredMatch = url.searchParams.get('match') || url.searchParams.get('slug') || undefined;
+  const result = await fetchLiveBallMoments(preferredMatch);
   const corsHeaders = getSafeCorsHeaders(request);
 
   return new Response(

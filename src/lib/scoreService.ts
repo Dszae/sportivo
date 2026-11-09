@@ -148,9 +148,9 @@ let lastDiscoveryTime = 0;
  * 1. Dynamic Match Discovery
  * Resolves active NPL match URL from live tournament schedule
  */
-export async function discoverActiveMatchUrl(): Promise<string | null> {
+export async function discoverActiveMatchUrl(preferredMatch?: string): Promise<string | null> {
   const now = Date.now();
-  if (activeMatchUrl && now - lastDiscoveryTime < 60000) {
+  if (!preferredMatch && activeMatchUrl && now - lastDiscoveryTime < 10000) {
     return activeMatchUrl;
   }
 
@@ -161,25 +161,42 @@ export async function discoverActiveMatchUrl(): Promise<string | null> {
     });
     if (!res.ok) return activeMatchUrl;
     const html = await res.text();
-    const matchRegex = /"https:\/\/crex\.com\/cricket-live-score\/([^"]*(?:nepal|npl|pka|spr|ktg|cwr|btr|jkb|kry|lbl)[^"]*)"/gi;
+    const matchRegex = /"https:\/\/crex\.com\/cricket-live-score\/([^"]*(?:nepal|npl|pka|spr|ktg|kmg|cwr|btr|jkb|kry|kny|lbl)[^"]*)"/gi;
     const matches = [...html.matchAll(matchRegex)].map((m) => m[0].replace(/"/g, ''));
 
     if (matches.length > 0) {
+      if (preferredMatch) {
+        const pLower = preferredMatch.toLowerCase();
+        const found = matches.find((m) => m.toLowerCase().includes(pLower));
+        if (found) {
+          activeMatchUrl = found;
+          lastDiscoveryTime = now;
+          return activeMatchUrl;
+        }
+      }
+
+      // Sort matches descending by T20 match number so the latest ongoing match today takes precedence
+      matches.sort((a, b) => {
+        const na = parseInt(a.match(/(\d+)(?:st|nd|rd|th)/i)?.[1] || '0', 10);
+        const nb = parseInt(b.match(/(\d+)(?:st|nd|rd|th)/i)?.[1] || '0', 10);
+        return nb - na;
+      });
+
       activeMatchUrl = matches[0];
       lastDiscoveryTime = now;
       return activeMatchUrl;
     }
   } catch {}
 
-  // Fallback to today's active match URL if discovery fails
-  return 'https://crex.com/cricket-live-score/pka-vs-spr-4th-t20-nepal-premier-league-2026-match-updates-14EV';
+  // Fallback to today's active Match 20 (Chitwan Rhinos vs Kathmandu Gurkhas)
+  return 'https://crex.com/cricket-live-score/cwr-vs-kmg-20th-t20-nepal-premier-league-2026-match-updates-14HH';
 }
 
 /**
  * 2. Fetch and decode live scoring state from app-root-state JSON
  */
-export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> {
-  const matchUrl = await discoverActiveMatchUrl();
+export async function fetchLiveBallMoments(preferredMatch?: string): Promise<LiveScorerPayload | null> {
+  const matchUrl = await discoverActiveMatchUrl(preferredMatch);
   if (!matchUrl) return null;
 
   try {
@@ -395,20 +412,20 @@ export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> 
       };
     }
 
-    const matchNumber = String(sv3.mn || matchMeta?.mn || '19');
+    const matchNumber = String(sv3.mn || matchMeta?.mn || '20');
     const venue = String(
       matchMeta?.v || sv3.v || 'TU International Cricket Ground, Kirtipur'
     );
     const tossNote = cleanCricketText(sv3.comment1 || '');
 
     const currentInning = Number(sv3.inning || 1);
-    const team1Short = sv3.team1short || sv3.team1 || 'KNY';
-    const team1Name = sv3.team1_f_n || 'Karnali Yaks';
+    const team1Short = sv3.team1short || sv3.team1 || 'KMG';
+    const team1Name = sv3.team1_f_n || sv3.team1 || 'Kathmandu Gurkhas';
     const team1Score = sv3.score1 ? String(sv3.score1).replace('-', '/') : score;
     const team1Overs = sv3.over1 ? `${sv3.over1} ov` : (overs ? `${overs} ov` : '');
 
-    const team2Short = sv3.team2short || sv3.team2 || 'PKA';
-    const team2Name = sv3.team2_f_n || 'Pokhara Avengers';
+    const team2Short = sv3.team2short || sv3.team2 || 'CWR';
+    const team2Name = sv3.team2_f_n || sv3.team2 || 'Chitwan Rhinos';
     const team2Score = sv3.score2
       ? String(sv3.score2).replace('-', '/')
       : currentInning === 1

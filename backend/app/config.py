@@ -34,7 +34,7 @@ class Settings(BaseSettings):
         return ["*"]
 
     # Upstream data sources
-    LIVE_CREX_ENDPOINT: str = "https://cricket-data.crex.live/v2/cricket/match/full-scorecard?matchId=np_t20_2026_m19"
+    LIVE_CREX_ENDPOINT: str = "https://cricket-data.crex.live/v2/cricket/match/full-scorecard?matchId=np_t20_2026_m20"
     STREAM_INDEX_ENDPOINT: str = "https://yonotv.pages.dev/LINK"
 
     model_config = SettingsConfigDict(
