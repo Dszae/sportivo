@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getCalibratedNplFixtures, type NplMatch } from '../../../lib/data/nplData';
+import { fetchLiveBallMoments } from '../../../lib/scoreService';
 import { getSafeCorsHeaders } from '../../../lib/security';
 
 export const prerender = false;
@@ -221,6 +222,27 @@ export const GET: APIRoute = async ({ request }) => {
       broadcast: finalStatus === 'COMPLETED' ? undefined : f.broadcast,
     };
   });
+
+  // 4. Real-time Ground Scorer Telemetry Overlay for Active LIVE match
+  try {
+    const liveScorer = await fetchLiveBallMoments();
+    if (liveScorer && liveScorer.score) {
+      fixtures = fixtures.map((f) => {
+        if (f.status === 'LIVE') {
+          return {
+            ...f,
+            homeScore: f.homeScore || `${liveScorer.score} (${liveScorer.overs} ov)`,
+            summary:
+              f.summary ||
+              (liveScorer.crr
+                ? `CRR: ${liveScorer.crr} • Live at TU Cricket Ground`
+                : 'Live from TU Cricket Ground'),
+          };
+        }
+        return f;
+      });
+    }
+  } catch {}
 
   return new Response(
     JSON.stringify({

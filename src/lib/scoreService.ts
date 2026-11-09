@@ -34,6 +34,62 @@ export interface CommentaryLine {
   isWicket?: boolean;
 }
 
+/**
+ * Thoroughly sanitizes and cleans raw commentary strings from cricket feeds.
+ * Eliminates:
+ * - Mojibake UTF-8 decoding artifacts (â€¢ -> •, â€“ -> –, â€™ -> ', â€œ/â€  -> ")
+ * - Pseudo-HTML tags (&l;b&g;, &l;/b&g;, &l;i&g;, &l;span&g;, etc.)
+ * - Standard HTML tags (<b>, <span>, etc.)
+ * - Provider shorthand entities (&s; -> ', &bull; -> •, &quot;, &apos;, &amp;)
+ * - Redundant whitespace
+ */
+export function cleanCricketText(raw: string | undefined | null): string {
+  if (!raw || typeof raw !== 'string') return '';
+  let str = raw;
+
+  // 1. Fix UTF-8 / Windows-1252 mojibake artifacts
+  str = str
+    .replace(/â€¢/g, '•')
+    .replace(/â€“/g, '–')
+    .replace(/â€”/g, '—')
+    .replace(/â€™/g, "'")
+    .replace(/â€˜/g, "'")
+    .replace(/â€œ/g, '"')
+    .replace(/â€ /g, '"')
+    .replace(/â€/g, '"')
+    .replace(/Ã©/g, 'é')
+    .replace(/Ã¡/g, 'á')
+    .replace(/Â·/g, '·')
+    .replace(/Â/g, '');
+
+  // 2. Strip pseudo-HTML tags like &l;b&g;, &l;/b&g;, &l;span&g;, &l;/span&g;
+  str = str.replace(/&l;\/?[a-z0-9_-]+[^&]*&g;/gi, '');
+  str = str.replace(/&l;[^&]*&g;/gi, '');
+
+  // 3. Strip standard HTML tags
+  str = str.replace(/<\/?[a-z0-9_-]+[^>]*>/gi, '');
+
+  // 4. Decode common HTML and cricket shorthand entities
+  str = str
+    .replace(/&s;/gi, "'")
+    .replace(/&bull;/gi, '•')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&apos;/gi, "'")
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&mdash;/gi, '—')
+    .replace(/&ndash;/gi, '–');
+
+  // 5. Clean any lingering &l; or &g; or unresolved &...; entities
+  str = str.replace(/&[lg];/gi, '').replace(/&[a-z0-9#]+;/gi, '');
+
+  // 6. Normalize whitespace
+  return str.replace(/\s+/g, ' ').trim();
+}
+
 export interface LiveScorerPayload {
   score: string;
   overs: string;
@@ -113,18 +169,23 @@ export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> 
       for (const item of feeds) {
         if (!item) continue;
         if (item.type === 'b' && item.o) {
-          const resCode = item.b || '';
-          const isFour = resCode === '4' || (item.c2 || '').toLowerCase().includes('four');
-          const isSix = resCode === '6' || (item.c2 || '').toLowerCase().includes('six');
-          const isWkt = resCode.toLowerCase().includes('w') || (item.c2 || '').toLowerCase().includes('wicket');
-          const cleanText = (item.c2 || '')
-            .replace(/&[lg]t;/g, '')
-            .replace(/<\/?b>/g, '')
-            .trim();
+          const resCode = (item.b || '').trim();
+          const lowerCode = resCode.toLowerCase();
+          const rawC2 = item.c2 || '';
+          const lowerC2 = rawC2.toLowerCase();
+
+          const isFour = lowerCode === '4' || lowerC2.includes('four');
+          const isSix = lowerCode === '6' || lowerC2.includes('six');
+          const isWkt =
+            lowerCode === 'w' ||
+            (lowerCode.includes('w') && !lowerCode.includes('wd')) ||
+            lowerC2.includes('wicket');
+          const cleanText = cleanCricketText(rawC2);
+          const cleanBowler = cleanCricketText(item.c1 || '');
 
           commentary.push({
             ball: String(item.o),
-            bowlerToBatsman: item.c1 || '',
+            bowlerToBatsman: cleanBowler,
             text: cleanText,
             outcome: isSix ? '6' : isFour ? '4' : isWkt ? 'W' : resCode,
             isBoundary: isFour || isSix,
@@ -134,7 +195,7 @@ export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> 
           commentary.push({
             ball: 'Info',
             bowlerToBatsman: 'Match Update',
-            text: item.c,
+            text: cleanCricketText(item.c),
           });
         }
       }

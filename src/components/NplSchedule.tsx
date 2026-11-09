@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { NPL_FIXTURES_2026, getCalibratedNplFixtures, type NplMatch } from '../lib/data/nplData';
-import { slugify, publicUrl } from '../lib/sportivo';
+import { getCalibratedNplFixtures, type NplMatch } from '../lib/data/nplData';
+import { slugify } from '../lib/sportivo';
 import { loadUserPreferences, saveUserPreferences, type UserPreferences } from '../lib/preferences';
-import { playNotificationChime, requestNotificationPermission } from '../lib/notificationService';
+import { requestNotificationPermission } from '../lib/notificationService';
+import type { LiveScorerPayload } from '../lib/scoreService';
 
 type Tab = 'today' | 'upcoming' | 'all';
 
@@ -91,6 +92,7 @@ export default function NplSchedule() {
   const [fixtures, setFixtures] = useState<NplMatch[]>(() => getCalibratedNplFixtures());
   const [query, setQuery] = useState('');
   const [lastSyncTime, setLastSyncTime] = useState('Just now');
+  const [liveTelemetry, setLiveTelemetry] = useState<LiveScorerPayload | null>(null);
 
   // Real-time synchronization for live scores, results & broadcast availability
   useEffect(() => {
@@ -127,6 +129,37 @@ export default function NplSchedule() {
     }, 30000);
 
     return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, []);
+
+  // Real-time live ball ground-scorer telemetry (every 5 seconds)
+  useEffect(() => {
+    let timer: any = null;
+    let isMounted = true;
+
+    async function pollLiveTelemetry() {
+      try {
+        const res = await fetch(`/api/npl/live-moments/?_t=${Date.now()}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted && data && (data.score || data.overs)) {
+            setLiveTelemetry(data);
+          }
+        }
+      } catch {}
+    }
+
+    pollLiveTelemetry();
+
+    timer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        pollLiveTelemetry();
+      }
+    }, 5000);
+
+    return () => {
+      isMounted = false;
       if (timer) clearInterval(timer);
     };
   }, []);
@@ -258,7 +291,11 @@ export default function NplSchedule() {
                 <Crest logo={m.homeTeamLogo} name={m.homeTeam} short={m.homeTeamShort} color={m.homeTeamColor} />
                 <span className="truncate text-[15px] text-fg">{m.homeTeam}</span>
               </div>
-              {m.homeScore && <span className="clock shrink-0 text-[15px] text-fg">{m.homeScore}</span>}
+              {(m.homeScore || (isLive && liveTelemetry?.score)) && (
+                <span className={`clock shrink-0 text-[15px] font-semibold ${isLive ? 'text-lime' : 'text-fg'}`}>
+                  {m.homeScore || `${liveTelemetry?.score} (${liveTelemetry?.overs} ov)`}
+                </span>
+              )}
             </div>
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
@@ -269,7 +306,11 @@ export default function NplSchedule() {
             </div>
           </div>
 
-          {m.summary && <p className="mt-4 text-sm leading-5 text-fg-2">{m.summary}</p>}
+          {m.summary ? (
+            <p className="mt-4 text-sm leading-5 text-fg-2">{m.summary}</p>
+          ) : isLive && liveTelemetry?.crr ? (
+            <p className="mt-4 text-sm leading-5 text-lime">CRR: {liveTelemetry.crr} • Live at TU Cricket Ground</p>
+          ) : null}
 
           <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-3">
             <span className="clock whitespace-nowrap text-xs text-fg-2">{shortDate(m.timestamp)}</span>
@@ -364,7 +405,16 @@ export default function NplSchedule() {
                   <Crest logo={liveFixture.homeTeamLogo} name={liveFixture.homeTeam} short={liveFixture.homeTeamShort} color={liveFixture.homeTeamColor} size={44} />
                   <span className="truncate text-2xl font-medium tracking-[-0.01em] text-fg sm:text-[28px]">{liveFixture.homeTeam}</span>
                 </div>
-                {liveFixture.homeScore && <span className="clock shrink-0 text-2xl text-fg sm:text-[28px]">{liveFixture.homeScore}</span>}
+                {(liveFixture.homeScore || liveTelemetry?.score) && (
+                  <div className="flex flex-col items-end shrink-0">
+                    <span className="clock text-2xl font-semibold text-lime sm:text-[28px]">
+                      {liveFixture.homeScore || `${liveTelemetry?.score} (${liveTelemetry?.overs} ov)`}
+                    </span>
+                    {liveTelemetry?.crr && (
+                      <span className="text-xs font-mono text-fg-3">CRR {liveTelemetry.crr}</span>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="flex items-center justify-between gap-4">
                 <div className="flex min-w-0 items-center gap-4">
@@ -373,7 +423,61 @@ export default function NplSchedule() {
                 </div>
                 {liveFixture.awayScore && <span className="clock shrink-0 text-2xl text-fg sm:text-[28px]">{liveFixture.awayScore}</span>}
               </div>
-              {liveFixture.summary && <p className="text-sm text-fg-2">{liveFixture.summary}</p>}
+
+              {/* Real-time Over Deliveries Ticker */}
+              {liveTelemetry?.recentBalls && liveTelemetry.recentBalls.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-line/60">
+                  <span className="text-xs font-mono text-fg-3">This Over:</span>
+                  <div className="flex items-center gap-1.5 overflow-x-auto py-1">
+                    {liveTelemetry.recentBalls.slice(-8).map((b, idx) => {
+                      const code = b.code.trim();
+                      const isSix = code === '6';
+                      const isFour = code === '4';
+                      const isWkt = b.isWicket;
+                      const isExt = b.isExtra;
+                      return (
+                        <span
+                          key={idx}
+                          className={`inline-flex items-center justify-center min-w-[26px] h-6 px-1.5 text-xs font-mono font-bold rounded-full ${
+                            isSix
+                              ? 'bg-purple-600 text-white shadow-sm'
+                              : isFour
+                              ? 'bg-blue-600 text-white shadow-sm'
+                              : isWkt
+                              ? 'bg-red-600 text-white animate-pulse'
+                              : isExt
+                              ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+                              : code === '0'
+                              ? 'bg-ink-800 text-fg-3'
+                              : 'bg-ink-700 text-fg'
+                          }`}
+                          title={`Over ${b.over}.${b.delivery}: ${code}`}
+                        >
+                          {code}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Latest commentary line if available */}
+              {liveTelemetry?.commentary && liveTelemetry.commentary.length > 0 && liveTelemetry.commentary[0].text && (
+                <div className="rounded-lg bg-ink-800/60 p-3 border border-line/40">
+                  <div className="flex items-center gap-2 text-xs text-fg-3 font-mono">
+                    <span className="font-semibold text-lime">{liveTelemetry.commentary[0].ball}</span>
+                    <span>•</span>
+                    <span className="text-fg-2">{liveTelemetry.commentary[0].bowlerToBatsman}</span>
+                  </div>
+                  <p className="mt-1 text-xs text-fg leading-relaxed line-clamp-2">
+                    {liveTelemetry.commentary[0].text}
+                  </p>
+                </div>
+              )}
+
+              {liveFixture.summary && (!liveTelemetry?.commentary?.length || !liveTelemetry.commentary[0]?.text) && (
+                <p className="text-sm text-fg-2">{liveFixture.summary}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-4 lg:col-span-4 lg:items-end">

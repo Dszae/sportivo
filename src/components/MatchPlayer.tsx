@@ -16,7 +16,7 @@ import {
 } from '../lib/sportivo';
 import { loadUserPreferences, saveUserPreferences, type UserPreferences } from '../lib/preferences';
 import { NPL_FIXTURES_2026, NPL_TEAMS, type NplMatch } from '../lib/data/nplData';
-import type { CommentaryLine, RecentBall } from '../lib/scoreService';
+import { cleanCricketText, type CommentaryLine, type RecentBall } from '../lib/scoreService';
 
 interface StreamItem {
   embedUrl: string;
@@ -1165,8 +1165,8 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
                       </div>
 
                       <div className="flex-1">
-                        <p className="text-sm text-fg-2">{comm.bowlerToBatsman}</p>
-                        <p className="mt-1 text-sm leading-relaxed text-fg">{comm.text}</p>
+                        <p className="text-sm text-fg-2">{cleanCricketText(comm.bowlerToBatsman)}</p>
+                        <p className="mt-1 text-sm leading-relaxed text-fg">{cleanCricketText(comm.text)}</p>
                       </div>
                     </div>
                   ))
