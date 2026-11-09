@@ -209,15 +209,27 @@ export default function MatchPlayerScreen() {
   const fallbackStream: StreamSource = {
     id: 'server-1',
     source: 'npl',
-    label: 'NetTV Action Sports HD (Edge MTDC Live 3)',
-    embedUrl: 'https://ott-edge-mtdc.nettv.com.np/npl/live_match3/index.mpd?CMCD=br%3D4194%2Cot%3Dm%2Cmtp%3D4194%2Csu%2Ccid%3D%22a-rz--cricket--p82103164700970876976%22%2Csf%3Dd%2Csid%3D%2272e4fbbc-1164-432c-a971-e66e1720d965%22%2Cst%3Dv',
-    streamUrl: 'https://ott-edge-mtdc.nettv.com.np/npl/live_match3/index.mpd?CMCD=br%3D4194%2Cot%3Dm%2Cmtp%3D4194%2Csu%2Ccid%3D%22a-rz--cricket--p82103164700970876976%22%2Csf%3Dd%2Csid%3D%2272e4fbbc-1164-432c-a971-e66e1720d965%22%2Cst%3Dv',
-    isDirectStream: true,
+    label: 'Action Sports HD (Multi-Device Direct)',
+    embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/8wxsmuwvra/out/v1/06f2368f16e8470b8593cb77dcad31fe/cenc.mpd&keyid=f638f10e9bee65a698926a527722e332&key=a9f519367caf419607f6705e3d767935',
+    streamUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/8wxsmuwvra/out/v1/06f2368f16e8470b8593cb77dcad31fe/cenc.mpd&keyid=f638f10e9bee65a698926a527722e332&key=a9f519367caf419607f6705e3d767935',
+    isDirectStream: false,
     hd: true,
-    licenseUrl: 'https://widevine-dash.ezdrm.com/proxy?pX=196792&user_id=M2ZhNWI0YzAtNzgxNy00MjRlLWFlODMtZWFmYWJmNDRmMjU1&CustomData=eyJyZXNlbGxlcl9pZCI6IjEwNyIsInN1YnNjcmliZXJfaWQiOiIxMDc3NDk3NiIsInNlcmlhbCI6ImdsXzExMTUwMTQwMDk4MTM0NDk0MDcxMi0xMDciLCJtYXRjaF9rZXkiOiJhLXJ6LS1jcmlja2V0LS1wODIxMDMxNjQ3MDA5NzA4NzY5NzYiLCJleHAiOjE3OTQyMDgyNDUsInNpZCI6ImIwNTQ5MzYzZDE5MzNhZGIyMmQwYzE1NTk1NWZjMTIyIiwicGxhdGZvcm0iOiJ3ZWIiLCJlbnRpdGxlZF91bnRpbCI6MTc5NDIyMTc0NSwibWF4X2NvbmN1cnJlbnQiOjEsInN1YnNjcmliZXJfc3RiX2lkIjoiMTM3Mzg1NTAiLCJ1YmJfZ3VpZCI6IjNmYTViNGMwLTc4MTctNDI0ZS1hZTgzLWVhZmFiZjQ0ZjI1NSJ9.0WmvaLJI7I_8734LxcSxUoityWDgrh8bqJoYVwzJDz0',
   };
 
   const activeStream = streams.length > 0 ? streams[selectedServer] || streams[0] : fallbackStream;
+
+  const isDirectVideo = Boolean(
+    (activeStream.isDirectStream ||
+      activeStream.streamUrl?.includes('.m3u8') ||
+      activeStream.streamUrl?.includes('.mpd') ||
+      activeStream.streamUrl?.includes('.mp4') ||
+      activeStream.embedUrl?.includes('.m3u8') ||
+      activeStream.embedUrl?.includes('.mpd')) &&
+      !activeStream.embedUrl?.includes('plyrr') &&
+      !activeStream.embedUrl?.includes('pages.dev') &&
+      !activeStream.streamUrl?.includes('plyrr') &&
+      !activeStream.streamUrl?.includes('pages.dev')
+  );
 
   const handleShare = async () => {
     try {
@@ -259,9 +271,9 @@ export default function MatchPlayerScreen() {
         </View>
       )}
 
-      {/* Video Player Stage (ExoPlayer Native Streaming) */}
+      {/* Video Player Stage (ExoPlayer Native Streaming or WebView) */}
       <View style={[styles.playerStage, isFullscreen && styles.playerStageFullscreen]}>
-        {activeStream.isDirectStream || activeStream.streamUrl || activeStream.embedUrl?.includes('.m3u8') || activeStream.embedUrl?.includes('.mpd') ? (
+        {isDirectVideo ? (
           <Video
             ref={videoRef}
             source={{ uri: activeStream.streamUrl || activeStream.embedUrl || '' }}
@@ -388,9 +400,32 @@ export default function MatchPlayerScreen() {
           <View style={styles.telemetryScoreRow}>
             <View style={styles.telemetryBadge}>
               <View style={styles.liveDot} />
-              <Text style={styles.telemetryBadgeText}>GROUND</Text>
+              <Text style={styles.telemetryBadgeText}>LIVE</Text>
             </View>
-            {liveDesk.score ? (
+            {liveDesk.header ? (
+              <View style={{ flex: 1, marginLeft: 8 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text style={[styles.scoreNumber, { fontSize: 13, color: liveDesk.header.activeTeam === 1 ? '#c9f36b' : '#f1f5f9' }]}>
+                    {liveDesk.header.team1Short || 'T1'}: {liveDesk.header.team1Score || '0/0'} {liveDesk.header.team1Overs ? `(${liveDesk.header.team1Overs})` : ''}
+                  </Text>
+                  <Text style={[styles.scoreNumber, { fontSize: 13, color: liveDesk.header.activeTeam === 2 ? '#c9f36b' : '#f1f5f9' }]}>
+                    {liveDesk.header.team2Short || 'T2'}: {liveDesk.header.team2Score || '0/0'} {liveDesk.header.team2Overs ? `(${liveDesk.header.team2Overs})` : ''}
+                  </Text>
+                </View>
+                {(liveDesk.header.tossNote || liveDesk.target || liveDesk.crr) ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
+                    <Text style={{ color: '#c9f36b', fontSize: 11, fontFamily: 'monospace' }} numberOfLines={1}>
+                      {liveDesk.header.tossNote || liveDesk.target}
+                    </Text>
+                    {liveDesk.crr ? (
+                      <Text style={{ color: '#94a3b8', fontSize: 10, fontFamily: 'monospace' }}>
+                        CRR: {liveDesk.crr}
+                      </Text>
+                    ) : null}
+                  </View>
+                ) : null}
+              </View>
+            ) : liveDesk.score ? (
               <View style={styles.scoreTextRow}>
                 <Text style={styles.scoreNumber}>{liveDesk.score}</Text>
                 {liveDesk.overs && <Text style={styles.oversNumber}>({liveDesk.overs} ov)</Text>}

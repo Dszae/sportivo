@@ -1,7 +1,7 @@
 {
-  "version": "1.1.2",
-  "versionCode": 13,
+  "version": "1.1.3",
+  "versionCode": 14,
   "downloadUrl": "https://sportivo.dipeshsapkota7.com.np/download/sportivo.apk",
-  "releaseNotes": "Exact mobile web UI alignment: floodlit stadium hero showcase, Up Next live fixture desk, unslop token system, NPL schedule with Live Now panel, segmented chips, team crests, and zero-delay streaming.",
-  "publishedAt": "2026-11-06"
+  "releaseNotes": "NPL 2026 real-time live score updates for both teams, simplified live card, zero-delay mobile streaming with multi-device Server 1, and mobile layout optimizations.",
+  "publishedAt": "2026-11-09"
 }

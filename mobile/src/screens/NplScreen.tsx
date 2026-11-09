@@ -24,6 +24,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NplMatch, RootStackParamList } from '../types';
 import {
   fetchNplFixtures,
+  fetchLiveDeskMoments,
+  LiveScorerMobile,
   formatKathmanduTime,
   formatKathmanduDate,
   getKathmanduDateKey,
@@ -95,6 +97,83 @@ export default function NplScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [starredSlugs, setStarredSlugs] = useState<string[]>([]);
   const [lastSyncTime, setLastSyncTime] = useState('Just now');
+  const [liveTelemetry, setLiveTelemetry] = useState<LiveScorerMobile | null>(null);
+
+  // Poll real-time live telemetry every 3 seconds
+  useEffect(() => {
+    let isMounted = true;
+    let timer: any = null;
+
+    async function pollLiveTelemetry() {
+      try {
+        const data = await fetchLiveDeskMoments();
+        if (isMounted && data && (data.score || data.overs || data.header)) {
+          setLiveTelemetry(data);
+        }
+      } catch {}
+    }
+
+    pollLiveTelemetry();
+
+    timer = setInterval(pollLiveTelemetry, 3000);
+
+    return () => {
+      isMounted = false;
+      if (timer) clearInterval(timer);
+    };
+  }, []);
+
+  const getTeamLiveScore = useCallback(
+    (teamName: string, teamShort: string) => {
+      if (!liveTelemetry?.header) {
+        return null;
+      }
+      const h = liveTelemetry.header;
+      const norm = (s?: string) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const tNorm = norm(teamName);
+      const sNorm = norm(teamShort);
+
+      const t1Name = norm(h.team1Name);
+      const t1Short = norm(h.team1Short);
+      const t2Name = norm(h.team2Name);
+      const t2Short = norm(h.team2Short);
+
+      const isTeam1 =
+        Boolean(t1Name && (tNorm.includes(t1Name) || t1Name.includes(tNorm))) ||
+        Boolean(t1Short && (sNorm === t1Short || tNorm.includes(t1Short) || sNorm.includes(t1Short)));
+
+      const isTeam2 =
+        Boolean(t2Name && (tNorm.includes(t2Name) || t2Name.includes(tNorm))) ||
+        Boolean(t2Short && (sNorm === t2Short || tNorm.includes(t2Short) || sNorm.includes(t2Short)));
+
+      if (isTeam1) {
+        const score = h.team1Score || '';
+        const overs = h.team1Overs ? (h.team1Overs.includes('ov') ? h.team1Overs : `${h.team1Overs} ov`) : '';
+        const display = score ? (overs && !score.includes('ov') && !score.includes('(') ? `${score} (${overs})` : score) : '';
+        return {
+          score,
+          overs,
+          display,
+          isBatting: h.activeTeam === 1,
+        };
+      }
+
+      if (isTeam2) {
+        const score = h.team2Score || '';
+        const overs = h.team2Overs ? (h.team2Overs.includes('ov') ? h.team2Overs : `${h.team2Overs} ov`) : '';
+        const display = score ? (overs && !score.includes('ov') && !score.includes('(') ? `${score} (${overs})` : score) : '';
+        return {
+          score,
+          overs,
+          display,
+          isBatting: h.activeTeam === 2,
+        };
+      }
+
+      return null;
+    },
+    [liveTelemetry]
+  );
 
   const loadData = useCallback(async () => {
     try {
@@ -190,97 +269,120 @@ export default function NplScreen() {
     return (
       <View>
         {/* Live Fixture Hero Panel (Matches web .panel mb-10 overflow-hidden border-line-strong) */}
-        {liveFixture && (
-          <View style={styles.heroPanel}>
-            <View style={styles.heroHeader}>
-              <View style={styles.liveTag}>
-                <LiveDot size={8} />
-                <Text style={styles.liveTagText}>Live now</Text>
-              </View>
-              <Text style={styles.heroMeta}>
-                Match <Text style={styles.clockInline}>{liveFixture.matchNumber}</Text>, {shortVenue(liveFixture.venue || 'TU Cricket Ground')}
-              </Text>
-            </View>
+        {liveFixture && (() => {
+          const liveHomeScore = getTeamLiveScore(liveFixture.homeTeam, liveFixture.homeTeamShort);
+          const liveAwayScore = getTeamLiveScore(liveFixture.awayTeam, liveFixture.awayTeamShort);
 
-            <View style={styles.heroBody}>
-              <View style={styles.heroTeams}>
-                {/* Home Team */}
-                <View style={styles.heroTeamRow}>
-                  <View style={styles.heroTeamLeft}>
-                    <TeamCrest
-                      uri={liveFixture.homeTeamLogo}
-                      name={liveFixture.homeTeam}
-                      short={liveFixture.homeTeamShort}
-                      color={liveFixture.homeTeamColor}
-                      size={44}
-                    />
-                    <Text style={styles.heroTeamName} numberOfLines={1}>
-                      {liveFixture.homeTeam}
-                    </Text>
+          return (
+            <View style={styles.heroPanel}>
+              <View style={styles.heroHeader}>
+                <View style={styles.liveTag}>
+                  <LiveDot size={8} />
+                  <Text style={styles.liveTagText}>Live now</Text>
+                </View>
+                <Text style={styles.heroMeta}>
+                  Match <Text style={styles.clockInline}>{liveFixture.matchNumber}</Text>, {shortVenue(liveFixture.venue || 'TU Cricket Ground')}
+                </Text>
+              </View>
+
+              <View style={styles.heroBody}>
+                <View style={styles.heroTeams}>
+                  {/* Home Team */}
+                  <View style={styles.heroTeamRow}>
+                    <View style={styles.heroTeamLeft}>
+                      <TeamCrest
+                        uri={liveFixture.homeTeamLogo}
+                        name={liveFixture.homeTeam}
+                        short={liveFixture.homeTeamShort}
+                        color={liveFixture.homeTeamColor}
+                        size={44}
+                      />
+                      <Text style={styles.heroTeamName} numberOfLines={1}>
+                        {liveFixture.homeTeam}
+                      </Text>
+                    </View>
+                    {(liveHomeScore?.display || liveFixture.homeScore) ? (
+                      <Text style={[styles.heroScoreText, liveHomeScore?.isBatting && { color: colors.lime, fontWeight: '700' }]}>
+                        {liveHomeScore?.display || liveFixture.homeScore}
+                      </Text>
+                    ) : null}
                   </View>
-                  {liveFixture.homeScore ? (
-                    <Text style={styles.heroScoreText}>{liveFixture.homeScore}</Text>
+
+                  {/* Away Team */}
+                  <View style={styles.heroTeamRow}>
+                    <View style={styles.heroTeamLeft}>
+                      <TeamCrest
+                        uri={liveFixture.awayTeamLogo}
+                        name={liveFixture.awayTeam}
+                        short={liveFixture.awayTeamShort}
+                        color={liveFixture.awayTeamColor}
+                        size={44}
+                      />
+                      <Text style={styles.heroTeamName} numberOfLines={1}>
+                        {liveFixture.awayTeam}
+                      </Text>
+                    </View>
+                    {(liveAwayScore?.display || liveFixture.awayScore) ? (
+                      <Text style={[styles.heroScoreText, liveAwayScore?.isBatting && { color: colors.lime, fontWeight: '700' }]}>
+                        {liveAwayScore?.display || liveFixture.awayScore}
+                      </Text>
+                    ) : null}
+                  </View>
+
+                  {/* Clean Live Equation / Target note */}
+                  {(liveTelemetry?.header?.tossNote || liveTelemetry?.target || liveTelemetry?.crr) ? (
+                    <View style={{ marginTop: 8, paddingTop: 6, borderTopWidth: 1, borderTopColor: colors.line }}>
+                      <Text style={{ color: colors.lime, fontSize: 13, fontFamily: fonts.mono, fontWeight: '600' }} numberOfLines={2}>
+                        {liveTelemetry?.header?.tossNote || liveTelemetry?.target}
+                      </Text>
+                      {(liveTelemetry?.crr || liveTelemetry?.rrr) ? (
+                        <Text style={{ color: colors.fg3, fontSize: 11, fontFamily: fonts.mono, marginTop: 2 }}>
+                          {liveTelemetry?.crr ? `CRR: ${liveTelemetry.crr}` : ''}
+                          {liveTelemetry?.crr && liveTelemetry?.rrr && liveTelemetry.rrr !== '--' ? ' • ' : ''}
+                          {liveTelemetry?.rrr && liveTelemetry.rrr !== '--' ? `RRR: ${liveTelemetry.rrr}` : ''}
+                        </Text>
+                      ) : null}
+                    </View>
+                  ) : liveFixture.summary ? (
+                    <Text style={styles.heroSummaryText}>{liveFixture.summary}</Text>
                   ) : null}
                 </View>
 
-                {/* Away Team */}
-                <View style={styles.heroTeamRow}>
-                  <View style={styles.heroTeamLeft}>
-                    <TeamCrest
-                      uri={liveFixture.awayTeamLogo}
-                      name={liveFixture.awayTeam}
-                      short={liveFixture.awayTeamShort}
-                      color={liveFixture.awayTeamColor}
-                      size={44}
-                    />
-                    <Text style={styles.heroTeamName} numberOfLines={1}>
-                      {liveFixture.awayTeam}
+                <View style={styles.heroActions}>
+                  <View style={styles.heroTiming}>
+                    <Text style={styles.heroStartedText}>
+                      Started <Text style={styles.clockHighlight}>{formatKathmanduTime(liveFixture.timestamp)}</Text>
                     </Text>
+                    <Text style={styles.heroBroadcasterText}>Action Sports HD, NetTV and DishHome</Text>
                   </View>
-                  {liveFixture.awayScore ? (
-                    <Text style={styles.heroScoreText}>{liveFixture.awayScore}</Text>
-                  ) : null}
+
+                  <TouchableOpacity
+                    style={styles.heroWatchBtn}
+                    activeOpacity={0.88}
+                    onPress={() => {
+                      triggerButtonHaptic();
+                      navigation.navigate('MatchPlayer', {
+                        match: {
+                          id: liveFixture.id,
+                          title: `${liveFixture.homeTeam} vs ${liveFixture.awayTeam}`,
+                          category: 'cricket',
+                          status: 'Live',
+                          venue: liveFixture.venue,
+                          timestamp: liveFixture.timestamp,
+                          sources: [
+                            { source: 'npl', id: liveFixture.id, label: 'Action Sports HD / NPL Live' },
+                          ],
+                        },
+                      });
+                    }}
+                  >
+                    <Text style={styles.heroWatchBtnText}>Watch live</Text>
+                  </TouchableOpacity>
                 </View>
-
-                {liveFixture.summary ? (
-                  <Text style={styles.heroSummaryText}>{liveFixture.summary}</Text>
-                ) : null}
-              </View>
-
-              <View style={styles.heroActions}>
-                <View style={styles.heroTiming}>
-                  <Text style={styles.heroStartedText}>
-                    Started <Text style={styles.clockHighlight}>{formatKathmanduTime(liveFixture.timestamp)}</Text>
-                  </Text>
-                  <Text style={styles.heroBroadcasterText}>Action Sports HD, NetTV and DishHome</Text>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.heroWatchBtn}
-                  activeOpacity={0.88}
-                  onPress={() => {
-                    triggerButtonHaptic();
-                    navigation.navigate('MatchPlayer', {
-                      match: {
-                        id: liveFixture.id,
-                        title: `${liveFixture.homeTeam} vs ${liveFixture.awayTeam}`,
-                        category: 'cricket',
-                        status: 'Live',
-                        venue: liveFixture.venue,
-                        timestamp: liveFixture.timestamp,
-                        sources: [
-                          { source: 'npl', id: liveFixture.id, label: 'Action Sports HD / NPL Live' },
-                        ],
-                      },
-                    });
-                  }}
-                >
-                  <Text style={styles.heroWatchBtnText}>Watch live</Text>
-                </TouchableOpacity>
               </View>
             </View>
-          </View>
-        )}
+          );
+        })()}
 
         {/* Tournament Header (Eyebrow, Screen Title, Subtitle, Search) */}
         <View style={styles.titleSection}>
@@ -377,6 +479,9 @@ export default function NplScreen() {
     const isLive = item.status === 'LIVE';
     const isCompleted = item.status === 'COMPLETED';
 
+    const cardHomeScore = isLive ? getTeamLiveScore(item.homeTeam, item.homeTeamShort) : null;
+    const cardAwayScore = isLive ? getTeamLiveScore(item.awayTeam, item.awayTeamShort) : null;
+
     return (
       <View style={[styles.card, isLive && styles.cardLive]}>
         {/* Card Header (Matches web .card header h-10 border-b border-line px-4) */}
@@ -410,8 +515,10 @@ export default function NplScreen() {
                 {item.homeTeam}
               </Text>
             </View>
-            {item.homeScore ? (
-              <Text style={styles.teamScore}>{item.homeScore}</Text>
+            {(cardHomeScore?.display || item.homeScore) ? (
+              <Text style={[styles.teamScore, cardHomeScore?.isBatting && { color: colors.lime, fontWeight: '700' }]}>
+                {cardHomeScore?.display || item.homeScore}
+              </Text>
             ) : null}
           </View>
 
@@ -429,14 +536,20 @@ export default function NplScreen() {
                 {item.awayTeam}
               </Text>
             </View>
-            {item.awayScore ? (
-              <Text style={styles.teamScore}>{item.awayScore}</Text>
+            {(cardAwayScore?.display || item.awayScore) ? (
+              <Text style={[styles.teamScore, cardAwayScore?.isBatting && { color: colors.lime, fontWeight: '700' }]}>
+                {cardAwayScore?.display || item.awayScore}
+              </Text>
             ) : null}
           </View>
 
           {/* Summary / Result Text */}
           {item.summary ? (
             <Text style={styles.summaryText}>{item.summary}</Text>
+          ) : isLive && (liveTelemetry?.header?.tossNote || liveTelemetry?.target || liveTelemetry?.crr) ? (
+            <Text style={[styles.summaryText, { color: colors.lime }]} numberOfLines={1}>
+              {liveTelemetry?.header?.tossNote || `${liveTelemetry?.target || ''} • CRR: ${liveTelemetry?.crr || ''}`}
+            </Text>
           ) : null}
 
           {/* Schedule Footer (Matches web border-t border-line pt-3 flex justify-between) */}

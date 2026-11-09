@@ -221,6 +221,41 @@ export interface LiveScorerMobile {
   score: string;
   overs: string;
   crr?: string;
+  rrr?: string;
+  target?: string;
+  header?: {
+    matchNumber?: string;
+    matchTitle?: string;
+    venue?: string;
+    tossNote?: string;
+    team1Short?: string;
+    team1Name?: string;
+    team1Score?: string;
+    team1Overs?: string;
+    team2Short?: string;
+    team2Name?: string;
+    team2Score?: string;
+    team2Overs?: string;
+    activeTeam?: 1 | 2;
+    target?: string;
+    crr?: string;
+    rrr?: string;
+  };
+  batters?: Array<{
+    name: string;
+    isOnStrike: boolean;
+    runs: string;
+    balls: string;
+    fours: string;
+    sixes: string;
+    strikeRate?: string;
+  }>;
+  bowler?: {
+    name: string;
+    figures: string;
+    overs?: string;
+    economy?: string;
+  };
   recentBalls: Array<{
     over: number;
     delivery: number;

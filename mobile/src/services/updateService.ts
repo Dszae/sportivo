@@ -12,8 +12,8 @@ export interface AppVersionInfo {
   hasUpdate: boolean;
 }
 
-export const CURRENT_VERSION = Constants.expoConfig?.version || '1.1.2';
-export const CURRENT_VERSION_CODE = Constants.expoConfig?.android?.versionCode || 13;
+export const CURRENT_VERSION = Constants.expoConfig?.version || '1.1.3';
+export const CURRENT_VERSION_CODE = Constants.expoConfig?.android?.versionCode || 14;
 const VERSION_CHECK_URL = 'https://sportivo.dipeshsapkota7.com.np/api/app-version.json';
 
 export async function checkForAppUpdate(): Promise<AppVersionInfo | null> {
