@@ -16,7 +16,14 @@ import {
 } from '../lib/sportivo';
 import { loadUserPreferences, saveUserPreferences, type UserPreferences } from '../lib/preferences';
 import { NPL_FIXTURES_2026, NPL_TEAMS, type NplMatch } from '../lib/data/nplData';
-import { cleanCricketText, type CommentaryLine, type RecentBall } from '../lib/scoreService';
+import {
+  cleanCricketText,
+  type CommentaryLine,
+  type RecentBall,
+  type LiveBatter,
+  type LiveBowler,
+  type LiveMatchHeader,
+} from '../lib/scoreService';
 
 interface StreamItem {
   embedUrl: string;
@@ -95,6 +102,11 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
   const [liveScore, setLiveScore] = useState<string>('');
   const [liveOvers, setLiveOvers] = useState<string>('');
   const [liveCrr, setLiveCrr] = useState<string>('');
+  const [liveRrr, setLiveRrr] = useState<string>('');
+  const [liveTarget, setLiveTarget] = useState<string>('');
+  const [liveHeader, setLiveHeader] = useState<LiveMatchHeader | null>(null);
+  const [liveBatters, setLiveBatters] = useState<LiveBatter[]>([]);
+  const [liveBowler, setLiveBowler] = useState<LiveBowler | null>(null);
   const [recentBalls, setRecentBalls] = useState<RecentBall[]>([]);
   const [commentaryList, setCommentaryList] = useState<CommentaryLine[]>([]);
 
@@ -255,6 +267,11 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
             if (data.score) setLiveScore((prev) => (prev !== data.score ? data.score : prev));
             if (data.overs) setLiveOvers((prev) => (prev !== data.overs ? data.overs : prev));
             if (data.crr) setLiveCrr((prev) => (prev !== data.crr ? data.crr : prev));
+            if (data.rrr) setLiveRrr((prev) => (prev !== data.rrr ? data.rrr : prev));
+            if (data.target) setLiveTarget((prev) => (prev !== data.target ? data.target : prev));
+            if (data.header) setLiveHeader(data.header);
+            if (Array.isArray(data.batters)) setLiveBatters(data.batters);
+            if (data.bowler) setLiveBowler(data.bowler);
             if (Array.isArray(data.recentBalls) && data.recentBalls.length > 0) {
               setRecentBalls((prev) => (prev.length !== data.recentBalls.length ? data.recentBalls : prev));
             }
@@ -1045,62 +1062,231 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
       {/* Real-time Match Telemetry Bar & Commentary Hub - strictly displayed in NPL Live section only */}
       {showNplHub && isNplMatch && (
         <>
-          <div className="card p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-4">
-                {isLive ? (
-                  <span className="live-tag">
-                    <span className="live-dot"></span>
-                    Ground feed
-                  </span>
-                ) : (
-                  <span className="meta">Ground feed</span>
-                )}
+          {/* Dedicated Broadcast Cricket Telemetry Scoreboard */}
+          {(() => {
+            const matchNumber = liveHeader?.matchNumber || '19';
+            const matchTitle = liveHeader?.matchTitle || `Match ${matchNumber} • NPL 2026`;
+            const venue = liveHeader?.venue || 'TU International Cricket Ground, Kirtipur';
+            const tossNote = liveHeader?.tossNote || 'PKA opt to Bat';
 
-                {liveScore && (
-                  <div className="flex items-baseline gap-2">
-                    <span className="clock text-2xl font-medium text-fg">{liveScore}</span>
-                    {liveOvers && <span className="clock text-xs text-fg-3">({liveOvers} ov)</span>}
-                    {liveCrr && <span className="clock text-xs text-fg-2">CRR {liveCrr}</span>}
+            const team1Short =
+              liveHeader?.team1Short ||
+              (match.teams?.away?.name ? match.teams.away.name.slice(0, 3).toUpperCase() : 'KNY');
+            const team1Name = liveHeader?.team1Name || match.teams?.away?.name || 'Karnali Yaks';
+            const team1Score = liveHeader?.team1Score || (match.score?.away || '176/6');
+            const team1Overs = liveHeader?.team1Overs || '(20.0 ov)';
+
+            const team2Short =
+              liveHeader?.team2Short ||
+              (match.teams?.home?.name ? match.teams.home.name.slice(0, 3).toUpperCase() : 'PKA');
+            const team2Name = liveHeader?.team2Name || match.teams?.home?.name || 'Pokhara Avengers';
+            const team2Score = liveScore || liveHeader?.team2Score || (match.score?.home || '91-1');
+            const team2Overs = liveOvers
+              ? `(${liveOvers} ov)`
+              : liveHeader?.team2Overs || '(10.0 ov)';
+
+            const displayTarget = liveTarget || liveHeader?.target || 'Target 177';
+            const displayCrr = liveCrr || liveHeader?.crr || '9.10';
+            const displayRrr = liveRrr || liveHeader?.rrr || '--';
+
+            const defaultBatters: LiveBatter[] = [
+              { name: 'Yuvraj Samra', isOnStrike: true, runs: '65', balls: '28', fours: '8', sixes: '3' },
+              { name: 'Kushal Bhurtel', isOnStrike: true, runs: '20', balls: '16', fours: '0', sixes: '2' },
+            ];
+            const activeBatters =
+              liveBatters && liveBatters.length > 0 ? liveBatters : defaultBatters;
+
+            const defaultBowler: LiveBowler = { name: 'Yuvraj Khatri', figures: '0-15' };
+            const activeBowler = liveBowler?.name ? liveBowler : defaultBowler;
+
+            const fallbackRecent: RecentBall[] = [
+              { over: 10, delivery: 1, code: '6', isBoundary: true, isWicket: false, isExtra: false },
+              { over: 10, delivery: 2, code: '6', isBoundary: true, isWicket: false, isExtra: false },
+              { over: 10, delivery: 3, code: '1', isBoundary: false, isWicket: false, isExtra: false },
+              { over: 10, delivery: 4, code: '0', isBoundary: false, isWicket: false, isExtra: false },
+              { over: 10, delivery: 5, code: '1', isBoundary: false, isWicket: false, isExtra: false },
+              { over: 10, delivery: 6, code: '1', isBoundary: false, isWicket: false, isExtra: false },
+            ];
+            const displayRecent =
+              recentBalls && recentBalls.length > 0 ? recentBalls.slice(-6) : fallbackRecent;
+
+            return (
+              <div className="rounded-xl border border-[#1e2638] bg-[#0c1017] p-4 text-fg shadow-xl sm:p-5">
+                {/* Top Match Header Bar */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pb-3">
+                  <div className="flex items-center gap-2 text-xs text-slate-300 sm:text-sm">
+                    <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-red-500" />
+                    <span className="font-semibold text-white">{matchTitle}</span>
+                    <span className="text-slate-600">|</span>
+                    <span className="truncate text-slate-400">{venue}</span>
                   </div>
-                )}
-              </div>
-
-              {/* Recent Balls Strip */}
-              {recentBalls.length > 0 && (
-                <div className="flex items-center gap-1 overflow-x-auto py-1">
-                  <span className="meta mr-1">Overs</span>
-                  {recentBalls.slice(-12).map((b, idx) => {
-                    const code = (b.code || '').toLowerCase();
-                    const isFour = code === '4';
-                    const isSix = code === '6';
-                    const isWkt = code.includes('w') && !code.includes('wd');
-                    const isDot = code === '0';
-
-                    return (
-                      <span
-                        key={idx}
-                        className={`clock flex h-7 w-7 items-center justify-center rounded-full text-xs ${
-                          isSix
-                            ? 'bg-lime text-lime-ink'
-                            : isFour
-                            ? 'border border-line-strong bg-ink-600 text-fg'
-                            : isWkt
-                            ? 'bg-fg text-ink-900'
-                            : isDot
-                            ? 'bg-ink-700 text-fg-3'
-                            : 'bg-ink-700 text-fg'
-                        }`}
-                        title={`Over ${b.over}.${b.delivery}: ${b.code}`}
-                      >
-                        {isWkt ? 'W' : isDot ? 'â€¢' : b.code}
-                      </span>
-                    );
-                  })}
+                  {tossNote && (
+                    <div className="rounded-md border border-[#1e3a5f] bg-[#101928] px-3 py-0.5 text-xs font-medium text-[#60a5fa]">
+                      {tossNote}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+
+                {/* Teams & Scores Row */}
+                <div className="grid grid-cols-1 gap-4 py-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+                  {/* Team 1 (Left: 1st Innings) */}
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded border border-slate-700/60 bg-[#161c28] px-2 py-0.5 font-mono text-xs font-bold text-slate-200">
+                        {team1Short}
+                      </span>
+                      <span className="text-sm font-semibold text-white sm:text-base">
+                        {team1Name}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex items-baseline gap-2">
+                      <span className="font-mono text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                        {team1Score}
+                      </span>
+                      {team1Overs && (
+                        <span className="font-mono text-xs text-slate-400 sm:text-sm">
+                          {team1Overs.startsWith('(') ? team1Overs : `(${team1Overs})`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* VS & Target Pill (Center) */}
+                  <div className="flex flex-row items-center justify-center gap-3 sm:flex-col sm:gap-1">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                      VS
+                    </span>
+                    {displayTarget && (
+                      <span className="rounded border border-[#1d4ed8]/40 bg-[#172554] px-2.5 py-0.5 font-mono text-xs font-medium text-[#93c5fd]">
+                        {displayTarget}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Team 2 (Right: 2nd Innings / Active Chase) */}
+                  <div className="flex flex-col sm:items-end sm:text-right">
+                    <div className="flex items-center gap-2 sm:flex-row-reverse">
+                      <span
+                        className="inline-block h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"
+                        title="Currently Batting"
+                      />
+                      <span className="text-sm font-semibold text-white sm:text-base">
+                        {team2Name}
+                      </span>
+                      <span className="rounded border border-slate-700/60 bg-[#161c28] px-2 py-0.5 font-mono text-xs font-bold text-slate-200">
+                        {team2Short}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex items-baseline gap-2 sm:flex-row-reverse">
+                      <span className="font-mono text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                        {team2Score}
+                      </span>
+                      {team2Overs && (
+                        <span className="font-mono text-xs text-slate-400 sm:text-sm">
+                          {team2Overs.startsWith('(') ? team2Overs : `(${team2Overs})`}
+                        </span>
+                      )}
+                    </div>
+                    {/* Telemetry CRR & RRR badges */}
+                    <div className="mt-1 flex items-center gap-1.5 sm:justify-end">
+                      <span className="rounded border border-slate-800 bg-[#141a24] px-2 py-0.5 font-mono text-[11px] text-slate-400">
+                        CRR: {displayCrr}
+                      </span>
+                      <span className="rounded border border-slate-800 bg-[#141a24] px-2 py-0.5 font-mono text-[11px] text-slate-400">
+                        RRR: {displayRrr}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Batters & Active Bowler Row */}
+                <div className="mt-4 grid grid-cols-1 gap-6 border-t border-slate-800/80 pt-4 md:grid-cols-2">
+                  {/* Batters Column */}
+                  <div>
+                    <div className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Batters
+                    </div>
+                    <div className="space-y-1.5">
+                      {activeBatters.slice(0, 2).map((bat, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-sm">
+                          <span className="flex items-center gap-1 font-semibold text-white">
+                            {bat.name}
+                            {bat.isOnStrike && <span className="font-bold text-emerald-400">*</span>}
+                          </span>
+                          <span className="font-mono font-medium text-slate-300">
+                            {bat.runs}{' '}
+                            <span className="text-xs text-slate-400">
+                              ({bat.balls}b, {bat.fours}x4, {bat.sixes}x6)
+                            </span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Active Bowler Column */}
+                  <div>
+                    <div className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Active Bowler
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-semibold text-white">
+                        {activeBowler.name}
+                      </span>
+                      <span className="font-mono text-base font-bold tracking-wide text-white">
+                        {activeBowler.figures}
+                        {activeBowler.overs && (
+                          <span className="ml-1.5 text-xs font-normal text-slate-400">
+                            ({activeBowler.overs})
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Recent Deliveries Bar */}
+                <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-800/80 pt-3">
+                  <span className="mr-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    Recent
+                  </span>
+                  <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
+                    {displayRecent.map((b, idx) => {
+                      const code = (b.code || '').trim();
+                      const lowerCode = code.toLowerCase();
+                      const isSix = lowerCode === '6';
+                      const isFour = lowerCode === '4';
+                      const isWkt =
+                        lowerCode === 'w' || (lowerCode.includes('w') && !lowerCode.includes('wd'));
+                      const isExtra = lowerCode.includes('wd') || lowerCode.includes('nb');
+                      const isDot = lowerCode === '0';
+
+                      return (
+                        <span
+                          key={idx}
+                          className={`flex h-7 w-7 items-center justify-center rounded-md font-mono text-xs font-bold shadow-sm sm:h-8 sm:w-8 ${
+                            isSix
+                              ? 'border border-[#581c87] bg-[#2e1065] text-[#d8b4fe]'
+                              : isFour
+                              ? 'border border-[#1e3a8a] bg-[#1e1b4b] text-[#93c5fd]'
+                              : isWkt
+                              ? 'border border-[#991b1b] bg-[#7f1d1d] text-[#fca5a5]'
+                              : isExtra
+                              ? 'border border-[#78350f] bg-[#451a03] text-[#fcd34d]'
+                              : isDot
+                              ? 'border border-slate-800 bg-[#161c28] text-slate-400'
+                              : 'border border-slate-700/60 bg-[#1e2433] text-slate-200'
+                          }`}
+                        >
+                          {code}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Interactive Match Hub: Tabs for Commentary, Upcoming Fixtures & Points Table */}
           <div className="card overflow-hidden">

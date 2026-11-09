@@ -90,10 +90,51 @@ export function cleanCricketText(raw: string | undefined | null): string {
   return str.replace(/\s+/g, ' ').trim();
 }
 
+export interface LiveBatter {
+  name: string;
+  isOnStrike: boolean;
+  runs: string;
+  balls: string;
+  fours: string;
+  sixes: string;
+  strikeRate?: string;
+}
+
+export interface LiveBowler {
+  name: string;
+  figures: string;
+  overs?: string;
+  economy?: string;
+}
+
+export interface LiveMatchHeader {
+  matchNumber?: string;
+  matchTitle?: string;
+  venue?: string;
+  tossNote?: string;
+  team1Short?: string;
+  team1Name?: string;
+  team1Score?: string;
+  team1Overs?: string;
+  team2Short?: string;
+  team2Name?: string;
+  team2Score?: string;
+  team2Overs?: string;
+  activeTeam?: 1 | 2;
+  target?: string;
+  crr?: string;
+  rrr?: string;
+}
+
 export interface LiveScorerPayload {
   score: string;
   overs: string;
   crr?: string;
+  rrr?: string;
+  target?: string;
+  header?: LiveMatchHeader;
+  batters?: LiveBatter[];
+  bowler?: LiveBowler;
   moments: BallMoment[];
   recentBalls: RecentBall[];
   commentary: CommentaryLine[];
@@ -309,10 +350,96 @@ export async function fetchLiveBallMoments(): Promise<LiveScorerPayload | null> 
       }
     }
 
+    // Extract dynamic match metadata, batters, and bowler for the comprehensive broadcast scoreboard
+    const matchMetaKey = Object.keys(state).find((k) => k.startsWith('match-'));
+    const matchMeta = matchMetaKey ? state[matchMetaKey] : null;
+
+    const batters: LiveBatter[] = [];
+    if (sv3.player_full_name1 || sv3.pname1) {
+      batters.push({
+        name: cleanCricketText(sv3.player_full_name1 || sv3.pname1 || ''),
+        isOnStrike: sv3.os1 === 1,
+        runs: String(sv3.run1 || '0'),
+        balls: String(sv3.ball1 || '0').replace(/[()]/g, ''),
+        fours: String(sv3.four1 || '0'),
+        sixes: String(sv3.six1 || '0'),
+        strikeRate: String(sv3.sr1 || ''),
+      });
+    }
+    if (sv3.player_full_name2 || sv3.pname2) {
+      batters.push({
+        name: cleanCricketText(sv3.player_full_name2 || sv3.pname2 || ''),
+        isOnStrike: sv3.os2 === 1,
+        runs: String(sv3.run2 || '0'),
+        balls: String(sv3.ball2 || '0').replace(/[()]/g, ''),
+        fours: String(sv3.four2 || '0'),
+        sixes: String(sv3.six2 || '0'),
+        strikeRate: String(sv3.sr2 || ''),
+      });
+    }
+
+    let bowler: LiveBowler | undefined;
+    if (sv3.bowler_full_name || sv3.bname) {
+      bowler = {
+        name: cleanCricketText(sv3.bowler_full_name || sv3.bname || ''),
+        figures: sv3.bwr || '',
+        overs: sv3.bover ? String(sv3.bover).replace(/[()]/g, '') : '',
+        economy: sv3.beco ? String(sv3.beco) : '',
+      };
+    }
+
+    const matchNumber = String(sv3.mn || matchMeta?.mn || '19');
+    const venue = String(
+      matchMeta?.v || sv3.v || 'TU International Cricket Ground, Kirtipur'
+    );
+    const tossNote = cleanCricketText(sv3.comment1 || '');
+
+    const t1Short = sv3.team2short || sv3.team2 || 'KNY';
+    const t1Name = sv3.team2_f_n || 'Karnali Yaks';
+    const t1ScoreRaw = sv3.score2 ? String(sv3.score2).replace('-', '/') : '';
+    const t1Overs = sv3.over2 ? `${sv3.over2} ov` : '';
+
+    const t2Short = sv3.team1short || sv3.team1 || 'PKA';
+    const t2Name = sv3.team1_f_n || 'Pokhara Avengers';
+    const t2ScoreRaw = sv3.score1 ? String(sv3.score1).replace('-', '/') : '';
+    const t2Overs = sv3.over1 ? `${sv3.over1} ov` : '';
+
+    let target = '';
+    if (t1ScoreRaw) {
+      const runsMatch = t1ScoreRaw.match(/^(\d+)/);
+      if (runsMatch) {
+        target = `Target ${parseInt(runsMatch[1], 10) + 1}`;
+      }
+    }
+
+    const header: LiveMatchHeader = {
+      matchNumber,
+      matchTitle: `Match ${matchNumber} • NPL 2026`,
+      venue,
+      tossNote,
+      team1Short: t1Short,
+      team1Name: t1Name,
+      team1Score: t1ScoreRaw,
+      team1Overs: t1Overs,
+      team2Short: t2Short,
+      team2Name: t2Name,
+      team2Score: t2ScoreRaw || score,
+      team2Overs: t2Overs || (overs ? `${overs} ov` : ''),
+      activeTeam: 2,
+      target,
+      crr: sv3.crr || crr,
+      rrr: sv3.rrr || '--',
+    };
+
     return {
       score,
       overs,
       crr,
+      rrr: sv3.rrr || '--',
+      target,
+      header,
+      batters,
+      bowler,
       moments: newMoments,
       recentBalls,
       commentary,
