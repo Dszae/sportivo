@@ -8,7 +8,7 @@
     "userInterfaceStyle": "dark",
     "scheme": "sportivo",
     "androidStatusBar": {
-      "backgroundColor": "#080a0b",
+      "backgroundColor": "#00000000",
       "barStyle": "light-content",
       "translucent": true
     },

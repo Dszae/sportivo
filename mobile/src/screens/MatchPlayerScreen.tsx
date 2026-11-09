@@ -37,22 +37,24 @@ import {
   fetchLiveDeskMoments,
   LiveScorerMobile,
   fetchNplFixtures,
+  fetchNplStandings,
   formatKathmanduTime,
+  cleanCricketText,
 } from '../services/api';
 
 type RouteProps = RouteProp<RootStackParamList, 'MatchPlayer'>;
 
 const { width } = Dimensions.get('window');
 
-const NPL_TEAMS_DATA = [
-  { name: 'Sudurpaschim Royals', p: 1, w: 1, l: 0, pts: 2, nrr: '+1.450' },
-  { name: 'Janakpur Bolts', p: 1, w: 1, l: 0, pts: 2, nrr: '+1.120' },
-  { name: 'Biratnagar Kings', p: 1, w: 1, l: 0, pts: 2, nrr: '+0.850' },
-  { name: 'Chitwan Rhinos', p: 1, w: 1, l: 0, pts: 2, nrr: '+0.420' },
-  { name: 'Kathmandu Gurkhas', p: 1, w: 0, l: 1, pts: 0, nrr: '-0.420' },
-  { name: 'Pokhara Avengers', p: 1, w: 0, l: 1, pts: 0, nrr: '-0.850' },
-  { name: 'Lumbini Lions', p: 1, w: 0, l: 1, pts: 0, nrr: '-1.120' },
-  { name: 'Karnali Yaks', p: 1, w: 0, l: 1, pts: 0, nrr: '-1.450' },
+const NPL_STANDINGS_DEFAULT = [
+  { rank: 1, name: 'Lumbini Lions', short: 'LUM', p: 4, w: 3, l: 1, nr: 0, nrr: '+1.526', pts: 6 },
+  { rank: 2, name: 'Kathmandu Gurkhas', short: 'KTG', p: 4, w: 3, l: 1, nr: 0, nrr: '+1.341', pts: 6 },
+  { rank: 3, name: 'Sudurpaschim Royals', short: 'SUR', p: 5, w: 3, l: 2, nr: 0, nrr: '-0.036', pts: 6 },
+  { rank: 4, name: 'Chitwan Rhinos', short: 'CHR', p: 3, w: 2, l: 1, nr: 0, nrr: '+0.207', pts: 4 },
+  { rank: 5, name: 'Janakpur Bolts', short: 'JAN', p: 5, w: 2, l: 3, nr: 0, nrr: '-0.083', pts: 4 },
+  { rank: 6, name: 'Karnali Yaks', short: 'KAR', p: 4, w: 2, l: 2, nr: 0, nrr: '-0.320', pts: 4 },
+  { rank: 7, name: 'Biratnagar Kings', short: 'BIR', p: 5, w: 2, l: 3, nr: 0, nrr: '-0.820', pts: 4 },
+  { rank: 8, name: 'Pokhara Avengers', short: 'POK', p: 4, w: 0, l: 4, nr: 0, nrr: '-1.959', pts: 0 },
 ];
 
 export default function MatchPlayerScreen() {
@@ -85,6 +87,20 @@ export default function MatchPlayerScreen() {
   // Live Ground Scorer State
   const [liveDesk, setLiveDesk] = useState<LiveScorerMobile | null>(null);
   const [upcomingMatches, setUpcomingMatches] = useState<NplMatch[]>([]);
+  const [standings, setStandings] = useState<any[]>(NPL_STANDINGS_DEFAULT);
+
+  // Load live standings
+  useEffect(() => {
+    let isMounted = true;
+    fetchNplStandings().then((data) => {
+      if (isMounted && data && data.length > 0) {
+        setStandings(data);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const videoRef = useRef<Video>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -209,7 +225,7 @@ export default function MatchPlayerScreen() {
   const fallbackStream: StreamSource = {
     id: 'server-1',
     source: 'npl',
-    label: 'Action Sports HD (Multi-Device Direct)',
+    label: 'Server 1 HD',
     embedUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/8wxsmuwvra/out/v1/06f2368f16e8470b8593cb77dcad31fe/cenc.mpd&keyid=f638f10e9bee65a698926a527722e332&key=a9f519367caf419607f6705e3d767935',
     streamUrl: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/8wxsmuwvra/out/v1/06f2368f16e8470b8593cb77dcad31fe/cenc.mpd&keyid=f638f10e9bee65a698926a527722e332&key=a9f519367caf419607f6705e3d767935',
     isDirectStream: false,
@@ -219,16 +235,13 @@ export default function MatchPlayerScreen() {
   const activeStream = streams.length > 0 ? streams[selectedServer] || streams[0] : fallbackStream;
 
   const isDirectVideo = Boolean(
-    (activeStream.isDirectStream ||
-      activeStream.streamUrl?.includes('.m3u8') ||
-      activeStream.streamUrl?.includes('.mpd') ||
-      activeStream.streamUrl?.includes('.mp4') ||
-      activeStream.embedUrl?.includes('.m3u8') ||
-      activeStream.embedUrl?.includes('.mpd')) &&
-      !activeStream.embedUrl?.includes('plyrr') &&
-      !activeStream.embedUrl?.includes('pages.dev') &&
-      !activeStream.streamUrl?.includes('plyrr') &&
-      !activeStream.streamUrl?.includes('pages.dev')
+    activeStream.isDirectStream &&
+    activeStream.streamUrl &&
+    (activeStream.streamUrl.endsWith('.m3u8') || activeStream.streamUrl.endsWith('.mp4')) &&
+    !activeStream.embedUrl?.includes('plyrr') &&
+    !activeStream.embedUrl?.includes('pages.dev') &&
+    !activeStream.streamUrl?.includes('plyrr') &&
+    !activeStream.streamUrl?.includes('pages.dev')
   );
 
   const handleShare = async () => {
@@ -248,12 +261,12 @@ export default function MatchPlayerScreen() {
   };
 
   return (
-    <View style={[styles.container, isFullscreen ? { paddingTop: 0 } : { paddingTop: topPadding }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#080a0b" hidden={isFullscreen} />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent hidden={isFullscreen} />
 
       {/* Top Bar with Back Button */}
       {!isFullscreen && (
-        <View style={styles.topBar}>
+        <View style={[styles.topBar, { paddingTop: topPadding + 6 }]}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backButton}
@@ -322,6 +335,9 @@ export default function MatchPlayerScreen() {
             setSupportMultipleWindows={false}
             sharedCookiesEnabled
             thirdPartyCookiesEnabled
+            androidLayerType="hardware"
+            onLoadStart={() => setIsBuffering(true)}
+            onLoadEnd={() => setIsBuffering(false)}
             renderError={() => (
               <View style={[styles.video, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#000', padding: 16 }]}>
                 <Text style={{ color: '#ef4444', fontSize: 13, fontWeight: 'bold', textAlign: 'center', marginBottom: 8 }}>
@@ -371,308 +387,404 @@ export default function MatchPlayerScreen() {
 
       {!isFullscreen && (
         <>
-          {/* Switch Server Helper if user wants to change stream */}
-          {hasTimedOut && streams.length > 1 && (
-            <View style={styles.streamHelperBanner}>
-              <View style={styles.streamHelperTextRow}>
-                <AlertCircleIcon size={16} color="#fbbf24" />
-                <Text style={styles.streamHelperTitle}>Switch to backup stream if buffering</Text>
-              </View>
-              <View style={styles.streamHelperActions}>
-                <TouchableOpacity
-                  style={styles.retryBtn}
-                  onPress={() => {
-                    setHasTimedOut(false);
-                    setIsBuffering(true);
-                    setSelectedServer((selectedServer + 1) % streams.length);
-                  }}
-                >
-                  <RefreshIcon size={12} color="#080a0b" />
-                  <Text style={styles.retryBtnText}>Next Server</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-      {/* Real-time Match Telemetry Bar (Live Score & Recent Balls) - NPL Matches Only */}
-      {isNplMatch && liveDesk && (
-        <View style={styles.telemetryBar}>
-          <View style={styles.telemetryScoreRow}>
-            <View style={styles.telemetryBadge}>
-              <View style={styles.liveDot} />
-              <Text style={styles.telemetryBadgeText}>LIVE</Text>
-            </View>
-            {liveDesk.header ? (
-              <View style={{ flex: 1, marginLeft: 8 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Text style={[styles.scoreNumber, { fontSize: 13, color: liveDesk.header.activeTeam === 1 ? '#c9f36b' : '#f1f5f9' }]}>
-                    {liveDesk.header.team1Short || 'T1'}: {liveDesk.header.team1Score || '0/0'} {liveDesk.header.team1Overs ? `(${liveDesk.header.team1Overs})` : ''}
-                  </Text>
-                  <Text style={[styles.scoreNumber, { fontSize: 13, color: liveDesk.header.activeTeam === 2 ? '#c9f36b' : '#f1f5f9' }]}>
-                    {liveDesk.header.team2Short || 'T2'}: {liveDesk.header.team2Score || '0/0'} {liveDesk.header.team2Overs ? `(${liveDesk.header.team2Overs})` : ''}
-                  </Text>
-                </View>
-                {(liveDesk.header.tossNote || liveDesk.target || liveDesk.crr) ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
-                    <Text style={{ color: '#c9f36b', fontSize: 11, fontFamily: 'monospace' }} numberOfLines={1}>
-                      {liveDesk.header.tossNote || liveDesk.target}
-                    </Text>
-                    {liveDesk.crr ? (
-                      <Text style={{ color: '#94a3b8', fontSize: 10, fontFamily: 'monospace' }}>
-                        CRR: {liveDesk.crr}
-                      </Text>
-                    ) : null}
-                  </View>
-                ) : null}
-              </View>
-            ) : liveDesk.score ? (
-              <View style={styles.scoreTextRow}>
-                <Text style={styles.scoreNumber}>{liveDesk.score}</Text>
-                {liveDesk.overs && <Text style={styles.oversNumber}>({liveDesk.overs} ov)</Text>}
-                {liveDesk.crr && <Text style={styles.crrNumber}>CRR: {liveDesk.crr}</Text>}
-              </View>
-            ) : null}
-          </View>
-
-          {/* Recent Balls Strip */}
-          {liveDesk.recentBalls && liveDesk.recentBalls.length > 0 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.ballsStrip}>
-              {liveDesk.recentBalls.slice(-10).map((b, idx) => {
-                const code = (b.code || '').toLowerCase();
-                const isFour = code === '4';
-                const isSix = code === '6';
-                const isWkt = code.includes('w') && !code.includes('wd');
-                const isDot = code === '0';
-
+          {/* Server Selection Toolbar (Directly under video, matching Web Screenshot 3) */}
+          <View style={styles.serverToolbar}>
+            <Text style={styles.serverToolbarLabel}>Servers</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.serverScroll}>
+              {(streams.length > 0 ? streams : [fallbackStream]).map((stream, idx) => {
+                const isCurrent = idx === selectedServer;
                 return (
-                  <View
-                    key={idx}
-                    style={[
-                      styles.ballCircle,
-                      isSix && styles.ballSix,
-                      isFour && styles.ballFour,
-                      isWkt && styles.ballWicket,
-                      isDot && styles.ballDot,
-                    ]}
+                  <TouchableOpacity
+                    key={stream.id || idx}
+                    style={[styles.serverChip, isCurrent && styles.serverChipActive]}
+                    onPress={async () => {
+                      await triggerButtonHaptic();
+                      setSelectedServer(idx);
+                    }}
                   >
-                    <Text
-                      style={[
-                        styles.ballText,
-                        isFour && styles.ballFourText,
-                        (isSix || isWkt) && styles.ballWhiteText,
-                      ]}
-                    >
-                      {isWkt ? 'W' : isDot ? '•' : b.code}
+                    <Text style={[styles.serverChipText, isCurrent && styles.serverChipTextActive]}>
+                      {stream.label || `Server ${idx + 1} HD`}
                     </Text>
-                  </View>
+                  </TouchableOpacity>
                 );
               })}
             </ScrollView>
-          )}
-        </View>
-      )}
-
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Interactive Match Hub Tabs - Strictly for NPL matches */}
-        {isNplMatch && (
-          <View style={styles.hubContainer}>
-            <View style={styles.hubHeader}>
-              <TouchableOpacity
-                style={[styles.hubTab, activeHubTab === 'commentary' && styles.hubTabActive]}
-                onPress={() => setActiveHubTab('commentary')}
-              >
-                <Text style={[styles.hubTabText, activeHubTab === 'commentary' && styles.hubTabTextActive]}>
-                  Commentary
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.hubTab, activeHubTab === 'upcoming' && styles.hubTabActive]}
-                onPress={() => setActiveHubTab('upcoming')}
-              >
-                <Text style={[styles.hubTabText, activeHubTab === 'upcoming' && styles.hubTabTextActive]}>
-                  Fixtures
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.hubTab, activeHubTab === 'standings' && styles.hubTabActive]}
-                onPress={() => setActiveHubTab('standings')}
-              >
-                <Text style={[styles.hubTabText, activeHubTab === 'standings' && styles.hubTabTextActive]}>
-                  Points Table
-                </Text>
-              </TouchableOpacity>
+            <View style={styles.liveEdgePill}>
+              <View style={styles.liveDot} />
+              <Text style={styles.liveEdgeText}>Live edge</Text>
             </View>
+          </View>
 
-            {/* Hub Tab Content */}
-            {activeHubTab === 'commentary' && (
-              <View style={styles.hubBody}>
-                {liveDesk && liveDesk.commentary && liveDesk.commentary.length > 0 ? (
-                  liveDesk.commentary.map((comm, idx) => (
-                    <View key={idx} style={styles.commItem}>
-                      <View style={styles.commBallCol}>
-                        <Text style={styles.commBallText}>{comm.ball}</Text>
-                        {comm.outcome && (
+          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            {/* Live Scoreboard Card (Matches web Screenshots 2 & 3) */}
+            {isNplMatch && (
+              <View style={styles.scoreboardCard}>
+                {/* Scoreboard Header: Match Title | Venue + Toss Badge */}
+                <View style={styles.sbHeader}>
+                  <View style={styles.sbHeaderLeft}>
+                    <View style={styles.liveDot} />
+                    <Text style={styles.sbMatchTitle} numberOfLines={1}>
+                      {liveDesk?.header?.matchTitle || match.title}
+                    </Text>
+                    <Text style={styles.sbDivider}>|</Text>
+                    <Text style={styles.sbVenue} numberOfLines={1}>
+                      {liveDesk?.header?.venue || match.venue || 'TU Cricket Ground, Kirtipur'}
+                    </Text>
+                  </View>
+                  {liveDesk?.header?.tossNote ? (
+                    <View style={styles.tossBadge}>
+                      <Text style={styles.tossBadgeText} numberOfLines={1}>
+                        {cleanCricketText(liveDesk.header.tossNote)}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+
+                {/* Scoreboard Body: 2 Teams with Batting Indicator & Target Equation */}
+                <View style={styles.sbScoresBody}>
+                  {/* Team 1 */}
+                  <View style={styles.sbTeamRow}>
+                    <View style={styles.sbTeamInfo}>
+                      <View style={styles.sbShortBadge}>
+                        <Text style={styles.sbShortText}>
+                          {liveDesk?.header?.team1Short || 'T1'}
+                        </Text>
+                      </View>
+                      <Text style={styles.sbTeamName} numberOfLines={1}>
+                        {liveDesk?.header?.team1Name || 'Team 1'}
+                      </Text>
+                      {liveDesk?.header?.activeTeam === 1 && (
+                        <View style={styles.activeBatDot} />
+                      )}
+                    </View>
+                    <View style={styles.sbScoreGroup}>
+                      <Text style={styles.sbScoreMain}>
+                        {liveDesk?.header?.team1Score || liveDesk?.score || '0/0'}
+                      </Text>
+                      {liveDesk?.header?.team1Overs ? (
+                        <Text style={styles.sbOversText}>
+                          ({liveDesk.header.team1Overs.replace(/[()]/g, '')})
+                        </Text>
+                      ) : liveDesk?.overs ? (
+                        <Text style={styles.sbOversText}>({liveDesk.overs} ov)</Text>
+                      ) : null}
+                    </View>
+                  </View>
+
+                  {/* VS / Target Equation Row */}
+                  <View style={styles.sbEquationRow}>
+                    {liveDesk?.header?.target || liveDesk?.target ? (
+                      <View style={styles.targetPill}>
+                        <Text style={styles.targetPillText}>
+                          {cleanCricketText(liveDesk.header?.target || liveDesk.target)}
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text style={styles.inningsText}>Innings 1</Text>
+                    )}
+                    {(liveDesk?.header?.crr || liveDesk?.crr || liveDesk?.header?.rrr || liveDesk?.rrr) ? (
+                      <View style={styles.runRatesRow}>
+                        {(liveDesk?.header?.crr || liveDesk?.crr) ? (
+                          <View style={styles.ratePill}>
+                            <Text style={styles.ratePillText}>
+                              CRR: {liveDesk.header?.crr || liveDesk.crr}
+                            </Text>
+                          </View>
+                        ) : null}
+                        {(liveDesk?.header?.rrr || liveDesk?.rrr) && (liveDesk.header?.rrr || liveDesk.rrr) !== '--' ? (
+                          <View style={[styles.ratePill, styles.rrrPill]}>
+                            <Text style={styles.rrrPillText}>
+                              RRR: {liveDesk.header?.rrr || liveDesk.rrr}
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
+                    ) : null}
+                  </View>
+
+                  {/* Team 2 */}
+                  <View style={styles.sbTeamRow}>
+                    <View style={styles.sbTeamInfo}>
+                      <View style={styles.sbShortBadge}>
+                        <Text style={styles.sbShortText}>
+                          {liveDesk?.header?.team2Short || 'T2'}
+                        </Text>
+                      </View>
+                      <Text style={styles.sbTeamName} numberOfLines={1}>
+                        {liveDesk?.header?.team2Name || 'Team 2'}
+                      </Text>
+                      {liveDesk?.header?.activeTeam === 2 && (
+                        <View style={styles.activeBatDot} />
+                      )}
+                    </View>
+                    <View style={styles.sbScoreGroup}>
+                      <Text
+                        style={[
+                          styles.sbScoreMain,
+                          (!liveDesk?.header?.team2Score || liveDesk.header.team2Score === 'Yet to Bat') &&
+                            styles.sbScoreMuted,
+                        ]}
+                      >
+                        {liveDesk?.header?.team2Score || 'Yet to Bat'}
+                      </Text>
+                      {liveDesk?.header?.team2Overs ? (
+                        <Text style={styles.sbOversText}>
+                          ({liveDesk.header.team2Overs.replace(/[()]/g, '')})
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+                </View>
+
+                {/* Batters & Active Bowler */}
+                {((liveDesk?.batters && liveDesk.batters.length > 0) || liveDesk?.bowler?.name) && (
+                  <View style={styles.playersSection}>
+                    {/* Batters */}
+                    {liveDesk?.batters && liveDesk.batters.length > 0 && (
+                      <View style={styles.battersCol}>
+                        <Text style={styles.colEyebrow}>BATTERS</Text>
+                        {liveDesk.batters.slice(0, 2).map((bat, idx) => (
+                          <View key={idx} style={styles.playerRow}>
+                            <Text style={styles.playerName} numberOfLines={1}>
+                              {cleanCricketText(bat.name)}
+                              {bat.isOnStrike && <Text style={{ color: '#c9f36b' }}> *</Text>}
+                            </Text>
+                            <Text style={styles.playerStats}>
+                              <Text style={styles.playerRuns}>{bat.runs}</Text>{' '}
+                              <Text style={styles.playerMeta}>
+                                ({bat.balls}b{bat.fours ? `, ${bat.fours}x4` : ''}{bat.sixes ? `, ${bat.sixes}x6` : ''})
+                              </Text>
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+
+                    {/* Bowler */}
+                    {liveDesk?.bowler?.name && (
+                      <View style={styles.bowlerCol}>
+                        <Text style={styles.colEyebrow}>ACTIVE BOWLER</Text>
+                        <View style={styles.playerRow}>
+                          <Text style={styles.playerName} numberOfLines={1}>
+                            {cleanCricketText(liveDesk.bowler.name)}
+                          </Text>
+                          <Text style={styles.playerStats}>
+                            <Text style={styles.playerRuns}>{liveDesk.bowler.figures}</Text>
+                            {liveDesk.bowler.overs ? (
+                              <Text style={styles.playerMeta}> ({liveDesk.bowler.overs})</Text>
+                            ) : null}
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                {/* Recent Balls Strip */}
+                {liveDesk?.recentBalls && liveDesk.recentBalls.length > 0 && (
+                  <View style={styles.recentStripContainer}>
+                    <Text style={styles.recentLabel}>RECENT</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recentBallsScroll}>
+                      {liveDesk.recentBalls.slice(-10).map((b, idx) => {
+                        const code = (b.code || '').toLowerCase().trim();
+                        const isFour = code === '4';
+                        const isSix = code === '6';
+                        const isWkt = code.includes('w') && !code.includes('wd');
+                        const isDot = code === '0';
+
+                        return (
                           <View
+                            key={idx}
                             style={[
-                              styles.commBadge,
-                              comm.outcome === '6' && styles.ballSix,
-                              comm.outcome === '4' && styles.ballFour,
-                              comm.outcome === 'W' && styles.ballWicket,
+                              styles.recentBallCircle,
+                              isSix && styles.recentBallSix,
+                              isFour && styles.recentBallFour,
+                              isWkt && styles.recentBallWicket,
+                              isDot && styles.recentBallDot,
                             ]}
                           >
-                            <Text style={styles.commBadgeText}>{comm.outcome}</Text>
+                            <Text
+                              style={[
+                                styles.recentBallText,
+                                isFour && styles.recentBallFourText,
+                                (isSix || isWkt) && styles.recentBallWhiteText,
+                              ]}
+                            >
+                              {isWkt ? 'W' : isDot ? '•' : b.code}
+                            </Text>
                           </View>
-                        )}
-                      </View>
-                      <View style={styles.commTextCol}>
-                        <Text style={styles.commBowlerText}>{comm.bowlerToBatsman}</Text>
-                        <Text style={styles.commDescText}>{comm.text}</Text>
-                      </View>
-                    </View>
-                  ))
-                ) : (
-                  <Text style={styles.emptyText}>Waiting for live ground scorer commentary feeds...</Text>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
                 )}
               </View>
             )}
 
-            {activeHubTab === 'upcoming' && (
-              <View style={styles.hubBody}>
-                {upcomingMatches.map((m) => (
-                  <View key={m.id} style={styles.upcomingCard}>
-                    <View style={styles.upcomingTop}>
-                      <Text style={styles.upcomingMatchNum}>Match {m.matchNumber}</Text>
-                      <Text style={styles.upcomingTime}>{formatKathmanduTime(m.timestamp)}</Text>
-                    </View>
-                    <Text style={styles.upcomingTitle}>
-                      {m.homeTeam} vs {m.awayTeam}
+            {/* Interactive Hub Tabs (Commentary | Upcoming | Points Table) */}
+            {isNplMatch && (
+              <View style={styles.hubContainer}>
+                <View style={styles.hubHeader}>
+                  <TouchableOpacity
+                    style={[styles.hubTab, activeHubTab === 'commentary' && styles.hubTabActive]}
+                    onPress={() => setActiveHubTab('commentary')}
+                  >
+                    <Text style={[styles.hubTabText, activeHubTab === 'commentary' && styles.hubTabTextActive]}>
+                      Commentary {liveDesk?.commentary?.length ? `(${liveDesk.commentary.length})` : ''}
                     </Text>
-                    <Text style={styles.upcomingVenue}>{m.venue}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
+                  </TouchableOpacity>
 
-            {activeHubTab === 'standings' && (
-              <View style={styles.hubBody}>
-                <View style={styles.tableHeader}>
-                  <Text style={[styles.tableCol, { flex: 3 }]}>Team</Text>
-                  <Text style={[styles.tableCol, { flex: 1, textAlign: 'center' }]}>P</Text>
-                  <Text style={[styles.tableCol, { flex: 1, textAlign: 'center' }]}>W</Text>
-                  <Text style={[styles.tableCol, { flex: 1, textAlign: 'center' }]}>PTS</Text>
-                  <Text style={[styles.tableCol, { flex: 1.5, textAlign: 'right' }]}>NRR</Text>
+                  <TouchableOpacity
+                    style={[styles.hubTab, activeHubTab === 'upcoming' && styles.hubTabActive]}
+                    onPress={() => setActiveHubTab('upcoming')}
+                  >
+                    <Text style={[styles.hubTabText, activeHubTab === 'upcoming' && styles.hubTabTextActive]}>
+                      Upcoming
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.hubTab, activeHubTab === 'standings' && styles.hubTabActive]}
+                    onPress={() => setActiveHubTab('standings')}
+                  >
+                    <Text style={[styles.hubTabText, activeHubTab === 'standings' && styles.hubTabTextActive]}>
+                      Points Table
+                    </Text>
+                  </TouchableOpacity>
                 </View>
-                {NPL_TEAMS_DATA.map((t, idx) => (
-                  <View key={idx} style={styles.tableRow}>
-                    <Text style={[styles.teamName, { flex: 3 }]} numberOfLines={1}>
-                      {idx + 1}. {t.name}
-                    </Text>
-                    <Text style={[styles.tableVal, { flex: 1, textAlign: 'center' }]}>{t.p}</Text>
-                    <Text style={[styles.tableVal, { flex: 1, textAlign: 'center', color: '#10b981' }]}>{t.w}</Text>
-                    <Text style={[styles.tableVal, { flex: 1, textAlign: 'center', fontWeight: '900', color: '#c9f36b' }]}>
-                      {t.pts}
-                    </Text>
-                    <Text style={[styles.tableVal, { flex: 1.5, textAlign: 'right' }]}>{t.nrr}</Text>
+
+                {/* Tab 1: Ball-by-ball Commentary */}
+                {activeHubTab === 'commentary' && (
+                  <View style={styles.hubBody}>
+                    {liveDesk && liveDesk.commentary && liveDesk.commentary.length > 0 ? (
+                      liveDesk.commentary.map((comm, idx) => (
+                        <View key={idx} style={styles.commItem}>
+                          <View style={styles.commBallCol}>
+                            <Text style={styles.commBallText}>{comm.ball}</Text>
+                            {comm.outcome && (
+                              <View
+                                style={[
+                                  styles.commBadge,
+                                  comm.outcome === '6' && styles.recentBallSix,
+                                  comm.outcome === '4' && styles.recentBallFour,
+                                  comm.outcome === 'W' && styles.recentBallWicket,
+                                ]}
+                              >
+                                <Text style={styles.commBadgeText}>{comm.outcome}</Text>
+                              </View>
+                            )}
+                          </View>
+                          <View style={styles.commTextCol}>
+                            <Text style={styles.commBowlerText}>{cleanCricketText(comm.bowlerToBatsman)}</Text>
+                            <Text style={styles.commDescText}>{cleanCricketText(comm.text)}</Text>
+                          </View>
+                        </View>
+                      ))
+                    ) : (
+                      <Text style={styles.emptyText}>Waiting for live ground scorer commentary feeds...</Text>
+                    )}
                   </View>
-                ))}
+                )}
+
+                {/* Tab 2: Upcoming Matches */}
+                {activeHubTab === 'upcoming' && (
+                  <View style={styles.hubBody}>
+                    {upcomingMatches.map((m) => (
+                      <View key={m.id} style={styles.upcomingCard}>
+                        <View style={styles.upcomingTop}>
+                          <Text style={styles.upcomingMatchNum}>Match {m.matchNumber}</Text>
+                          <Text style={styles.upcomingTime}>{formatKathmanduTime(m.timestamp)}</Text>
+                        </View>
+                        <Text style={styles.upcomingTitle}>
+                          {m.homeTeam} vs {m.awayTeam}
+                        </Text>
+                        <Text style={styles.upcomingVenue}>{m.venue}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {/* Tab 3: Points Table */}
+                {activeHubTab === 'standings' && (
+                  <View style={styles.hubBody}>
+                    <View style={styles.tableHeader}>
+                      <Text style={[styles.tableCol, { width: 28 }]}>#</Text>
+                      <Text style={[styles.tableCol, { flex: 1 }]}>Team</Text>
+                      <Text style={[styles.tableCol, { width: 30, textAlign: 'center' }]}>P</Text>
+                      <Text style={[styles.tableCol, { width: 30, textAlign: 'center' }]}>W</Text>
+                      <Text style={[styles.tableCol, { width: 34, textAlign: 'center' }]}>PTS</Text>
+                      <Text style={[styles.tableCol, { width: 56, textAlign: 'right' }]}>NRR</Text>
+                    </View>
+                    {(standings.length > 0 ? standings : NPL_STANDINGS_DEFAULT).map((t, idx) => (
+                      <View key={idx} style={[styles.tableRow, idx < 4 && styles.tableRowTop4]}>
+                        <View style={{ width: 28, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          {idx < 4 && <View style={styles.top4Dot} />}
+                          <Text style={styles.tableRank}>{t.rank || idx + 1}</Text>
+                        </View>
+                        <Text style={styles.teamNameText} numberOfLines={1}>
+                          {t.name}
+                        </Text>
+                        <Text style={[styles.tableVal, { width: 30, textAlign: 'center' }]}>{t.p}</Text>
+                        <Text style={[styles.tableVal, { width: 30, textAlign: 'center', color: '#c9f36b' }]}>{t.w}</Text>
+                        <Text style={[styles.tableVal, { width: 34, textAlign: 'center', fontWeight: '900', color: '#c9f36b' }]}>
+                          {t.pts}
+                        </Text>
+                        <Text style={[styles.tableVal, { width: 56, textAlign: 'right', fontFamily: 'monospace' }]}>
+                          {t.nrr}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
               </View>
             )}
-          </View>
-        )}
 
-        {/* Match Header Information */}
-        <View style={styles.metaCard}>
-          <View style={styles.metaTopRow}>
-            <View style={styles.liveIndicator}>
-              <View style={styles.liveDot} />
-              <Text style={styles.liveText}>
-                {match.status === 'LIVE' || match.status === 'Live' ? 'LIVE NOW' : 'FIXTURE DESK'}
-              </Text>
-            </View>
-            <Text style={styles.leagueText}>
-              {match.league || match.competition || 'SPORTS'} · NST
-            </Text>
-          </View>
+            {/* Match Meta Card */}
+            <View style={styles.metaCard}>
+              <View style={styles.metaTopRow}>
+                <View style={styles.liveIndicator}>
+                  <View style={styles.liveDot} />
+                  <Text style={styles.liveText}>
+                    {match.status === 'LIVE' || match.status === 'Live' ? 'LIVE NOW' : 'FIXTURE DESK'}
+                  </Text>
+                </View>
+                <Text style={styles.leagueText}>
+                  {match.league || match.competition || 'SPORTS'} · NST
+                </Text>
+              </View>
 
-          <Text style={styles.matchTitle}>{match.title}</Text>
-          {match.venue && (
-            <View style={styles.venueRow}>
-              <LocationIcon size={13} color="#94a3b8" />
-              <Text style={styles.venueText}>{match.venue}</Text>
-            </View>
-          )}
+              <Text style={styles.matchTitle}>{match.title}</Text>
+              {match.venue && (
+                <View style={styles.venueRow}>
+                  <LocationIcon size={13} color="#94a3b8" />
+                  <Text style={styles.venueText}>{match.venue}</Text>
+                </View>
+              )}
 
-          {/* Action Row */}
-          <View style={styles.actionRow}>
-            <TouchableOpacity
-              style={[styles.actionButton, isStarred && styles.actionButtonActive]}
-              onPress={handleToggleStar}
-            >
-              <BookmarkIcon
-                size={16}
-                color={isStarred ? '#fbbf24' : '#cbd5e1'}
-                fill={isStarred ? '#fbbf24' : undefined}
-              />
-              <Text style={[styles.actionButtonText, isStarred && styles.actionButtonTextActive]}>
-                {isStarred ? 'Saved to Watchlist' : 'Add to Watchlist'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-              <ShareIcon size={16} color="#cbd5e1" />
-              <Text style={styles.actionButtonText}>Share</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Server Selection Desk */}
-        <View style={styles.serverSection}>
-          <Text style={styles.sectionHeader}>MULTI-SERVER LIVE DESK</Text>
-          <Text style={styles.serverSubtext}>
-            Switch servers below if any broadcast feed encounters buffering or lag.
-          </Text>
-
-          <View style={styles.serverList}>
-            {(streams.length > 0 ? streams : [fallbackStream]).map((stream, idx) => {
-              const isCurrent = idx === selectedServer;
-              return (
+              {/* Action Row */}
+              <View style={styles.actionRow}>
                 <TouchableOpacity
-                  key={stream.id || idx}
-                  style={[styles.serverCard, isCurrent && styles.serverCardActive]}
-                  onPress={async () => {
-                    await triggerButtonHaptic();
-                    setSelectedServer(idx);
-                  }}
+                  style={[styles.actionButton, isStarred && styles.actionButtonActive]}
+                  onPress={handleToggleStar}
                 >
-                  <View style={styles.serverInfo}>
-                    <View style={styles.serverTitleRow}>
-                      <RadioIcon size={15} color={isCurrent ? '#c9f36b' : '#94a3b8'} />
-                      <Text style={[styles.serverTitle, isCurrent && styles.serverTitleActive]}>
-                        Server DSZ{idx + 1}
-                      </Text>
-                      {stream.hd && (
-                        <View style={styles.hdBadge}>
-                          <Text style={styles.hdBadgeText}>HD</Text>
-                        </View>
-                      )}
-                    </View>
-                    <Text style={styles.serverSourceText}>
-                      High-Speed Stream · NST Synced
-                    </Text>
-                  </View>
-
-                  <View style={[styles.serverSelectCircle, isCurrent && styles.serverSelectCircleActive]}>
-                    {isCurrent && <View style={styles.serverSelectInner} />}
-                  </View>
+                  <BookmarkIcon
+                    size={16}
+                    color={isStarred ? '#fbbf24' : '#cbd5e1'}
+                    fill={isStarred ? '#fbbf24' : undefined}
+                  />
+                  <Text style={[styles.actionButtonText, isStarred && styles.actionButtonTextActive]}>
+                    {isStarred ? 'Saved to Watchlist' : 'Add to Watchlist'}
+                  </Text>
                 </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-      </ScrollView>
-      </>
+
+                <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
+                  <ShareIcon size={16} color="#cbd5e1" />
+                  <Text style={styles.actionButtonText}>Share</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </>
       )}
     </View>
   );
@@ -689,7 +801,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 10,
-    backgroundColor: '#0c1413',
+    backgroundColor: '#080a0b',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.08)',
   },
@@ -764,6 +876,363 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
   },
+  /* Servers Toolbar under Player */
+  serverToolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0a0f0e',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  serverToolbarLabel: {
+    color: '#94a3b8',
+    fontSize: 11,
+    fontWeight: '700',
+    marginRight: 8,
+  },
+  serverScroll: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingRight: 8,
+  },
+  serverChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  serverChipActive: {
+    backgroundColor: '#c9f36b',
+    borderColor: '#c9f36b',
+  },
+  serverChipText: {
+    color: '#cbd5e1',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  serverChipTextActive: {
+    color: '#080a0b',
+    fontWeight: '900',
+  },
+  liveEdgePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(201, 243, 107, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(201, 243, 107, 0.25)',
+  },
+  liveEdgeText: {
+    color: '#c9f36b',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+
+  /* Match Scoreboard Card (Matching Web Screenshots 2 & 3) */
+  scoreboardCard: {
+    backgroundColor: '#0b1413',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  sbHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+    gap: 8,
+  },
+  sbHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+    minWidth: 0,
+  },
+  sbMatchTitle: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '800',
+    flexShrink: 0,
+  },
+  sbDivider: {
+    color: '#64748b',
+    fontSize: 12,
+  },
+  sbVenue: {
+    color: '#94a3b8',
+    fontSize: 11,
+    flex: 1,
+  },
+  tossBadge: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    maxWidth: 140,
+  },
+  tossBadgeText: {
+    color: '#cbd5e1',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  sbScoresBody: {
+    padding: 14,
+    gap: 10,
+  },
+  sbTeamRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  sbTeamInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+    minWidth: 0,
+  },
+  sbShortBadge: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  sbShortText: {
+    color: '#ffffff',
+    fontFamily: 'monospace',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  sbTeamName: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
+    flex: 1,
+  },
+  activeBatDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#c9f36b',
+  },
+  sbScoreGroup: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+    flexShrink: 0,
+  },
+  sbScoreMain: {
+    color: '#ffffff',
+    fontFamily: 'monospace',
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  sbScoreMuted: {
+    color: '#64748b',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  sbOversText: {
+    color: '#94a3b8',
+    fontFamily: 'monospace',
+    fontSize: 11,
+  },
+  sbEquationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    paddingVertical: 6,
+  },
+  targetPill: {
+    backgroundColor: 'rgba(201, 243, 107, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(201, 243, 107, 0.25)',
+  },
+  targetPillText: {
+    color: '#c9f36b',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  inningsText: {
+    color: '#64748b',
+    fontSize: 11,
+    fontFamily: 'monospace',
+  },
+  runRatesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  ratePill: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  ratePillText: {
+    color: '#94a3b8',
+    fontSize: 10,
+    fontFamily: 'monospace',
+    fontWeight: '700',
+  },
+  rrrPill: {
+    backgroundColor: 'rgba(201, 243, 107, 0.1)',
+  },
+  rrrPillText: {
+    color: '#c9f36b',
+    fontSize: 10,
+    fontFamily: 'monospace',
+    fontWeight: '700',
+  },
+
+  /* Batters & Bowler */
+  playersSection: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    gap: 10,
+  },
+  battersCol: {
+    gap: 4,
+  },
+  bowlerCol: {
+    gap: 4,
+    marginTop: 4,
+  },
+  colEyebrow: {
+    color: '#64748b',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    marginBottom: 2,
+  },
+  playerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  playerName: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '700',
+    flex: 1,
+  },
+  playerStats: {
+    flexShrink: 0,
+  },
+  playerRuns: {
+    color: '#ffffff',
+    fontFamily: 'monospace',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  playerMeta: {
+    color: '#94a3b8',
+    fontSize: 10,
+    fontFamily: 'monospace',
+  },
+
+  /* Recent Balls Strip */
+  recentStripContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    gap: 8,
+  },
+  recentLabel: {
+    color: '#64748b',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  recentBallsScroll: {
+    flexDirection: 'row',
+    gap: 5,
+  },
+  recentBallCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  recentBallSix: {
+    backgroundColor: '#c9f36b',
+  },
+  recentBallFour: {
+    backgroundColor: 'rgba(201, 243, 107, 0.25)',
+    borderWidth: 1,
+    borderColor: '#c9f36b',
+  },
+  recentBallWicket: {
+    backgroundColor: '#ef4444',
+  },
+  recentBallDot: {
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  recentBallText: {
+    color: '#cbd5e1',
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  recentBallFourText: {
+    color: '#c9f36b',
+  },
+  recentBallWhiteText: {
+    color: '#080a0b',
+  },
+
+  tableRowTop4: {
+    backgroundColor: 'rgba(201, 243, 107, 0.04)',
+  },
+  top4Dot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#c9f36b',
+  },
+  tableRank: {
+    color: '#94a3b8',
+    fontSize: 11,
+    fontFamily: 'monospace',
+  },
+  teamNameText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '700',
+    flex: 1,
+  },
+
   streamHelperBanner: {
     flexDirection: 'row',
     alignItems: 'center',

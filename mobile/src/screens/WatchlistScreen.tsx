@@ -106,18 +106,30 @@ export default function WatchlistScreen() {
   };
 
   return (
-    <ScrollView
-      style={[styles.container, { paddingTop: topPadding }]}
-      contentContainerStyle={styles.scrollContent}
-    >
-      {/* Top Banner */}
-      <View style={styles.banner}>
-        <BookmarkIcon size={32} color="#fbbf24" fill="#fbbf24" style={{ marginBottom: 8 }} />
-        <Text style={styles.bannerTitle}>My Personal Watchlist</Text>
-        <Text style={styles.bannerSubtitle}>
-          Follow your favorite clubs and NPL franchises. Match alerts will automatically fire 5 minutes before kickoff!
-        </Text>
+    <View style={styles.container}>
+      {/* Top Header (Completely transparent, matching web SiteHeader) */}
+      <View style={[styles.screenHeader, { paddingTop: topPadding + 6 }]}>
+        <View style={styles.brandRow}>
+          <View style={styles.brandDot} />
+          <Text style={styles.brandText}>Sportivo</Text>
+          <View style={styles.headerBadge}>
+            <Text style={styles.headerBadgeText}>Watchlist</Text>
+          </View>
+        </View>
       </View>
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Top Banner */}
+        <View style={styles.banner}>
+          <BookmarkIcon size={32} color="#fbbf24" fill="#fbbf24" style={{ marginBottom: 8 }} />
+          <Text style={styles.bannerTitle}>My Personal Watchlist</Text>
+          <Text style={styles.bannerSubtitle}>
+            Follow your favorite clubs and NPL franchises. Match alerts will automatically fire 5 minutes before kickoff!
+          </Text>
+        </View>
 
       {/* Your Match Schedule */}
       <View style={styles.section}>
@@ -236,7 +248,8 @@ export default function WatchlistScreen() {
           </TouchableOpacity>
         </View>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -244,6 +257,47 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#080a0b',
+  },
+  screenHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    backgroundColor: 'transparent',
+    borderBottomWidth: 0,
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  brandDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#c9f36b',
+  },
+  brandText: {
+    fontFamily: 'System',
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: -0.3,
+  },
+  headerBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginLeft: 4,
+  },
+  headerBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#fbbf24',
   },
   scrollContent: {
     padding: 16,

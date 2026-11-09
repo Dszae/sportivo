@@ -268,6 +268,24 @@ export default function NplScreen() {
   const renderHeader = () => {
     return (
       <View>
+        {/* Top Header (Completely transparent, matching web SiteHeader) */}
+        <View style={[styles.screenHeader, { paddingTop: topPadding + 6 }]}>
+          <View style={styles.brandRow}>
+            <View style={styles.brandDot} />
+            <Text style={styles.brandText}>Sportivo</Text>
+            <View style={styles.headerBadge}>
+              <Text style={styles.headerBadgeText}>NPL 2026</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.headerChip}
+            onPress={() => navigation.navigate('WatchlistTab' as any)}
+          >
+            <BookmarkIcon size={16} color={colors.fg2} />
+            <Text style={styles.headerChipText}>Watchlist</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Live Fixture Hero Panel (Matches web .panel mb-10 overflow-hidden border-line-strong) */}
         {liveFixture && (() => {
           const liveHomeScore = getTeamLiveScore(liveFixture.homeTeam, liveFixture.homeTeamShort);
@@ -628,8 +646,45 @@ export default function NplScreen() {
     );
   };
 
+  const renderFooter = () => (
+    <View style={styles.footerSection}>
+      <View style={styles.infoCardsRow}>
+        <View style={styles.infoCard}>
+          <Text style={styles.infoCardEyebrow}>Venue</Text>
+          <Text style={styles.infoCardTitle}>TU Cricket Ground</Text>
+          <Text style={styles.infoCardDesc}>All 32 matches are hosted at the TU International Cricket Ground in Kirtipur, Kathmandu.</Text>
+        </View>
+        <View style={styles.infoCard}>
+          <Text style={styles.infoCardEyebrow}>Match times</Text>
+          <Text style={styles.infoCardTitle}>12:30 PM &amp; 5:00 PM NST</Text>
+          <Text style={styles.infoCardDesc}>Double-header days feature an afternoon clash followed by one under lights.</Text>
+        </View>
+      </View>
+
+      <View style={styles.faqSection}>
+        <Text style={styles.faqEyebrow}>Questions</Text>
+        <Text style={styles.faqHeading}>About NPL 2026</Text>
+
+        <View style={styles.faqItem}>
+          <Text style={styles.faqQuestion}>Where is NPL 2026 being held?</Text>
+          <Text style={styles.faqAnswer}>All Nepal Premier League matches are hosted at the Tribhuvan University International Cricket Ground in Kirtipur, Kathmandu.</Text>
+        </View>
+
+        <View style={styles.faqItem}>
+          <Text style={styles.faqQuestion}>What time are matches played in NST?</Text>
+          <Text style={styles.faqAnswer}>Matches kick off at 12:30 PM NST (06:45 UTC), with evening games starting at 5:00 PM NST under floodlights.</Text>
+        </View>
+
+        <View style={styles.faqItem}>
+          <Text style={styles.faqQuestion}>Where can I watch NPL live streams?</Text>
+          <Text style={styles.faqAnswer}>Official broadcasts in Nepal are on Action Sports HD and streamed via DishHome and NetTV. Sportivo provides fast, zero-delay multi-server playback.</Text>
+        </View>
+      </View>
+    </View>
+  );
+
   return (
-    <View style={[styles.container, { paddingTop: topPadding }]}>
+    <View style={styles.container}>
       {loading ? (
         <View style={styles.centerLoading}>
           <ActivityIndicator size="large" color={colors.lime} />
@@ -641,6 +696,7 @@ export default function NplScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderMatchCard}
           ListHeaderComponent={renderHeader}
+          ListFooterComponent={renderFooter}
           contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl
@@ -678,6 +734,59 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.ink900,
+  },
+  screenHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 14,
+    backgroundColor: 'transparent',
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  brandDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.lime,
+  },
+  brandText: {
+    fontFamily: fonts.sansSemibold,
+    fontSize: 17,
+    color: colors.fg,
+  },
+  headerBadge: {
+    backgroundColor: 'rgba(201, 243, 107, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(201, 243, 107, 0.3)',
+  },
+  headerBadgeText: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    color: colors.lime,
+    fontWeight: '700',
+  },
+  headerChip: {
+    height: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    borderRadius: radius.md,
+    backgroundColor: colors.ink800,
+    borderWidth: 1,
+    borderColor: colors.line,
+    gap: 6,
+  },
+  headerChipText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 12,
+    color: colors.fg2,
   },
   listContent: {
     paddingHorizontal: 16,
@@ -1075,5 +1184,79 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sansMedium,
     fontSize: 13,
     color: colors.fg,
+  },
+
+  /* Footer & About NPL 2026 Section (Matches web NPL page) */
+  footerSection: {
+    marginTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
+    paddingTop: 24,
+    paddingBottom: 20,
+  },
+  infoCardsRow: {
+    gap: 12,
+    marginBottom: 28,
+  },
+  infoCard: {
+    backgroundColor: colors.ink800,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+    padding: 16,
+  },
+  infoCardEyebrow: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    color: colors.fg3,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  infoCardTitle: {
+    fontFamily: fonts.sansSemibold,
+    fontSize: 16,
+    color: colors.fg,
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  infoCardDesc: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.fg2,
+    lineHeight: 18,
+  },
+  faqSection: {
+    marginTop: 8,
+  },
+  faqEyebrow: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    color: colors.lime,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  faqHeading: {
+    fontFamily: fonts.sansSemibold,
+    fontSize: 22,
+    color: colors.fg,
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  faqItem: {
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+  },
+  faqQuestion: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 15,
+    color: colors.fg,
+    marginBottom: 6,
+  },
+  faqAnswer: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.fg2,
+    lineHeight: 19,
   },
 });

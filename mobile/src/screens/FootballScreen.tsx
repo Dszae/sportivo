@@ -155,7 +155,25 @@ export default function FootballScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: topPadding }]}>
+    <View style={styles.container}>
+      {/* Top Header */}
+      <View style={[styles.screenHeader, { paddingTop: topPadding + 6 }]}>
+        <View style={styles.brandRow}>
+          <View style={styles.brandDot} />
+          <Text style={styles.brandText}>Sportivo</Text>
+          <View style={styles.headerBadge}>
+            <Text style={styles.headerBadgeText}>Football</Text>
+          </View>
+        </View>
+        <TouchableOpacity
+          style={styles.headerChip}
+          onPress={() => navigation.navigate('WatchlistTab' as any)}
+        >
+          <BookmarkIcon size={16} color="#cbd5e1" />
+          <Text style={styles.headerChipText}>Watchlist</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Horizontal League Filters */}
       <View style={styles.filtersBar}>
         <ScrollView
@@ -221,6 +239,59 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#080a0b',
+  },
+  screenHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    backgroundColor: 'transparent',
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  brandDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#c9f36b',
+  },
+  brandText: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#f8fafc',
+  },
+  headerBadge: {
+    backgroundColor: 'rgba(201, 243, 107, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(201, 243, 107, 0.3)',
+  },
+  headerBadgeText: {
+    fontSize: 11,
+    color: '#c9f36b',
+    fontWeight: '700',
+  },
+  headerChip: {
+    height: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    gap: 6,
+  },
+  headerChipText: {
+    fontSize: 12,
+    color: '#cbd5e1',
+    fontWeight: '500',
   },
   filtersBar: {
     paddingVertical: 10,

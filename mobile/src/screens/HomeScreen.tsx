@@ -176,8 +176,14 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Top Header (Matches web SiteHeader) */}
-      <View style={[styles.siteHeader, { paddingTop: topPadding + 4 }]}>
+      {/* Floodlit pitch background spanning to the absolute top behind transparent header */}
+      <View style={styles.heroBackgroundContainer} pointerEvents="none">
+        <Image source={{ uri: HERO_IMAGE }} style={styles.heroBackgroundImage} />
+        <View style={styles.heroBackgroundGradient} />
+      </View>
+
+      {/* Top Header (Completely transparent, matching web SiteHeader) */}
+      <View style={[styles.siteHeader, { paddingTop: topPadding + 6 }]}>
         <View style={styles.brandRow}>
           <View style={styles.brandDot} />
           <Text style={styles.brandText}>Sportivo</Text>
@@ -248,11 +254,6 @@ export default function HomeScreen() {
 
         {/* Hero Showcase (Matches web HeroShowcase.tsx) */}
         <View style={styles.heroSection}>
-          <View style={styles.heroImageContainer}>
-            <Image source={{ uri: HERO_IMAGE }} style={styles.heroImage} />
-            <View style={styles.heroImageOverlay} />
-          </View>
-
           <View style={styles.heroContent}>
             <Text style={styles.eyebrow}>Live sports desk, Nepal</Text>
             <Text style={styles.heroHeadline}>Every kickoff, in Nepal time</Text>
@@ -440,9 +441,27 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.line,
-    backgroundColor: colors.ink950,
+    backgroundColor: 'transparent',
+    borderBottomWidth: 0,
+    zIndex: 10,
+  },
+  heroBackgroundContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 480,
+    overflow: 'hidden',
+  },
+  heroBackgroundImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+    opacity: 0.40,
+  },
+  heroBackgroundGradient: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(12, 16, 18, 0.70)',
   },
   brandRow: {
     flexDirection: 'row',
@@ -580,24 +599,6 @@ const styles = StyleSheet.create({
   heroSection: {
     position: 'relative',
     paddingBottom: 24,
-  },
-  heroImageContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 380,
-    overflow: 'hidden',
-  },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-    opacity: 0.35,
-  },
-  heroImageOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(16, 19, 18, 0.75)',
   },
   heroContent: {
     paddingHorizontal: 16,
