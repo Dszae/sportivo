@@ -117,11 +117,31 @@ async function fetchPpvStreams(): Promise<PpvCategoryItem[]> {
         if (data?.success && Array.isArray(data.streams)) {
           cachedStreams = data.streams;
           lastStreamsFetch = Date.now();
+          logDiagnostic({
+            provider: 'ppv',
+            operation: 'streams:upstream',
+            durationMs: 0,
+            status: 200,
+            error: `url=${url} categories=${data.streams.length}`,
+          });
           return cachedStreams;
         }
       }
+      logDiagnostic({
+        provider: 'ppv',
+        operation: 'streams:upstream',
+        durationMs: 0,
+        status: res.status,
+        error: `url=${url} ok=${res.ok} contentType=${res.headers.get('content-type') || ''}`,
+      });
     } catch (err: any) {
-      // Continue to next mirror candidate
+      logDiagnostic({
+        provider: 'ppv',
+        operation: 'streams:upstream',
+        durationMs: 0,
+        status: 'error',
+        error: `url=${url} ${err?.message || err}`,
+      });
     }
   }
 
