@@ -48,7 +48,7 @@ export default function MatchExplorer({ category, matches: initialMatches, explo
     let cancelled = false;
     const fetchFresh = async () => {
       try {
-        const res = await fetch(/api/matches//);
+        const res = await fetch(`/api/matches/${category}/`);
         if (res.ok) {
           const freshData = await res.json();
           if (!cancelled && Array.isArray(freshData) && freshData.length > 0) {
