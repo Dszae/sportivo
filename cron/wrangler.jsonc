@@ -1,0 +1,12 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "sportivo-cron",
+  "main": "worker.js",
+  "compatibility_date": "2026-11-10",
+  "triggers": {
+    "crons": ["0 6 * * *"]
+  },
+  "observability": {
+    "enabled": true
+  }
+}
