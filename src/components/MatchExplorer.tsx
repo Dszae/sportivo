@@ -29,7 +29,8 @@ function splitKickoff(formatted: string) {
   return { date: formatted.slice(0, i), time: formatted.slice(i + 2) };
 }
 
-export default function MatchExplorer({ category, matches, exploreUrl }: Props) {
+export default function MatchExplorer({ category, matches: initialMatches, exploreUrl }: Props) {
+  const [matches, setMatches] = useState<Match[]>(initialMatches || []);
   const [query, setQuery] = useState('');
   const [selectedLeague, setSelectedLeague] = useState<FootballLeague>('All');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
@@ -41,6 +42,32 @@ export default function MatchExplorer({ category, matches, exploreUrl }: Props) 
   const [viewMode, setViewMode] = useState<'fotmob' | 'grid'>('fotmob');
 
   const categoryLabel = category[0].toUpperCase() + category.slice(1);
+
+  // Client-side instant fetch & live sync
+  useEffect(() => {
+    let cancelled = false;
+    const fetchFresh = async () => {
+      try {
+        const res = await fetch(/api/matches//);
+        if (res.ok) {
+          const freshData = await res.json();
+          if (!cancelled && Array.isArray(freshData) && freshData.length > 0) {
+            setMatches(freshData);
+          }
+        }
+      } catch {}
+    };
+
+    // If initial server matches was empty, fetch immediately; otherwise poll every 45s
+    if (!initialMatches || initialMatches.length === 0) {
+      fetchFresh();
+    }
+    const interval = setInterval(fetchFresh, 45000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [category]);
 
   useEffect(() => {
     setVisibleCount(16);

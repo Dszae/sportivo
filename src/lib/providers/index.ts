@@ -42,9 +42,55 @@ function slugify(text: string): string {
  * Fetches and merges matches across active providers with bounded timeouts.
  * Prioritizes live streams, followed by chronological upcoming fixtures.
  */
+// In-memory & KV cache with fallback
+const memoryCache: Record<string, { data: NormalizedMatch[]; timestamp: number }> = {};
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds TTL
+
+async function getFromCache(category: Category): Promise<NormalizedMatch[] | null> {
+  // 1. Check in-memory cache first
+  const entry = memoryCache[category];
+  if (entry && Date.now() - entry.timestamp < CACHE_TTL_MS) {
+    return entry.data;
+  }
+  // 2. Check Cloudflare KV (SESSION namespace if bound to global/env)
+  try {
+    const kv = (globalThis as any).SESSION;
+    if (kv && typeof kv.get === 'function') {
+      const raw = await kv.get(`matches:${category}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          memoryCache[category] = { data: parsed, timestamp: Date.now() };
+          return parsed;
+        }
+      }
+    }
+  } catch {}
+  return null;
+}
+
+async function saveToCache(category: Category, data: NormalizedMatch[]): Promise<void> {
+  if (!Array.isArray(data) || data.length === 0) return;
+  memoryCache[category] = { data, timestamp: Date.now() };
+  try {
+    const kv = (globalThis as any).SESSION;
+    if (kv && typeof kv.put === 'function') {
+      await kv.put(`matches:${category}`, JSON.stringify(data), { expirationTtl: 60 });
+    }
+  } catch {}
+}
+
 export async function fetchUnifiedMatches(category: Category, signal?: AbortSignal): Promise<NormalizedMatch[]> {
-  const timeoutSignal = AbortSignal.timeout(8000);
+  // Check cached response before calling external APIs
+  const cached = await getFromCache(category);
+  if (cached && cached.length > 0) {
+    return cached;
+  }
+
+  // 2.5 second fallback timeout to prevent Worker execution limits
+  const timeoutSignal = AbortSignal.timeout(2500);
   const effectiveSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
+
 
   const ppv = adapters.ppv;
   const strmfree = adapters.strmfree;
@@ -218,7 +264,7 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
   });
 
   // Sort: Live matches first, then upcoming by start time
-  return activeMatches.sort((a, b) => {
+  const sorted = activeMatches.sort((a, b) => {
     const aLive = a.status === 'Live' ? 1 : 0;
     const bLive = b.status === 'Live' ? 1 : 0;
     if (aLive !== bLive) return bLive - aLive;
@@ -229,6 +275,8 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
     if (bTime === 0 && aTime > 0) return -1;
     return aTime - bTime;
   });
+  await saveToCache(category, sorted);
+  return sorted;
 }
 
 /**
