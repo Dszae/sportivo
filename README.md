@@ -64,7 +64,7 @@
 
 ### 4. Background Push Notifications & Match Alerts
 - **Audio Synthesis**: Integrated Web Audio API synthesizes instant chimes for boundaries (C5 &rarr; E5 &rarr; G5) and wickets without downloading external audio files.
-- **Web Push (Closed Tab)**: Vercel serverless integration and Service Worker (`public/sw.js`) pushes encrypted alerts via Google FCM / Mozilla VAPID.
+- **Web Push (Closed Tab)**: Cloudflare Worker integration and Service Worker (`public/sw.js`) pushes encrypted alerts via Google FCM / Mozilla VAPID.
 - **Native Android OS Alarms**: Local kickoff reminders (30m & 5m before start) scheduled via Android `AlarmManager` with wall-clock precision even when the app is completely terminated.
 
 ---

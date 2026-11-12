@@ -14,9 +14,9 @@
     "preview": "astro dev --mode production"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^14.4.7",
     "@astrojs/react": "^7.0.1",
     "@astrojs/sitemap": "^3.7.4",
-    "@astrojs/vercel": "^11.0.14",
     "@supabase/supabase-js": "^2.118.0",
     "@types/web-push": "^3.6.4",
     "astro": "^7.3.8",

@@ -25,10 +25,10 @@ Sportivo is an independent, high-performance web platform built with Astro, Reac
 
 ## Technical Architecture
 
-- Framework: Astro 5 (Server-side rendered via `@astrojs/vercel`)
+- Framework: Astro 5 (Server-side rendered via `@astrojs/cloudflare`)
 - UI Library: React 19 Client Hydration
 - Styling: Tailwind CSS
 - Timezone: Default Asia/Kathmandu (UTC+5:45) with user-selectable timezone preferences
-- Host: Vercel Edge Network
+- Host: Cloudflare (Workers + Static Assets)
 - Creator & Publisher: Dipesh Sapkota (https://www.dipeshsapkota7.com.np/)
 

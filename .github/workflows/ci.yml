@@ -99,7 +99,6 @@ jobs:
           name: sportivo-production-build
           path: |
             dist/
-            .vercel/output/
           retention-days: 7
 
       - name: Write CI Job Summary
