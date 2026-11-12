@@ -10,6 +10,20 @@ function slugify(text: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
+// StreamFree stream key for a fixture, e.g. "Ghana" + "England" -> "ghana-vs-england".
+// Keeps Unicode letters because StreamFree keys do too ("belgium-vs-türkiye").
+function streamKeyFor(home: string, away: string): string {
+  const clean = (s: string) =>
+    s
+      .toLowerCase()
+      .trim()
+      .replace(/[^\p{L}\p{N}\s-]/gu, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  return `${clean(home)}-vs-${clean(away)}`;
+}
+
 export class EspnAdapter implements ProviderAdapter {
   readonly name = 'espn';
   readonly isAuthorized = true; // Free, public, unauthenticated scoreboard API
@@ -72,30 +86,45 @@ export class EspnAdapter implements ProviderAdapter {
           'afc.champions', // AFC Champions League
         ];
 
+        // Today and tomorrow (UTC). Without a date ESPN returns the last finished matchday only.
+        const dayKey = (offsetDays: number) => {
+          const d = new Date(Date.now() + offsetDays * 86400000);
+          return `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
+        };
+        const dates = [dayKey(0), dayKey(1)];
+
         const leagueFetches = await Promise.allSettled(
-          leagues.map(async (league) => {
-            const res = await fetch(
-              `https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/scoreboard`,
-              { signal: effectiveSignal }
-            );
-            if (!res.ok) return null;
-            const data = (await res.json()) as any;
-            return { data, league };
-          })
+          leagues.flatMap((league) =>
+            dates.map(async (date) => {
+              const res = await fetch(
+                `https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/scoreboard?dates=${date}`,
+                { signal: effectiveSignal }
+              );
+              if (!res.ok) return null;
+              const data = (await res.json()) as any;
+              return { data, league };
+            })
+          )
         );
 
+        const seenEvents = new Set<string>();
         for (const resItem of leagueFetches) {
           if (resItem.status !== 'fulfilled' || !resItem.value) continue;
           const { data, league } = resItem.value;
           const events = data?.events || [];
           for (const ev of events) {
             if (matches.length >= 60) break;
+            if (ev?.id) {
+              if (seenEvents.has(String(ev.id))) continue;
+              seenEvents.add(String(ev.id));
+            }
             const comp = ev?.competitions?.[0];
             const competitors = comp?.competitors || [];
             const home = competitors.find((c: any) => c.homeAway === 'home');
             const away = competitors.find((c: any) => c.homeAway === 'away');
-            const title = ev.name || `${home?.team?.displayName || 'Home'} vs ${away?.team?.displayName || 'Away'}`;
-            const slug = slugify(title);
+            const homeName = home?.team?.displayName || 'Home';
+            const awayName = away?.team?.displayName || 'Away';
+            const title = `${homeName} vs ${awayName}`;
 
             const isLive = comp?.status?.type?.state === 'in';
             const isCompleted = comp?.status?.type?.state === 'post';
@@ -103,8 +132,13 @@ export class EspnAdapter implements ProviderAdapter {
             if (isCompleted) continue;
             const status = isLive ? 'Live' : 'Upcoming';
 
+            // Fixtures come from ESPN; the playable links come from StreamFree. StreamFree keys look
+            // like "home-vs-away" (or the reverse order), so offer both as alternate servers.
+            const keyA = streamKeyFor(homeName, awayName);
+            const keyB = streamKeyFor(awayName, homeName);
+
             matches.push({
-              id: ev.id ? `espn-soc-${ev.id}` : slug,
+              id: ev.id ? `espn-soc-${ev.id}` : keyA,
               title,
               category: 'football',
               competition: data?.leagues?.[0]?.name || league.toUpperCase(),
@@ -113,10 +147,13 @@ export class EspnAdapter implements ProviderAdapter {
               date: ev.date ? new Date(ev.date).getTime() : undefined,
               poster: home?.team?.logo || away?.team?.logo || undefined,
               teams: {
-                home: { name: home?.team?.displayName || 'Home', badge: home?.team?.logo },
-                away: { name: away?.team?.displayName || 'Away', badge: away?.team?.logo },
+                home: { name: homeName, badge: home?.team?.logo },
+                away: { name: awayName, badge: away?.team?.logo },
               },
-              sources: [{ source: 'espn', id: slug, label: 'ESPN Desk' }],
+              sources: [
+                { source: 'strmfree', id: keyA, label: 'StreamFree' },
+                { source: 'strmfree', id: keyB, label: 'StreamFree (alt)' },
+              ],
             });
           }
         }

@@ -4,9 +4,9 @@ import { logDiagnostic } from '../diagnostics';
 
 // Documented public API (no key). The docs ask for caching on our side and no polling per page load.
 const API = 'https://streamfree.top/api/v1';
+const EMBED_BASE = 'https://strmfree.st/embed/soccer';
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Sportivo/2.0';
 const LIST_TTL_MS = 2 * 60 * 1000;
-const SOURCES_TTL_MS = 60 * 1000;
 const FAILURE_BACKOFF_MS = 5 * 60 * 1000;
 
 // Our category names -> StreamFree category names
@@ -34,7 +34,6 @@ interface StreamFreeStream {
 }
 
 const listCache = new Map<string, { data: StreamFreeStream[]; at: number }>();
-const sourcesCache = new Map<string, { data: StreamFreeSource[]; at: number }>();
 const lastFailure = new Map<string, number>();
 
 function inBackoff(key: string): boolean {
@@ -72,22 +71,6 @@ async function fetchStreamList(apiCategory: string): Promise<StreamFreeStream[]>
 
   const data = body.streams as StreamFreeStream[];
   listCache.set(apiCategory, { data, at: Date.now() });
-  return data;
-}
-
-async function fetchSources(streamKey: string): Promise<StreamFreeSource[]> {
-  const cached = sourcesCache.get(streamKey);
-  if (cached && Date.now() - cached.at < SOURCES_TTL_MS) return cached.data;
-  if (inBackoff(`sources:${streamKey}`)) return cached?.data ?? [];
-
-  const body = await getJson(`${API}/sources/${encodeURIComponent(streamKey)}`, `sources:${streamKey}`);
-  if (!body || !Array.isArray(body.sources)) {
-    lastFailure.set(`sources:${streamKey}`, Date.now());
-    return cached?.data ?? [];
-  }
-
-  const data = body.sources as StreamFreeSource[];
-  sourcesCache.set(streamKey, { data, at: Date.now() });
   return data;
 }
 
@@ -152,22 +135,25 @@ export class StrmFreeAdapter implements ProviderAdapter {
   }
 
   async resolvePlayback(id: string, _signal?: AbortSignal): Promise<PlaybackResolution> {
-    const sources = await fetchSources(id);
+    // The embed URLs follow a fixed pattern from the stream key, so no API call is needed (the API
+    // is blocked from Cloudflare). The embed starts on its own once its source goes live.
+    // Per StreamFree's docs the first source ends in "1080p", the others add a number.
+    // Don't sandbox these iframes (their docs ask for that).
+    const candidates = [`${id}1080p`, `${id}1080p2`, `${id}1080p3`]
+      .map((path) => sanitizePlaybackUrl(`${EMBED_BASE}/${encodeURIComponent(path)}`))
+      .filter((url): url is string => Boolean(url));
 
-    // Live sources first; the embed starts on its own once its source goes live.
-    const ordered = [...sources].sort((a, b) => Number(b.live === true) - Number(a.live === true));
-    const validatedStreams = ordered
-      .map((s) => ({ url: typeof s.url === 'string' ? sanitizePlaybackUrl(s.url) : null, quality: s.quality || '' }))
-      .filter((s): s is { url: string; quality: string } => Boolean(s.url))
-      .map((s, idx) => ({
-        embedUrl: s.url,
-        hd: /1080|720|FHD|HD|4K/i.test(s.quality) || s.url.includes('1080p') || s.url.includes('720p'),
-        language: `Server DSZ${idx + 1}`,
-        isSandboxedIframe: true,
-      }));
-
-    if (validatedStreams.length > 0) {
-      return { status: 'ready', streams: validatedStreams, provider: this.name };
+    if (candidates.length > 0) {
+      return {
+        status: 'ready',
+        streams: candidates.map((url, idx) => ({
+          embedUrl: url,
+          hd: true,
+          language: `Server DSZ${idx + 1}`,
+          isSandboxedIframe: false,
+        })),
+        provider: this.name,
+      };
     }
 
     return {
