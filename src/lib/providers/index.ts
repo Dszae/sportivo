@@ -87,8 +87,9 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
     return cached;
   }
 
-  // 2.5 second fallback timeout to prevent Worker execution limits
-  const timeoutSignal = AbortSignal.timeout(2500);
+  // Overall budget for provider fetches. Must exceed the PPV upstream's typical ~3 s response,
+  // otherwise every slow provider is aborted and the football list comes back empty.
+  const timeoutSignal = AbortSignal.timeout(8000);
   const effectiveSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
 
 

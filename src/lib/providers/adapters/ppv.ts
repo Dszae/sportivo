@@ -84,17 +84,15 @@ async function refreshMirrorDomains(signal?: AbortSignal): Promise<void> {
   } catch {}
 }
 
-async function getPpvData(signal?: AbortSignal): Promise<PpvCategoryItem[]> {
-  const now = Date.now();
-  if (cachedStreams && now - lastStreamsFetch < CACHE_TTL_MS) {
-    return cachedStreams;
-  }
+// One shared upstream request at a time. It is NOT tied to the caller's signal, so a
+// request that gives up early still lets the refresh finish and populate the cache.
+// The upstream regularly takes ~3 s (see its "performance" field), so allow more than that.
+const UPSTREAM_TIMEOUT_MS = 8000;
+let inflightFetch: Promise<PpvCategoryItem[]> | null = null;
 
+async function fetchPpvStreams(): Promise<PpvCategoryItem[]> {
   // Refresh mirror domains periodically in background
-  refreshMirrorDomains(signal).catch(() => {});
-
-  const timeoutSignal = AbortSignal.timeout(5000);
-  const effectiveSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
+  refreshMirrorDomains().catch(() => {});
 
   // Try primary upstream first, then fallback to mirrors if primary is unreachable
   const candidateUrls = [
@@ -111,14 +109,14 @@ async function getPpvData(signal?: AbortSignal): Promise<PpvCategoryItem[]> {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Sportivo/2.0',
           Accept: 'application/json',
         },
-        signal: effectiveSignal,
+        signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       });
 
       if (res.ok) {
         const data = (await res.json()) as PpvResponse;
         if (data?.success && Array.isArray(data.streams)) {
           cachedStreams = data.streams;
-          lastStreamsFetch = now;
+          lastStreamsFetch = Date.now();
           return cachedStreams;
         }
       }
@@ -128,6 +126,39 @@ async function getPpvData(signal?: AbortSignal): Promise<PpvCategoryItem[]> {
   }
 
   return cachedStreams || [];
+}
+
+function refreshPpvStreams(): Promise<PpvCategoryItem[]> {
+  if (!inflightFetch) {
+    inflightFetch = fetchPpvStreams().finally(() => {
+      inflightFetch = null;
+    });
+  }
+  return inflightFetch;
+}
+
+async function getPpvData(signal?: AbortSignal): Promise<PpvCategoryItem[]> {
+  const isFresh = cachedStreams !== null && Date.now() - lastStreamsFetch < CACHE_TTL_MS;
+  if (isFresh) return cachedStreams!;
+
+  // Stale data available: serve it immediately and refresh in the background.
+  if (cachedStreams) {
+    refreshPpvStreams().catch(() => {});
+    return cachedStreams;
+  }
+
+  // Cold start: wait for upstream, but stop waiting if the caller gives up.
+  const pending = refreshPpvStreams();
+  if (!signal) return pending;
+  if (signal.aborted) return cachedStreams || [];
+  return new Promise<PpvCategoryItem[]>((resolve) => {
+    const onAbort = () => resolve(cachedStreams || []);
+    signal.addEventListener('abort', onAbort, { once: true });
+    pending.then((data) => {
+      signal.removeEventListener('abort', onAbort);
+      resolve(data);
+    });
+  });
 }
 
 export class PpvAdapter implements ProviderAdapter {
