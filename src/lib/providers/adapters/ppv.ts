@@ -89,6 +89,14 @@ async function refreshMirrorDomains(signal?: AbortSignal): Promise<void> {
 // The upstream regularly takes ~3 s (see its "performance" field), so allow more than that.
 const UPSTREAM_TIMEOUT_MS = 8000;
 let inflightFetch: Promise<PpvCategoryItem[]> | null = null;
+// After a failed refresh (blocked, errored, or no usable data) do not query upstream again
+// for a while. Hammering the API is what got this worker's IP blocked.
+const FAILURE_BACKOFF_MS = 5 * 60 * 1000;
+let lastFailedAttempt = 0;
+
+function inBackoff(): boolean {
+  return Date.now() - lastFailedAttempt < FAILURE_BACKOFF_MS;
+}
 
 async function fetchPpvStreams(): Promise<PpvCategoryItem[]> {
   // Refresh mirror domains periodically in background
@@ -145,6 +153,7 @@ async function fetchPpvStreams(): Promise<PpvCategoryItem[]> {
     }
   }
 
+  lastFailedAttempt = Date.now();
   return cachedStreams || [];
 }
 
@@ -163,9 +172,12 @@ async function getPpvData(signal?: AbortSignal): Promise<PpvCategoryItem[]> {
 
   // Stale data available: serve it immediately and refresh in the background.
   if (cachedStreams) {
-    refreshPpvStreams().catch(() => {});
+    if (!inBackoff()) refreshPpvStreams().catch(() => {});
     return cachedStreams;
   }
+
+  // Cold start during a failure cooldown: don't call upstream again yet.
+  if (inBackoff()) return [];
 
   // Cold start: wait for upstream, but stop waiting if the caller gives up.
   const pending = refreshPpvStreams();

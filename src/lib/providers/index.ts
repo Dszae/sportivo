@@ -47,7 +47,8 @@ const memoryCache: Record<string, { data: NormalizedMatch[]; timestamp: number }
 const CACHE_TTL_MS = 60 * 1000; // 60 seconds TTL
 
 async function getFromCache(category: Category): Promise<NormalizedMatch[] | null> {
-  // 1. Check in-memory cache first
+  // 1. Check in-memory cache first (empty results are cached too, so an empty
+  //    upstream state does not make every request hit every provider again)
   const entry = memoryCache[category];
   if (entry && Date.now() - entry.timestamp < CACHE_TTL_MS) {
     return entry.data;
@@ -70,8 +71,9 @@ async function getFromCache(category: Category): Promise<NormalizedMatch[] | nul
 }
 
 async function saveToCache(category: Category, data: NormalizedMatch[]): Promise<void> {
-  if (!Array.isArray(data) || data.length === 0) return;
+  if (!Array.isArray(data)) return;
   memoryCache[category] = { data, timestamp: Date.now() };
+  if (data.length === 0) return; // KV only stores non-empty results
   try {
     const kv = (globalThis as any).SESSION;
     if (kv && typeof kv.put === 'function') {
@@ -83,7 +85,7 @@ async function saveToCache(category: Category, data: NormalizedMatch[]): Promise
 export async function fetchUnifiedMatches(category: Category, signal?: AbortSignal): Promise<NormalizedMatch[]> {
   // Check cached response before calling external APIs
   const cached = await getFromCache(category);
-  if (cached && cached.length > 0) {
+  if (cached) {
     return cached;
   }
 
