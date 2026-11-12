@@ -27,6 +27,10 @@ const slug = Astro.params.slug || '';
 const validCategory = isCategory(categoryParam);
 const category = (validCategory ? categoryParam : 'football') as Category;
 
+if (validCategory) {
+  Astro.response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
+}
+
 let match: Match | undefined;
 let relatedMatches: Match[] = [];
 if (validCategory) {

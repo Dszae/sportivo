@@ -6,6 +6,8 @@ import MatchExplorer from '../components/MatchExplorer';
 import HeroShowcase, { type HeroMatch } from '../components/HeroShowcase';
 import { categories, fetchMatches, getMatchTimestamp, slugify, statusOf, titleOf, type Match } from '../lib/sportivo';
 
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
+
 const data = await Promise.all(
   categories.map(async (category) => {
     try {

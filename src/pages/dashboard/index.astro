@@ -5,6 +5,8 @@ import SiteFooter from '../../components/SiteFooter.astro';
 import PersonalDashboard from '../../components/PersonalDashboard';
 import { categories, fetchMatches, type Category, type Match } from '../../lib/sportivo';
 
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
+
 const data = await Promise.all(
   categories.map(async (category: Category) => {
     try {

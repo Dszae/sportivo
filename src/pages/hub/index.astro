@@ -6,6 +6,8 @@ import FotmobHub from '../../components/FotmobHub';
 import { fetchMatches, type Match } from '../../lib/sportivo';
 import { getCalibratedNplFixtures } from '../../lib/data/nplData';
 
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
+
 // Server-Side Rendering (SSR Backend):
 // Prefetch matches on the server so no client-side API calls are exposed to the user on initial load.
 const [football, cricket, basketball] = await Promise.all([

@@ -22,9 +22,9 @@ export const GET: APIRoute = async ({ request }) => {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-        'CDN-Cache-Control': 'no-store',
-        'Vercel-CDN-Cache-Control': 'no-store',
+        'Cache-Control': 'public, s-maxage=3, stale-while-revalidate=10',
+        'CDN-Cache-Control': 'public, s-maxage=3, stale-while-revalidate=10',
+        'Vercel-CDN-Cache-Control': 'public, s-maxage=3, stale-while-revalidate=10',
         ...corsHeaders,
       },
     }

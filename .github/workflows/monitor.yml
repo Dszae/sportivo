@@ -2,7 +2,8 @@ name: Sportivo availability monitor
 
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    # Run once daily at midnight UTC instead of every 30 minutes to prevent exhausting serverless CPU quotas
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 jobs:

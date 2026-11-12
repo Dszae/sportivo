@@ -10,6 +10,8 @@ const categoryParam = Astro.params.category || '';
 const validCategory = isCategory(categoryParam);
 if (!validCategory) {
   Astro.response.status = 404;
+} else {
+  Astro.response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
 }
 
 const category = (validCategory ? categoryParam : 'football') as Category;
