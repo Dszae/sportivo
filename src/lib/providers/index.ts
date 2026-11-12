@@ -43,7 +43,7 @@ function slugify(text: string): string {
  * Prioritizes live streams, followed by chronological upcoming fixtures.
  */
 export async function fetchUnifiedMatches(category: Category, signal?: AbortSignal): Promise<NormalizedMatch[]> {
-  const timeoutSignal = AbortSignal.timeout(4000);
+  const timeoutSignal = AbortSignal.timeout(8000);
   const effectiveSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
 
   const ppv = adapters.ppv;

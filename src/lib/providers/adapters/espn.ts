@@ -72,48 +72,53 @@ export class EspnAdapter implements ProviderAdapter {
           'afc.champions', // AFC Champions League
         ];
 
-        for (const league of leagues) {
-          if (matches.length >= 60) break;
-          try {
+        const leagueFetches = await Promise.allSettled(
+          leagues.map(async (league) => {
             const res = await fetch(
               `https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/scoreboard`,
               { signal: effectiveSignal }
             );
-            if (res.ok) {
-              const data = (await res.json()) as any;
-              const events = data?.events || [];
-              for (const ev of events) {
-                const comp = ev?.competitions?.[0];
-                const competitors = comp?.competitors || [];
-                const home = competitors.find((c: any) => c.homeAway === 'home');
-                const away = competitors.find((c: any) => c.homeAway === 'away');
-                const title = ev.name || `${home?.team?.displayName || 'Home'} vs ${away?.team?.displayName || 'Away'}`;
-                const slug = slugify(title);
+            if (!res.ok) return null;
+            const data = (await res.json()) as any;
+            return { data, league };
+          })
+        );
 
-                const isLive = comp?.status?.type?.state === 'in';
-                const isCompleted = comp?.status?.type?.state === 'post';
-                // User requirement: Never ingest completed past matches ("remove those recent results")
-                if (isCompleted) continue;
-                const status = isLive ? 'Live' : 'Upcoming';
+        for (const resItem of leagueFetches) {
+          if (resItem.status !== 'fulfilled' || !resItem.value) continue;
+          const { data, league } = resItem.value;
+          const events = data?.events || [];
+          for (const ev of events) {
+            if (matches.length >= 60) break;
+            const comp = ev?.competitions?.[0];
+            const competitors = comp?.competitors || [];
+            const home = competitors.find((c: any) => c.homeAway === 'home');
+            const away = competitors.find((c: any) => c.homeAway === 'away');
+            const title = ev.name || `${home?.team?.displayName || 'Home'} vs ${away?.team?.displayName || 'Away'}`;
+            const slug = slugify(title);
 
-                matches.push({
-                  id: ev.id ? `espn-soc-${ev.id}` : slug,
-                  title,
-                  category: 'football',
-                  competition: data?.leagues?.[0]?.name || league.toUpperCase(),
-                  league: data?.leagues?.[0]?.name || league.toUpperCase(),
-                  status,
-                  date: ev.date ? new Date(ev.date).getTime() : undefined,
-                  poster: home?.team?.logo || away?.team?.logo || undefined,
-                  teams: {
-                    home: { name: home?.team?.displayName || 'Home', badge: home?.team?.logo },
-                    away: { name: away?.team?.displayName || 'Away', badge: away?.team?.logo },
-                  },
-                  sources: [{ source: 'espn', id: slug, label: 'ESPN Desk' }],
-                });
-              }
-            }
-          } catch {}
+            const isLive = comp?.status?.type?.state === 'in';
+            const isCompleted = comp?.status?.type?.state === 'post';
+            // User requirement: Never ingest completed past matches ("remove those recent results")
+            if (isCompleted) continue;
+            const status = isLive ? 'Live' : 'Upcoming';
+
+            matches.push({
+              id: ev.id ? `espn-soc-${ev.id}` : slug,
+              title,
+              category: 'football',
+              competition: data?.leagues?.[0]?.name || league.toUpperCase(),
+              league: data?.leagues?.[0]?.name || league.toUpperCase(),
+              status,
+              date: ev.date ? new Date(ev.date).getTime() : undefined,
+              poster: home?.team?.logo || away?.team?.logo || undefined,
+              teams: {
+                home: { name: home?.team?.displayName || 'Home', badge: home?.team?.logo },
+                away: { name: away?.team?.displayName || 'Away', badge: away?.team?.logo },
+              },
+              sources: [{ source: 'espn', id: slug, label: 'ESPN Desk' }],
+            });
+          }
         }
       }
 
