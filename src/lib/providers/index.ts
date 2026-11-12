@@ -103,7 +103,8 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
 
   // Ingest PPV, NPL, DaddyLive, StrmFree, and ESPN
   const promises: Promise<any>[] = [
-    ppv.fetchMatches(category, effectiveSignal),
+    // PPV is not used for football (its upstream blocks Cloudflare; StreamFree covers football)
+    category === 'football' ? Promise.resolve([]) : ppv.fetchMatches(category, effectiveSignal),
     daddylive.fetchMatches(category, effectiveSignal),
     strmfree.fetchMatches(category, effectiveSignal),
     espn.fetchMatches(category, effectiveSignal),
