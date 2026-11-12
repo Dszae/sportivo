@@ -18,9 +18,9 @@ Sportivo aggregates real-time sports fixtures, kickoff times calibrated for Nepa
 
 ## Public API Endpoints
 
-- [Football API](https://sportivo.dipeshsapkota7.com.np/api/matches/football): JSON endpoint returning current football fixture objects.
-- [Cricket API](https://sportivo.dipeshsapkota7.com.np/api/matches/cricket): JSON endpoint returning current cricket fixture objects.
-- [Basketball API](https://sportivo.dipeshsapkota7.com.np/api/matches/basketball): JSON endpoint returning current basketball fixture objects.
+- [Football API](https://sportivo.dipeshsapkota7.com.np/api/matches/football/): JSON endpoint returning current football fixture objects.
+- [Cricket API](https://sportivo.dipeshsapkota7.com.np/api/matches/cricket/): JSON endpoint returning current cricket fixture objects.
+- [Basketball API](https://sportivo.dipeshsapkota7.com.np/api/matches/basketball/): JSON endpoint returning current basketball fixture objects.
 
 ## Data and Attribution
 

@@ -72,6 +72,21 @@ const staticRoutes = [
     priority: '0.70',
     changefreq: 'monthly',
   },
+  {
+    url: `${siteUrl}/hub/`,
+    priority: '0.70',
+    changefreq: 'daily',
+  },
+  {
+    url: `${siteUrl}/download/`,
+    priority: '0.60',
+    changefreq: 'monthly',
+  },
+  {
+    url: `${siteUrl}/privacy/`,
+    priority: '0.30',
+    changefreq: 'yearly',
+  },
 ];
 
 await mkdir('public', { recursive: true });

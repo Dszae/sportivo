@@ -1,66 +1,64 @@
 export const prerender = true;
 
-export function GET() {
-  const content = [
-    'User-agent: *',
-    'Allow: /',
-    '',
-    '# Search Engine Indexers',
-    'User-agent: Googlebot',
-    'Allow: /',
-    '',
-    'User-agent: Googlebot-Image',
-    'Allow: /',
-    '',
-    'User-agent: Bingbot',
-    'Allow: /',
-    '',
-    '# OpenAI Bots (ChatGPT & Search)',
-    'User-agent: GPTBot',
-    'Allow: /',
-    '',
-    'User-agent: ChatGPT-User',
-    'Allow: /',
-    '',
-    'User-agent: OAI-SearchBot',
-    'Allow: /',
-    '',
-    '# Anthropic Claude Bots',
-    'User-agent: ClaudeBot',
-    'Allow: /',
-    '',
-    'User-agent: Claude-Web',
-    'Allow: /',
-    '',
-    '# Perplexity AI',
-    'User-agent: PerplexityBot',
-    'Allow: /',
-    '',
-    '# Google Gemini & Extended',
-    'User-agent: Google-Extended',
-    'Allow: /',
-    '',
-    '# Apple Intelligence',
-    'User-agent: Applebot-Extended',
-    'Allow: /',
-    '',
-    '# Common Crawl (LLM Training Corpus)',
-    'User-agent: CCBot',
-    'Allow: /',
-    '',
-    '# Meta & Cohere AI',
-    'User-agent: Meta-ExternalAgent',
-    'Allow: /',
-    '',
-    'User-agent: cohere-ai',
-    'Allow: /',
-    '',
-    'Sitemap: https://sportivo.dipeshsapkota7.com.np/sitemap.xml',
-    'Sitemap: https://sportivo.dipeshsapkota7.com.np/sitemap-index.xml',
-    '',
-  ].join('\n');
+const SITE = 'https://sportivo.dipeshsapkota7.com.np';
 
-  return new Response(content, {
+// Every crawler is allowed by the wildcard group. The named groups below make
+// that explicit for agents that only honour a group addressed to them, and
+// cover the three kinds of AI traffic: training crawlers, search indexers,
+// and user-triggered fetchers (the ones that report "access denied" in chat).
+const AGENT_GROUPS: Array<{ label: string; agents: string[] }> = [
+  {
+    label: 'Search engines',
+    agents: ['Googlebot', 'Googlebot-Image', 'Bingbot', 'DuckDuckBot', 'Applebot', 'YandexBot', 'Baiduspider'],
+  },
+  {
+    label: 'OpenAI (ChatGPT, ChatGPT search)',
+    agents: ['GPTBot', 'OAI-SearchBot', 'ChatGPT-User'],
+  },
+  {
+    label: 'Anthropic (Claude)',
+    agents: ['ClaudeBot', 'Claude-SearchBot', 'Claude-User', 'Claude-Web', 'anthropic-ai'],
+  },
+  {
+    label: 'Perplexity',
+    agents: ['PerplexityBot', 'Perplexity-User'],
+  },
+  {
+    label: 'Google AI (Gemini, AI Overviews, Vertex)',
+    agents: ['Google-Extended', 'GoogleOther', 'Google-CloudVertexBot'],
+  },
+  {
+    label: 'Other AI assistants and corpora',
+    agents: [
+      'Applebot-Extended',
+      'Amazonbot',
+      'Meta-ExternalAgent',
+      'Meta-ExternalFetcher',
+      'DuckAssistBot',
+      'MistralAI-User',
+      'cohere-ai',
+      'YouBot',
+      'Bytespider',
+      'CCBot',
+    ],
+  },
+];
+
+// Machine-only endpoints with no value in an index.
+const PRIVATE_PATHS = ['/api/cron/', '/api/push/'];
+
+export function GET() {
+  const lines: string[] = ['User-agent: *', 'Allow: /', ...PRIVATE_PATHS.map((p) => `Disallow: ${p}`), ''];
+
+  for (const group of AGENT_GROUPS) {
+    lines.push(`# ${group.label}`);
+    for (const agent of group.agents) lines.push(`User-agent: ${agent}`);
+    lines.push('Allow: /', ...PRIVATE_PATHS.map((p) => `Disallow: ${p}`), '');
+  }
+
+  lines.push(`Sitemap: ${SITE}/sitemap.xml`, `Sitemap: ${SITE}/sitemap-index.xml`, '');
+
+  return new Response(lines.join('\n'), {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
       'Cache-Control': 'public, max-age=86400',

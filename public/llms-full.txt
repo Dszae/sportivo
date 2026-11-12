@@ -19,9 +19,9 @@ Sportivo is an independent, high-performance web platform built with Astro, Reac
 
 ## Public JSON Endpoints
 
-- [Football API](https://sportivo.dipeshsapkota7.com.np/api/matches/football): JSON endpoint returning current football fixture objects.
-- [Cricket API](https://sportivo.dipeshsapkota7.com.np/api/matches/cricket): JSON endpoint returning current cricket fixture objects.
-- [Basketball API](https://sportivo.dipeshsapkota7.com.np/api/matches/basketball): JSON endpoint returning current basketball fixture objects.
+- [Football API](https://sportivo.dipeshsapkota7.com.np/api/matches/football/): JSON endpoint returning current football fixture objects.
+- [Cricket API](https://sportivo.dipeshsapkota7.com.np/api/matches/cricket/): JSON endpoint returning current cricket fixture objects.
+- [Basketball API](https://sportivo.dipeshsapkota7.com.np/api/matches/basketball/): JSON endpoint returning current basketball fixture objects.
 
 ## Technical Architecture
 

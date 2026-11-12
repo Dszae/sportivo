@@ -104,6 +104,46 @@ for (const path of paths) {
   }
 }
 
+// AI and search crawlers must never be challenged or denied. A CDN bot rule
+// (for example Cloudflare "Block AI bots") shows up here as a 403 for the
+// crawler user agent while the plain request above still passes.
+const crawlerAgents = {
+  Googlebot: 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+  Bingbot: 'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)',
+  GPTBot: 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.2; +https://openai.com/gptbot)',
+  'OAI-SearchBot': 'Mozilla/5.0 (compatible; OAI-SearchBot/1.0; +https://openai.com/searchbot)',
+  'ChatGPT-User': 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko); compatible; ChatGPT-User/1.0; +https://openai.com/bot',
+  ClaudeBot: 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; ClaudeBot/1.0; +claudebot@anthropic.com)',
+  'Claude-User': 'Mozilla/5.0 (compatible; Claude-User/1.0; +Claude-User@anthropic.com)',
+  PerplexityBot: 'Mozilla/5.0 (compatible; PerplexityBot/1.0; +https://perplexity.ai/perplexitybot)',
+  'Perplexity-User': 'Mozilla/5.0 (compatible; Perplexity-User/1.0; +https://perplexity.ai/perplexity-user)',
+};
+const crawlerPaths = ['/', '/npl/', '/robots.txt', '/llms.txt'];
+
+for (const [name, userAgent] of Object.entries(crawlerAgents)) {
+  for (const path of crawlerPaths) {
+    try {
+      const response = await fetch(`${baseUrl}${path}`, {
+        headers: { 'User-Agent': userAgent },
+        redirect: 'follow',
+        signal: AbortSignal.timeout(10000),
+      });
+      const body = await response.text();
+      const challenged = /Just a moment|Attention Required|cf-chl-|Access denied/i.test(body.slice(0, 4000));
+      const blockedByHeader = /noindex|none/i.test(response.headers.get('x-robots-tag') || '');
+      if (!response.ok || challenged || blockedByHeader) {
+        failures++;
+        const reason = !response.ok ? `HTTP status ${response.status}` : challenged ? 'bot challenge page' : 'noindex X-Robots-Tag';
+        console.error(`ERR crawler ${name} ${path} -> ${reason}`);
+      }
+    } catch (error) {
+      failures++;
+      console.error(`ERR crawler ${name} ${path}: ${error.message}`);
+    }
+  }
+  console.log(`OK  crawler ${name} checked on ${crawlerPaths.length} paths`);
+}
+
 if (failures > 0) {
   console.error(`Monitor failed with ${failures} issue(s).`);
   process.exitCode = 1;
