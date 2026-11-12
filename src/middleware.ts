@@ -1,6 +1,21 @@
 import { defineMiddleware } from 'astro:middleware';
 
-export const onRequest = defineMiddleware(async (_context, next) => {
+export const onRequest = defineMiddleware(async (context, next) => {
+  const url = new URL(context.request.url);
+  const host = url.hostname;
+  const proto = context.request.headers.get('x-forwarded-proto') || url.protocol.replace(':', '');
+
+  // 1. Force Canonical Host & HTTPS:
+  // Redirect www.* to non-www and enforce HTTPS with permanent 301
+  const isWww = host.startsWith('www.');
+  const isHttp = proto === 'http';
+
+  if (isWww || isHttp) {
+    const cleanHost = isWww ? host.replace(/^www\./, '') : host;
+    const destination = `https://${cleanHost}${url.pathname}${url.search}`;
+    return context.redirect(destination, 301);
+  }
+
   const response = await next();
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'SAMEORIGIN');
