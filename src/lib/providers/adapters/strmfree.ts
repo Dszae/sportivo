@@ -1,12 +1,15 @@
-import type { Category, NormalizedMatch, PlaybackResolution, ProviderAdapter } from '../types';
+import type { Category, NormalizedMatch, PlaybackResolution, PlaybackStream, ProviderAdapter } from '../types';
 import { sanitizePlaybackUrl } from '../allowlist';
 import { logDiagnostic } from '../diagnostics';
 
 // Documented public API (no key). The docs ask for caching on our side and no polling per page load.
+//   GET /streams?category=x   -> { count, streams: [{ stream_key, iframe, additional_sources, ... }] }
+//   GET /sources/{stream_key} -> { stream_key, sources: [{ quality, url, live }] }  (404 = not a real stream)
 const API = 'https://streamfree.top/api/v1';
-const EMBED_BASE = 'https://strmfree.st/embed/soccer';
+const EMBED_HOST = 'https://strmfree.st/embed';
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Sportivo/2.0';
 const LIST_TTL_MS = 2 * 60 * 1000;
+const SOURCES_TTL_MS = 60 * 1000;
 const FAILURE_BACKOFF_MS = 5 * 60 * 1000;
 
 // Our category names -> StreamFree category names
@@ -16,11 +19,12 @@ const API_CATEGORY: Record<string, string> = {
   basketball: 'basketball',
 };
 
+const HD_QUALITIES = new Set(['HD', 'FHD', '4K']);
+
 interface StreamFreeSource {
   quality?: string;
   url?: string;
   live?: boolean;
-  broadcast?: string | null;
 }
 
 interface StreamFreeStream {
@@ -29,11 +33,17 @@ interface StreamFreeStream {
   league?: string;
   stream_key?: string;
   match_timestamp?: number;
-  sources?: StreamFreeSource[];
   thumbnail_url?: string;
+  /** Main embed URL; exists from the moment the stream is created and starts playing on its own once live. */
+  iframe?: string;
+  additional_sources?: StreamFreeSource[];
 }
 
 const listCache = new Map<string, { data: StreamFreeStream[]; at: number }>();
+/** stream_key -> list entry, filled by every successful list fetch. */
+const streamByKey = new Map<string, StreamFreeStream>();
+/** stream_key -> sources (null = 404, the key is not a real stream). */
+const sourcesCache = new Map<string, { data: StreamFreeSource[] | null; at: number }>();
 const lastFailure = new Map<string, number>();
 
 function inBackoff(key: string): boolean {
@@ -41,20 +51,23 @@ function inBackoff(key: string): boolean {
   return at !== undefined && Date.now() - at < FAILURE_BACKOFF_MS;
 }
 
-async function getJson(url: string, key: string): Promise<any | null> {
+type JsonResult = { ok: true; body: any } | { ok: false; status: number | 'error' };
+
+async function getJson(url: string, key: string): Promise<JsonResult> {
+  const started = Date.now();
   try {
     const res = await fetch(url, {
       headers: { 'User-Agent': USER_AGENT, accept: 'application/json' },
       signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) {
-      logDiagnostic({ provider: 'strmfree', operation: `api:${key}`, durationMs: 0, status: res.status });
-      return null;
+      logDiagnostic({ provider: 'strmfree', operation: `api:${key}`, durationMs: Date.now() - started, status: res.status });
+      return { ok: false, status: res.status };
     }
-    return await res.json();
+    return { ok: true, body: await res.json() };
   } catch (err: any) {
-    logDiagnostic({ provider: 'strmfree', operation: `api:${key}`, durationMs: 0, status: 'error', error: err?.message });
-    return null;
+    logDiagnostic({ provider: 'strmfree', operation: `api:${key}`, durationMs: Date.now() - started, status: 'error', error: err?.message });
+    return { ok: false, status: 'error' };
   }
 }
 
@@ -63,15 +76,75 @@ async function fetchStreamList(apiCategory: string): Promise<StreamFreeStream[]>
   if (cached && Date.now() - cached.at < LIST_TTL_MS) return cached.data;
   if (inBackoff(`list:${apiCategory}`)) return cached?.data ?? [];
 
-  const body = await getJson(`${API}/streams?category=${encodeURIComponent(apiCategory)}`, `list:${apiCategory}`);
-  if (!body || !Array.isArray(body.streams)) {
+  const res = await getJson(`${API}/streams?category=${encodeURIComponent(apiCategory)}`, `list:${apiCategory}`);
+  if (!res.ok || !Array.isArray(res.body?.streams)) {
     lastFailure.set(`list:${apiCategory}`, Date.now());
     return cached?.data ?? [];
   }
 
-  const data = body.streams as StreamFreeStream[];
+  const data = res.body.streams as StreamFreeStream[];
   listCache.set(apiCategory, { data, at: Date.now() });
+  for (const s of data) {
+    if (typeof s.stream_key === 'string' && s.stream_key) streamByKey.set(s.stream_key, s);
+  }
   return data;
+}
+
+/**
+ * Source list for a key. Returns null when the key is not a real stream (404),
+ * undefined when the API could not be reached (caller falls back to the URL pattern).
+ */
+async function fetchSources(streamKey: string): Promise<StreamFreeSource[] | null | undefined> {
+  const cached = sourcesCache.get(streamKey);
+  if (cached && Date.now() - cached.at < SOURCES_TTL_MS) return cached.data;
+  // One backoff for the whole endpoint: when it is blocked (e.g. from Cloudflare) every key fails the same way.
+  if (inBackoff('sources')) return cached?.data;
+
+  const res = await getJson(`${API}/sources/${encodeURIComponent(streamKey)}`, 'sources');
+  if (!res.ok) {
+    if (res.status === 404) {
+      sourcesCache.set(streamKey, { data: null, at: Date.now() });
+      return null;
+    }
+    lastFailure.set('sources', Date.now());
+    return cached?.data;
+  }
+  const data = Array.isArray(res.body?.sources) ? (res.body.sources as StreamFreeSource[]) : [];
+  sourcesCache.set(streamKey, { data, at: Date.now() });
+  return data;
+}
+
+/** Main source first (always kept: it starts on its own once live), extra sources only if not reported offline. */
+function toPlaybackStreams(sources: StreamFreeSource[]): PlaybackStream[] {
+  const streams: PlaybackStream[] = [];
+  const seen = new Set<string>();
+  sources.forEach((s, idx) => {
+    if (idx > 0 && s.live === false) return;
+    const url = typeof s.url === 'string' ? sanitizePlaybackUrl(s.url) : null;
+    if (!url || seen.has(url)) return;
+    seen.add(url);
+    const quality = typeof s.quality === 'string' ? s.quality.toUpperCase() : '';
+    streams.push({
+      embedUrl: url,
+      hd: quality ? HD_QUALITIES.has(quality) : true,
+      language: `Server DSZ${streams.length + 1}${quality ? ` · ${quality}` : ''}`,
+      // Don't sandbox these iframes (StreamFree's docs ask for that).
+      isSandboxedIframe: false,
+    });
+  });
+  return streams;
+}
+
+function sourcesFromListEntry(item: StreamFreeStream): StreamFreeSource[] {
+  const extra = Array.isArray(item.additional_sources) ? item.additional_sources : [];
+  return typeof item.iframe === 'string' ? [{ url: item.iframe }, ...extra] : extra;
+}
+
+/** Last resort when the API is unreachable: per the docs the main embed ends in "1080p", extras add a number. */
+function guessedSources(streamKey: string, apiCategory: string): StreamFreeSource[] {
+  return [`${streamKey}1080p`, `${streamKey}1080p2`, `${streamKey}1080p3`].map((path) => ({
+    url: `${EMBED_HOST}/${encodeURIComponent(apiCategory)}/${encodeURIComponent(path)}`,
+  }));
 }
 
 function slugify(text: string): string {
@@ -115,7 +188,8 @@ export class StrmFreeAdapter implements ProviderAdapter {
       const isPast = startSec > 0 && nowSec > startSec + 12600;
       const status = startSec === 0 ? 'Live' : isLiveNow ? 'Live' : isPast ? 'Final' : 'Upcoming';
 
-      const anyLive = Array.isArray(item.sources) && item.sources.some((s) => s.live === true);
+      // The main iframe has no live flag; additional sources do.
+      const anyLive = Array.isArray(item.additional_sources) && item.additional_sources.some((s) => s.live === true);
       const thumb = typeof item.thumbnail_url === 'string' && item.thumbnail_url.startsWith('https://') ? item.thumbnail_url : undefined;
 
       matches.push({
@@ -135,25 +209,28 @@ export class StrmFreeAdapter implements ProviderAdapter {
   }
 
   async resolvePlayback(id: string, _signal?: AbortSignal): Promise<PlaybackResolution> {
-    // The embed URLs follow a fixed pattern from the stream key, so no API call is needed (the API
-    // is blocked from Cloudflare). The embed starts on its own once its source goes live.
-    // Per StreamFree's docs the first source ends in "1080p", the others add a number.
-    // Don't sandbox these iframes (their docs ask for that).
-    const candidates = [`${id}1080p`, `${id}1080p2`, `${id}1080p3`]
-      .map((path) => sanitizePlaybackUrl(`${EMBED_BASE}/${encodeURIComponent(path)}`))
-      .filter((url): url is string => Boolean(url));
+    // 1. Stream already seen in a list fetch: its iframe + additional_sources are authoritative.
+    // 2. Otherwise ask /sources/{key}; a 404 means the key is not a real stream (e.g. a wrong home/away guess).
+    // 3. API unreachable: fall back to the documented URL pattern.
+    const listed = streamByKey.get(id);
+    let sources: StreamFreeSource[] | null | undefined = listed ? sourcesFromListEntry(listed) : undefined;
 
-    if (candidates.length > 0) {
-      return {
-        status: 'ready',
-        streams: candidates.map((url, idx) => ({
-          embedUrl: url,
-          hd: true,
-          language: `Server DSZ${idx + 1}`,
-          isSandboxedIframe: false,
-        })),
-        provider: this.name,
-      };
+    if (!sources || sources.length === 0) {
+      const fetched = await fetchSources(id);
+      if (fetched === null) {
+        return {
+          status: 'unavailable',
+          streams: [],
+          error: 'No StreamFree broadcast exists for this match.',
+          provider: this.name,
+        };
+      }
+      sources = fetched && fetched.length > 0 ? fetched : guessedSources(id, listed?.category || 'soccer');
+    }
+
+    const streams = toPlaybackStreams(sources);
+    if (streams.length > 0) {
+      return { status: 'ready', streams, provider: this.name };
     }
 
     return {

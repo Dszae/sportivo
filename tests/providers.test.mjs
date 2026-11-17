@@ -156,3 +156,92 @@ test('17. NPL broadcast authorization and stream resolution', async () => {
   assert.equal(unmapped.streams.length, 0);
 });
 
+
+// --- StreamFree API contract (fetch stubbed with the documented response shapes) ---
+function stubFetch(routes) {
+  const original = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url) => {
+    calls.push(String(url));
+    for (const [match, respond] of routes) {
+      if (String(url).includes(match)) return respond();
+    }
+    return new Response('not found', { status: 404 });
+  };
+  return { calls, restore: () => { globalThis.fetch = original; } };
+}
+const json = (body, status = 200) => () => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+
+test('18. StreamFree list: iframe + live additional_sources drive status and playback', async () => {
+  const stub = stubFetch([
+    ['/streams?category=basketball', json({
+      count: 1,
+      streams: [{
+        name: 'Lakers vs Celtics', category: 'basketball', league: 'NBA', stream_key: 'lakers-vs-celtics-t18',
+        match_timestamp: Math.floor(Date.now() / 1000) + 86400,
+        iframe: 'https://strmfree.st/embed/basketball/lakers-vs-celtics-t181080p',
+        additional_sources: [
+          { quality: 'FHD', url: 'https://strmfree.st/embed/basketball/lakers-vs-celtics-t181080p2', live: true },
+          { quality: 'SD', url: 'https://strmfree.st/embed/basketball/lakers-vs-celtics-t181080p3', live: false },
+        ],
+      }],
+    })],
+  ]);
+  try {
+    const sf = new StrmFreeAdapter();
+    const matches = await sf.fetchMatches('basketball');
+    assert.equal(matches.length, 1);
+    assert.equal(matches[0].status, 'Live'); // a live additional source overrides the future timestamp
+
+    const res = await sf.resolvePlayback('lakers-vs-celtics-t18');
+    assert.equal(res.status, 'ready');
+    // Category comes from the API, not a hardcoded soccer path; offline extra source dropped
+    assert.deepEqual(res.streams.map((s) => s.embedUrl), [
+      'https://strmfree.st/embed/basketball/lakers-vs-celtics-t181080p',
+      'https://strmfree.st/embed/basketball/lakers-vs-celtics-t181080p2',
+    ]);
+    assert.equal(res.streams[1].language, 'Server DSZ2 · FHD');
+    assert.ok(res.streams.every((s) => s.isSandboxedIframe === false));
+    assert.ok(!stub.calls.some((u) => u.includes('/sources/')), 'listed stream needs no sources call');
+  } finally {
+    stub.restore();
+  }
+});
+
+test('19. StreamFree /sources: unknown key is unavailable, known key uses the API list', async () => {
+  const stub = stubFetch([
+    ['/sources/england-vs-ghana-t19', json({ error: 'not found' }, 404)],
+    ['/sources/ghana-vs-england-t19', json({
+      stream_key: 'ghana-vs-england-t19',
+      sources: [
+        { quality: 'FHD', url: 'https://strmfree.st/embed/soccer/ghana-vs-england-t191080p', live: true },
+        { quality: 'HD', url: 'https://strmfree.st/embed/soccer/ghana-vs-england-t191080p2', live: true },
+      ],
+    })],
+  ]);
+  try {
+    const sf = new StrmFreeAdapter();
+    const missing = await sf.resolvePlayback('england-vs-ghana-t19');
+    assert.equal(missing.status, 'unavailable');
+    assert.equal(missing.streams.length, 0);
+
+    const found = await sf.resolvePlayback('ghana-vs-england-t19');
+    assert.equal(found.status, 'ready');
+    assert.equal(found.streams.length, 2);
+    assert.equal(found.streams[0].hd, true);
+  } finally {
+    stub.restore();
+  }
+});
+
+test('20. StreamFree /sources unreachable: falls back to the documented URL pattern', async () => {
+  const stub = stubFetch([['/sources/', () => { throw new Error('blocked'); }]]);
+  try {
+    const sf = new StrmFreeAdapter();
+    const res = await sf.resolvePlayback('spain-vs-italy-t20');
+    assert.equal(res.status, 'ready');
+    assert.equal(res.streams[0].embedUrl, 'https://strmfree.st/embed/soccer/spain-vs-italy-t201080p');
+  } finally {
+    stub.restore();
+  }
+});
