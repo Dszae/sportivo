@@ -147,6 +147,22 @@ function guessedSources(streamKey: string, apiCategory: string): StreamFreeSourc
   }));
 }
 
+/**
+ * Playback ids are a bare stream key ("ghana-vs-england", assumed soccer) or "category:key"
+ * ("basketball:new-york-knicks-vs-toronto-raptors"). The category matters for the fallback URL:
+ * strmfree.st 404s an embed under the wrong category path.
+ */
+function parsePlaybackId(id: string): { key: string; apiCategory?: string } {
+  const m = /^([a-z]+):(.+)$/.exec(id);
+  if (m && Object.values(API_CATEGORY).includes(m[1])) return { apiCategory: m[1], key: m[2] };
+  return { key: id };
+}
+
+export function strmfreePlaybackId(category: Category, streamKey: string): string {
+  const apiCategory = API_CATEGORY[category];
+  return apiCategory && apiCategory !== 'soccer' ? `${apiCategory}:${streamKey}` : streamKey;
+}
+
 function slugify(text: string): string {
   return text
     .toLowerCase()
@@ -212,11 +228,12 @@ export class StrmFreeAdapter implements ProviderAdapter {
     // 1. Stream already seen in a list fetch: its iframe + additional_sources are authoritative.
     // 2. Otherwise ask /sources/{key}; a 404 means the key is not a real stream (e.g. a wrong home/away guess).
     // 3. API unreachable: fall back to the documented URL pattern.
-    const listed = streamByKey.get(id);
+    const { key, apiCategory } = parsePlaybackId(id);
+    const listed = streamByKey.get(key);
     let sources: StreamFreeSource[] | null | undefined = listed ? sourcesFromListEntry(listed) : undefined;
 
     if (!sources || sources.length === 0) {
-      const fetched = await fetchSources(id);
+      const fetched = await fetchSources(key);
       if (fetched === null) {
         return {
           status: 'unavailable',
@@ -225,7 +242,7 @@ export class StrmFreeAdapter implements ProviderAdapter {
           provider: this.name,
         };
       }
-      sources = fetched && fetched.length > 0 ? fetched : guessedSources(id, listed?.category || 'soccer');
+      sources = fetched && fetched.length > 0 ? fetched : guessedSources(key, listed?.category || apiCategory || 'soccer');
     }
 
     const streams = toPlaybackStreams(sources);

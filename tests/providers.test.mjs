@@ -245,3 +245,16 @@ test('20. StreamFree /sources unreachable: falls back to the documented URL patt
     stub.restore();
   }
 });
+
+test('21. StreamFree fallback keeps the category from a "category:key" playback id', async () => {
+  const stub = stubFetch([['streamfree.top', () => { throw new Error('blocked'); }]]);
+  try {
+    const sf = new StrmFreeAdapter();
+    // strmfree.st 404s an embed under the wrong category path, so basketball must not fall back to /soccer/
+    const res = await sf.resolvePlayback('basketball:knicks-vs-raptors-t21');
+    assert.equal(res.status, 'ready');
+    assert.equal(res.streams[0].embedUrl, 'https://strmfree.st/embed/basketball/knicks-vs-raptors-t211080p');
+  } finally {
+    stub.restore();
+  }
+});
