@@ -22,6 +22,9 @@ export default function StreamFreeMatchFallback({ category, slug }: Props) {
         setMatch(found);
         setState('found');
         document.title = `${titleOf(found)} - ${categoryLabel} Live Stream & Score | Nepal Time | Sportivo`;
+        // The breadcrumb is rendered by the server (as "Fixture not found") outside this component.
+        const crumb = document.getElementById('match-breadcrumb-title');
+        if (crumb) crumb.textContent = titleOf(found);
       } else {
         setState('missing');
       }
