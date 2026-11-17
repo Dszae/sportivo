@@ -13,7 +13,7 @@ import {
 } from '../lib/sportivo';
 import { loadUserPreferences, saveUserPreferences, type UserPreferences } from '../lib/preferences';
 import { playNotificationChime } from '../lib/notificationService';
-import { fetchStreamFreeMatches, mergeStreamFreeMatches } from '../lib/streamfreeClient';
+import { fetchStreamFreeList, markStreamless, mergeStreamFreeMatches } from '../lib/streamfreeClient';
 
 type Props = { category: Category; matches: Match[]; exploreUrl?: string };
 type DateFilter = 'all' | 'today' | 'tomorrow' | 'week';
@@ -50,15 +50,17 @@ export default function MatchExplorer({ category, matches: initialMatches, explo
     let latestServer: Match[] = initialMatches || [];
     const fetchFresh = async () => {
       // Our server's list plus StreamFree's own list, fetched by the browser (StreamFree blocks our server).
-      const [serverList, streamFreeList] = await Promise.all([
+      const [serverList, streamFree] = await Promise.all([
         fetch(`/api/matches/${category}/`)
           .then((res) => (res.ok ? res.json() : null))
           .then((data) => (Array.isArray(data) ? (data as Match[]) : null))
           .catch(() => null),
-        fetchStreamFreeMatches(category),
+        fetchStreamFreeList(category),
       ]);
       if (serverList && serverList.length > 0) latestServer = serverList;
-      const merged = mergeStreamFreeMatches(latestServer, streamFreeList);
+      const combined = mergeStreamFreeMatches(latestServer, streamFree.matches);
+      // Only judge "no stream" when StreamFree's list actually loaded.
+      const merged = streamFree.ok ? markStreamless(combined, streamFree.keys) : combined;
       if (!cancelled && merged.length > 0) {
         setMatches(merged);
       }
@@ -209,6 +211,8 @@ export default function MatchExplorer({ category, matches: initialMatches, explo
     }
 
     return [...list].sort((a, b) => {
+      // Matches without a stream go after the watchable ones
+      if (Boolean(a.noStream) !== Boolean(b.noStream)) return a.noStream ? 1 : -1;
       const timeA = typeof a.date === 'number' ? a.date : new Date(a.date || a.startTime || a.start_at || a.timestamp || 0).getTime() || 0;
       const timeB = typeof b.date === 'number' ? b.date : new Date(b.date || b.startTime || b.start_at || b.timestamp || 0).getTime() || 0;
       return timeA - timeB;
@@ -309,7 +313,9 @@ export default function MatchExplorer({ category, matches: initialMatches, explo
           ) : (
             <span className="clock whitespace-nowrap text-[13px] text-fg">{kickoff.time}</span>
           )}
-          <span className="meta clock whitespace-nowrap">{isLive ? 'In play' : kickoff.date || 'NST'}</span>
+          <span className="meta clock whitespace-nowrap">
+            {match.noStream ? 'No stream' : isLive ? 'In play' : kickoff.date || 'NST'}
+          </span>
         </div>
 
         <div className="min-w-0 flex-1 space-y-1.5">
@@ -330,7 +336,7 @@ export default function MatchExplorer({ category, matches: initialMatches, explo
         </div>
 
         <div className="flex shrink-0 items-center gap-1 pl-2">
-          {isLive && <span className="btn btn-live btn-sm hidden sm:inline-flex">Watch</span>}
+          {isLive && !match.noStream && <span className="btn btn-live btn-sm hidden sm:inline-flex">Watch</span>}
           <button
             type="button"
             onClick={(e) => toggleFavorite(slug, e)}
@@ -417,6 +423,7 @@ export default function MatchExplorer({ category, matches: initialMatches, explo
             ) : (
               <span className="clock">{formattedTime}</span>
             )}
+            {match.noStream && <span className="text-fg-2">· No stream</span>}
           </span>
 
           {hasTeams && (

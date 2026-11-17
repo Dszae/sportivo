@@ -335,3 +335,17 @@ test('24. StreamFree client: /sources ok, 404 and network failure', async () => 
     stub.restore();
   }
 });
+
+test('25. StreamFree client: live matches with no StreamFree stream are flagged; others are not', async () => {
+  const { markStreamless } = await import('../src/lib/streamfreeClient.ts');
+  const now = 1_800_000_000_000;
+  const keys = new Set(['norway-vs-denmark']);
+  const out = markStreamless([
+    { title: 'Japan vs Paraguay', status: 'Live', date: now - 600000, sources: [{ source: 'strmfree', id: 'japan-vs-paraguay' }, { source: 'strmfree', id: 'paraguay-vs-japan' }] },
+    { title: 'Denmark vs Norway', status: 'Live', date: now, sources: [{ source: 'strmfree', id: 'denmark-vs-norway' }, { source: 'strmfree', id: 'norway-vs-denmark' }] },
+    { title: 'Far Future vs X', status: 'Upcoming', date: now + 86400000, sources: [{ source: 'strmfree', id: 'far-future-vs-x' }] },
+    { title: 'Soon vs Y', status: 'Upcoming', date: now + 10 * 60000, sources: [{ source: 'strmfree', id: 'basketball:soon-vs-y' }] },
+    { title: 'NPL A vs B', status: 'Live', date: now, sources: [{ source: 'npl', id: 'npl26-29' }] },
+  ], keys, now);
+  assert.deepEqual(out.map((m) => Boolean(m.noStream)), [true, false, false, true, false]);
+});

@@ -97,6 +97,8 @@ export type Match = {
   score?: { home?: string; away?: string };
   summary?: string;
   sources?: StreamSource[];
+  /** Set in the browser when the match is live (or about to start) and no stream source carries it. */
+  noStream?: boolean;
 };
 
 

@@ -157,13 +157,22 @@ export function streamToMatch(item: StreamFreeStream, category: string, nowSec =
   };
 }
 
-const listCache = new Map<string, { at: number; data: Match[] }>();
-const inflight = new Map<string, Promise<Match[]>>();
+export interface StreamFreeList {
+  /** False when the list could not be fetched (and nothing was cached): `keys` then says nothing. */
+  ok: boolean;
+  matches: Match[];
+  /** Every stream key StreamFree has in this category, including channels and finished streams. */
+  keys: Set<string>;
+}
 
-/** StreamFree's fixtures for one of our categories. Never throws; returns [] (or the last good list) on failure. */
-export function fetchStreamFreeMatches(category: string): Promise<Match[]> {
+const EMPTY_LIST: StreamFreeList = { ok: false, matches: [], keys: new Set() };
+const listCache = new Map<string, { at: number; data: StreamFreeList }>();
+const inflight = new Map<string, Promise<StreamFreeList>>();
+
+/** StreamFree's list for one of our categories. Never throws; returns the last good list (or `ok: false`) on failure. */
+export function fetchStreamFreeList(category: string): Promise<StreamFreeList> {
   const apiCategory = STREAMFREE_CATEGORY[category];
-  if (!apiCategory) return Promise.resolve([]);
+  if (!apiCategory) return Promise.resolve(EMPTY_LIST);
   const cached = listCache.get(category);
   if (cached && Date.now() - cached.at < LIST_TTL_MS) return Promise.resolve(cached.data);
   const pending = inflight.get(category);
@@ -175,20 +184,52 @@ export function fetchStreamFreeMatches(category: string): Promise<Match[]> {
         headers: { accept: 'application/json' },
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
-      if (!res.ok) return cached?.data ?? [];
+      if (!res.ok) return cached?.data ?? EMPTY_LIST;
       const body = await res.json();
-      const items: StreamFreeStream[] = Array.isArray(body?.streams) ? body.streams : [];
-      const data = items.map((s) => streamToMatch(s, category)).filter((m): m is Match => m !== null);
+      if (!Array.isArray(body?.streams)) return cached?.data ?? EMPTY_LIST;
+      const items: StreamFreeStream[] = body.streams;
+      const data: StreamFreeList = {
+        ok: true,
+        matches: items.map((s) => streamToMatch(s, category)).filter((m): m is Match => m !== null),
+        keys: new Set(items.map((s) => s.stream_key).filter((k): k is string => typeof k === 'string' && k !== '')),
+      };
       listCache.set(category, { at: Date.now(), data });
       return data;
     } catch {
-      return cached?.data ?? [];
+      return cached?.data ?? EMPTY_LIST;
     } finally {
       inflight.delete(category);
     }
   })();
   inflight.set(category, request);
   return request;
+}
+
+/** StreamFree's fixtures for one of our categories. Never throws; returns [] (or the last good list) on failure. */
+export function fetchStreamFreeMatches(category: string): Promise<Match[]> {
+  return fetchStreamFreeList(category).then((list) => list.matches);
+}
+
+const NO_STREAM_LEAD_MS = 30 * 60 * 1000;
+
+/**
+ * Flags matches that are live (or start within 30 minutes) but have no stream: every source is a
+ * StreamFree key and StreamFree has none of them. Matches further out are left alone, since
+ * StreamFree may still create their stream. Matches with any other provider are never flagged.
+ */
+export function markStreamless(matches: Match[], streamFreeKeys: Set<string>, now = Date.now()): Match[] {
+  return matches.map((m) => {
+    const sources = m.sources || [];
+    const onlyStreamFree = sources.length > 0 && sources.every((s) => s.source === 'strmfree' && s.id);
+    if (!onlyStreamFree) return m.noStream ? { ...m, noStream: false } : m;
+
+    const start = typeof m.date === 'number' ? m.date : new Date(m.date || m.startTime || m.start_at || 0).getTime();
+    const isLive = String(m.status || '').toLowerCase() === 'live';
+    const soon = Number.isFinite(start) && start > 0 && start - now <= NO_STREAM_LEAD_MS;
+    const hasStream = sources.some((s) => streamFreeKeys.has(parseStrmfreeId(s.id!).key));
+    const noStream = (isLive || soon) && !hasStream;
+    return noStream === Boolean(m.noStream) ? m : { ...m, noStream };
+  });
 }
 
 /** Finds a StreamFree fixture by the slug our match links use (slugified title) or by its stream key. */

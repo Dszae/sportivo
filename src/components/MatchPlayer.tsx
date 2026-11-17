@@ -606,7 +606,11 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
     setStreams([]);
     setActiveStream(null);
     setPlayerState('unavailable');
-    setErrorMessage('No stream has been set up for this match yet. Check back closer to kickoff.');
+    setErrorMessage(
+      isLive
+        ? 'No stream is available for this match.'
+        : 'No stream has been set up for this match yet. Check back closer to kickoff.'
+    );
     return true;
   }
 

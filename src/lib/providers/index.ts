@@ -99,13 +99,13 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
   const strmfree = adapters.strmfree;
   const espn = adapters.espn;
   const npl = adapters.npl;
-  const daddylive = adapters.daddylive;
-
-  // Ingest PPV, NPL, DaddyLive, StrmFree, and ESPN
+  // Ingest PPV, NPL, StrmFree, and ESPN
   const promises: Promise<any>[] = [
     // PPV is not used for football (its upstream blocks Cloudflare; StreamFree covers football)
     category === 'football' ? Promise.resolve([]) : ppv.fetchMatches(category, effectiveSignal),
-    daddylive.fetchMatches(category, effectiveSignal),
+    // DaddyLive channels are not listed: their players refuse our domain ("Not allowed to stream.
+    // Contact admin." on dembed.st, a blank page on thedaddy.pk). Re-enable once they allow the site.
+    Promise.resolve([]),
     strmfree.fetchMatches(category, effectiveSignal),
     espn.fetchMatches(category, effectiveSignal),
   ];
