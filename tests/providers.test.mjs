@@ -318,6 +318,7 @@ test('24. StreamFree client: /sources ok, 404 and network failure', async () => 
       { quality: 'HD', url: 'https://evil.example/embed/x', live: true },
     ] })],
     ['/sources/broken', () => { throw new Error('offline'); }],
+    ['/sources/not-live-yet', json({ stream_key: 'not-live-yet', sources: [] })],
   ]);
   try {
     const ok = await fetchStreamFreeSources('basketball:real-vs-key');
@@ -326,6 +327,10 @@ test('24. StreamFree client: /sources ok, 404 and network failure', async () => 
     assert.equal(ok.streams[0].isSandboxedIframe, false);
     assert.equal((await fetchStreamFreeSources('nope-vs-nope')).status, 'missing');
     assert.equal((await fetchStreamFreeSources('broken')).status, 'error');
+    // Real stream, not live yet: the API returns 200 with no sources -> offer the main embed (starts at kickoff)
+    const pending = await fetchStreamFreeSources('basketball:not-live-yet');
+    assert.equal(pending.status, 'ok');
+    assert.equal(pending.streams[0].embedUrl, 'https://strmfree.st/embed/basketball/not-live-yet1080p');
   } finally {
     stub.restore();
   }

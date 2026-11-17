@@ -50,6 +50,11 @@ export interface StreamFreePlayable {
   isSandboxedIframe: false;
 }
 
+/** A stream's main embed, the same URL as the list's `iframe` field: /embed/{category}/{key}1080p. */
+function mainEmbedUrl(key: string, apiCategory = 'soccer'): string {
+  return `${EMBED_ORIGIN}/embed/${encodeURIComponent(apiCategory)}/${encodeURIComponent(key)}1080p`;
+}
+
 function embedUrl(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   try {
@@ -89,7 +94,7 @@ export type SourcesResult =
   | { status: 'error' };
 
 export async function fetchStreamFreeSources(id: string): Promise<SourcesResult> {
-  const { key } = parseStrmfreeId(id);
+  const { key, apiCategory } = parseStrmfreeId(id);
   try {
     const res = await fetch(`${API}/sources/${encodeURIComponent(key)}`, {
       headers: { accept: 'application/json' },
@@ -98,7 +103,12 @@ export async function fetchStreamFreeSources(id: string): Promise<SourcesResult>
     if (res.status === 404) return { status: 'missing' };
     if (!res.ok) return { status: 'error' };
     const body = await res.json();
-    const streams = toPlayableStreams(Array.isArray(body?.sources) ? body.sources : []);
+    const listed: StreamFreeSource[] = Array.isArray(body?.sources) ? body.sources : [];
+    // Unlike the docs' example, a real stream that isn't live yet comes back as 200 with an empty list
+    // (a key with no stream is a 404). Its main embed already exists and starts on its own once the
+    // stream goes live, so offer that.
+    const sources = listed.length > 0 ? listed : [{ url: mainEmbedUrl(key, apiCategory) }];
+    const streams = toPlayableStreams(sources);
     return streams.length > 0 ? { status: 'ok', streams } : { status: 'missing' };
   } catch {
     return { status: 'error' };
