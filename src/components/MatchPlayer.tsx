@@ -15,6 +15,7 @@ import {
   titleOf,
 } from '../lib/sportivo';
 import { loadUserPreferences, saveUserPreferences, type UserPreferences } from '../lib/preferences';
+import { fetchStreamFreeSources } from '../lib/streamfreeClient';
 import { NPL_FIXTURES_2026, NPL_TEAMS, type NplMatch } from '../lib/data/nplData';
 import {
   cleanCricketText,
@@ -576,6 +577,50 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
     };
   }, [streamUrl, isNative, videoEl]);
 
+  // StreamFree's API blocks our server (Cloudflare) but allows browsers, so StreamFree sources are
+  // resolved here first: real embed URLs and live flags instead of the server's guessed URL pattern.
+  // Tries the selected StreamFree source, then the other StreamFree sources (e.g. the reversed
+  // home/away key). Returns false when the API was unreachable, so the caller can ask our server.
+  async function resolveStreamFreeInBrowser(): Promise<boolean> {
+    const candidates = sources
+      .map((s, idx) => ({ s, idx }))
+      .filter(({ s }) => s.source === 'strmfree' && s.id)
+      .sort((a, b) => Number(b.idx === selectedSourceIndex) - Number(a.idx === selectedSourceIndex));
+    if (candidates.length === 0) return false;
+
+    let unreachable = false;
+    for (const { s, idx } of candidates) {
+      const result = await fetchStreamFreeSources(s.id!);
+      if (result.status === 'ok') {
+        if (idx !== selectedSourceIndex) setSelectedSourceIndex(idx);
+        setStreams(result.streams);
+        setActiveStream(result.streams[0]);
+        setErrorMessage('');
+        setPlayerState('ready');
+        return true;
+      }
+      if (result.status === 'error') unreachable = true;
+    }
+    if (unreachable) return false;
+
+    setStreams([]);
+    setActiveStream(null);
+    setPlayerState('unavailable');
+    setErrorMessage('No stream has been set up for this match yet. Check back closer to kickoff.');
+    return true;
+  }
+
+  // The server pre-resolves StreamFree with guessed URLs; replace them with the real ones once mounted.
+  useEffect(() => {
+    if (!hasInitial || status === 'Final' || currentSource?.source !== 'strmfree') return;
+    if (isResolvingRef.current) return;
+    isResolvingRef.current = true;
+    resolveStreamFreeInBrowser().finally(() => {
+      isResolvingRef.current = false;
+    });
+    // Run once on mount: later source changes go through resolvePlayback.
+  }, []);
+
   // Resolves playback signals on explicit user action
   async function resolvePlayback(force = false) {
     if (status === 'Final') {
@@ -599,6 +644,8 @@ export default function MatchPlayer({ match, showNplHub = false, initialStreams 
     const sid = encodeURIComponent(currentSource.id);
 
     try {
+      if (currentSource.source === 'strmfree' && (await resolveStreamFreeInBrowser())) return;
+
       const res = await fetch(`/api/stream/${src}/${sid}/`, {
         signal: AbortSignal.timeout(6000),
       });

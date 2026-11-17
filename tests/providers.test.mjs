@@ -258,3 +258,75 @@ test('21. StreamFree fallback keeps the category from a "category:key" playback 
     stub.restore();
   }
 });
+
+// --- Browser-side StreamFree client (src/lib/streamfreeClient.ts) ---
+import { streamToMatch, mergeStreamFreeMatches, fetchStreamFreeSources, parseStrmfreeId, strmfreeIdFor } from '../src/lib/streamfreeClient.ts';
+
+test('22. StreamFree client: list items become matches; channels and long-finished items are dropped', () => {
+  const now = 1_800_000_000;
+  const m = streamToMatch({
+    name: 'New York Knicks vs Toronto Raptors', league: 'NBA', stream_key: 'new-york-knicks-vs-toronto-raptors',
+    match_timestamp: now + 3600, thumbnail_url: 'https://streamfree.top/thumbnails/x',
+    team1: { name: 'New York Knicks', logo: 'https://a.espncdn.com/ny.png' }, team2: { name: 'Toronto Raptors', logo: 'http://insecure/tor.png' },
+    additional_sources: [],
+  }, 'basketball', now);
+  assert.equal(m.status, 'Upcoming');
+  assert.deepEqual(m.sources, [{ source: 'strmfree', id: 'basketball:new-york-knicks-vs-toronto-raptors', label: 'StreamFree' }]);
+  assert.equal(m.teams.away.badge, undefined); // non-https logo dropped
+
+  assert.equal(streamToMatch({ name: 'Willow', stream_key: 'willow', match_timestamp: now }, 'cricket', now), null);
+  assert.equal(streamToMatch({ name: 'A vs B', stream_key: 'a-vs-b', match_timestamp: now - 20000 }, 'football', now), null);
+  const live = streamToMatch({ name: 'A vs B', stream_key: 'a-vs-b', match_timestamp: now + 86400,
+    additional_sources: [{ quality: 'HD', url: 'https://strmfree.st/embed/soccer/a-vs-b1080p2', live: true }] }, 'football', now);
+  assert.equal(live.status, 'Live');
+
+  assert.deepEqual(parseStrmfreeId('basketball:x-vs-y'), { apiCategory: 'basketball', key: 'x-vs-y' });
+  assert.deepEqual(parseStrmfreeId('ghana-vs-england'), { key: 'ghana-vs-england' });
+  assert.equal(strmfreeIdFor('football', 'ghana-vs-england'), 'ghana-vs-england');
+});
+
+test('23. StreamFree client: merge dedupes by key/teams, puts the real key first, adds new fixtures', () => {
+  const server = [{
+    id: 'espn-soc-1', title: 'Norway vs Denmark', status: 'Upcoming',
+    sources: [{ source: 'strmfree', id: 'norway-vs-denmark' }, { source: 'strmfree', id: 'denmark-vs-norway' }],
+  }, {
+    id: 'espn-nba-2', title: 'Toronto Raptors vs New York Knicks', status: 'Upcoming',
+    sources: [{ source: 'strmfree', id: 'basketball:toronto-raptors-vs-new-york-knicks' }],
+  }];
+  const sf = [
+    { id: 'denmark-vs-norway', title: 'Denmark vs Norway', status: 'Live', sources: [{ source: 'strmfree', id: 'denmark-vs-norway', label: 'StreamFree' }] },
+    { id: 'new-york-knicks-vs-toronto-raptors', title: 'New York Knicks vs Toronto Raptors', status: 'Upcoming',
+      sources: [{ source: 'strmfree', id: 'basketball:new-york-knicks-vs-toronto-raptors', label: 'StreamFree' }] },
+    { id: 'mls-a-vs-mls-b', title: 'MLS A vs MLS B', status: 'Upcoming', sources: [{ source: 'strmfree', id: 'mls-a-vs-mls-b' }] },
+  ];
+  const merged = mergeStreamFreeMatches(server, sf);
+  assert.equal(merged.length, 3);
+  assert.equal(merged[0].status, 'Live');
+  assert.equal(merged[0].sources[0].id, 'denmark-vs-norway'); // StreamFree's real key moved first
+  assert.equal(merged[0].sources.length, 2);
+  assert.equal(merged[1].sources[0].id, 'basketball:new-york-knicks-vs-toronto-raptors'); // matched by team pair
+  assert.equal(merged[2].id, 'mls-a-vs-mls-b');
+  assert.equal(server[0].status, 'Upcoming'); // input not mutated
+  assert.equal(server[0].sources[0].id, 'norway-vs-denmark');
+});
+
+test('24. StreamFree client: /sources ok, 404 and network failure', async () => {
+  const stub = stubFetch([
+    ['/sources/real-vs-key', json({ stream_key: 'real-vs-key', sources: [
+      { quality: 'FHD', url: 'https://strmfree.st/embed/basketball/real-vs-key1080p', live: false },
+      { quality: 'SD', url: 'https://strmfree.st/embed/basketball/real-vs-key1080p2', live: false },
+      { quality: 'HD', url: 'https://evil.example/embed/x', live: true },
+    ] })],
+    ['/sources/broken', () => { throw new Error('offline'); }],
+  ]);
+  try {
+    const ok = await fetchStreamFreeSources('basketball:real-vs-key');
+    assert.equal(ok.status, 'ok');
+    assert.equal(ok.streams.length, 1); // main kept even before going live; offline extra and foreign host dropped
+    assert.equal(ok.streams[0].isSandboxedIframe, false);
+    assert.equal((await fetchStreamFreeSources('nope-vs-nope')).status, 'missing');
+    assert.equal((await fetchStreamFreeSources('broken')).status, 'error');
+  } finally {
+    stub.restore();
+  }
+});

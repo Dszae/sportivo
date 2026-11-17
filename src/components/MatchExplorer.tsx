@@ -13,6 +13,7 @@ import {
 } from '../lib/sportivo';
 import { loadUserPreferences, saveUserPreferences, type UserPreferences } from '../lib/preferences';
 import { playNotificationChime } from '../lib/notificationService';
+import { fetchStreamFreeMatches, mergeStreamFreeMatches } from '../lib/streamfreeClient';
 
 type Props = { category: Category; matches: Match[]; exploreUrl?: string };
 type DateFilter = 'all' | 'today' | 'tomorrow' | 'week';
@@ -46,22 +47,25 @@ export default function MatchExplorer({ category, matches: initialMatches, explo
   // Client-side instant fetch & live sync
   useEffect(() => {
     let cancelled = false;
+    let latestServer: Match[] = initialMatches || [];
     const fetchFresh = async () => {
-      try {
-        const res = await fetch(`/api/matches/${category}/`);
-        if (res.ok) {
-          const freshData = await res.json();
-          if (!cancelled && Array.isArray(freshData) && freshData.length > 0) {
-            setMatches(freshData);
-          }
-        }
-      } catch {}
+      // Our server's list plus StreamFree's own list, fetched by the browser (StreamFree blocks our server).
+      const [serverList, streamFreeList] = await Promise.all([
+        fetch(`/api/matches/${category}/`)
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => (Array.isArray(data) ? (data as Match[]) : null))
+          .catch(() => null),
+        fetchStreamFreeMatches(category),
+      ]);
+      if (serverList && serverList.length > 0) latestServer = serverList;
+      const merged = mergeStreamFreeMatches(latestServer, streamFreeList);
+      if (!cancelled && merged.length > 0) {
+        setMatches(merged);
+      }
     };
 
-    // If initial server matches was empty, fetch immediately; otherwise poll every 45s
-    if (!initialMatches || initialMatches.length === 0) {
-      fetchFresh();
-    }
+    // Fetch right away (the StreamFree list never comes from the server render), then poll every 45s
+    fetchFresh();
     const interval = setInterval(fetchFresh, 45000);
     return () => {
       cancelled = true;

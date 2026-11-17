@@ -3,6 +3,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SiteHeader from '../../../components/SiteHeader.astro';
 import SiteFooter from '../../../components/SiteFooter.astro';
 import MatchPlayer from '../../../components/MatchPlayer';
+import StreamFreeMatchFallback from '../../../components/StreamFreeMatchFallback';
 import { getCalibratedNplFixtures } from '../../../lib/data/nplData';
 import { fetchUnifiedMatches, resolveUnifiedPlayback } from '../../../lib/providers';
 import {
@@ -366,6 +367,8 @@ const matchJsonLd = match
             </div>
           )}
         </>
+      ) : validCategory ? (
+        <StreamFreeMatchFallback client:load category={category} slug={slug} />
       ) : (
         <div class="card p-8">
           <h1 class="text-3xl font-medium text-fg">Fixture not found</h1>

@@ -1,6 +1,6 @@
 import type { Category, NormalizedMatch, PlaybackResolution, ProviderAdapter } from '../types';
 import { logDiagnostic } from '../diagnostics';
-import { strmfreePlaybackId } from './strmfree';
+import { strmfreeIdFor } from '../../streamfreeClient';
 
 // StreamFree stream key for a fixture, e.g. "Ghana" + "England" -> "ghana-vs-england".
 // Keeps Unicode letters because StreamFree keys do too ("belgium-vs-türkiye").
@@ -81,8 +81,8 @@ export class EspnAdapter implements ProviderAdapter {
 
             // StreamFree keys use the same full team names ("new-york-knicks-vs-toronto-raptors"),
             // listed away-first or home-first, so offer both orders.
-            const keyA = strmfreePlaybackId('basketball', streamKeyFor(awayName, homeName));
-            const keyB = strmfreePlaybackId('basketball', streamKeyFor(homeName, awayName));
+            const keyA = strmfreeIdFor('basketball', streamKeyFor(awayName, homeName));
+            const keyB = strmfreeIdFor('basketball', streamKeyFor(homeName, awayName));
 
             matches.push({
               id: ev.id ? `${league.idPrefix}-${ev.id}` : keyA,
