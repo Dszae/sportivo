@@ -1,15 +1,6 @@
 import type { Category, NormalizedMatch, PlaybackResolution, ProviderAdapter } from '../types';
 import { logDiagnostic } from '../diagnostics';
 
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/[\s_-]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
 // StreamFree stream key for a fixture, e.g. "Ghana" + "England" -> "ghana-vs-england".
 // Keeps Unicode letters because StreamFree keys do too ("belgium-vs-türkiye").
 function streamKeyFor(home: string, away: string): string {
@@ -24,6 +15,20 @@ function streamKeyFor(home: string, away: string): string {
   return `${clean(home)}-vs-${clean(away)}`;
 }
 
+// Today and tomorrow (UTC). Without a date ESPN returns the last finished matchday only.
+function scoreboardDates(): string[] {
+  const dayKey = (offsetDays: number) => {
+    const d = new Date(Date.now() + offsetDays * 86400000);
+    return `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
+  };
+  return [dayKey(0), dayKey(1)];
+}
+
+const BASKETBALL_LEAGUES: { path: string; idPrefix: string; label: string }[] = [
+  { path: 'nba', idPrefix: 'espn-nba', label: 'NBA' },
+  { path: 'mens-college-basketball', idPrefix: 'espn-ncaab', label: "NCAA Men's Basketball" },
+];
+
 export class EspnAdapter implements ProviderAdapter {
   readonly name = 'espn';
   readonly isAuthorized = true; // Free, public, unauthenticated scoreboard API
@@ -37,40 +42,64 @@ export class EspnAdapter implements ProviderAdapter {
 
     try {
       if (category === 'basketball') {
-        const res = await fetch('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard', {
-          signal: effectiveSignal,
-        });
-        if (res.ok) {
-          const data = (await res.json()) as any;
-          const events = data?.events || [];
-          for (const ev of events) {
+        const dates = scoreboardDates();
+        const fetches = await Promise.allSettled(
+          BASKETBALL_LEAGUES.flatMap((league) =>
+            dates.map(async (date) => {
+              const res = await fetch(
+                `https://site.api.espn.com/apis/site/v2/sports/basketball/${league.path}/scoreboard?dates=${date}`,
+                { signal: effectiveSignal }
+              );
+              if (!res.ok) return null;
+              return { data: (await res.json()) as any, league };
+            })
+          )
+        );
+
+        const seenEvents = new Set<string>();
+        for (const resItem of fetches) {
+          if (resItem.status !== 'fulfilled' || !resItem.value) continue;
+          const { data, league } = resItem.value;
+          for (const ev of data?.events || []) {
+            if (matches.length >= 60) break;
+            if (ev?.id) {
+              if (seenEvents.has(String(ev.id))) continue;
+              seenEvents.add(String(ev.id));
+            }
             const comp = ev?.competitions?.[0];
             const competitors = comp?.competitors || [];
             const home = competitors.find((c: any) => c.homeAway === 'home');
             const away = competitors.find((c: any) => c.homeAway === 'away');
-            const title = ev.name || `${home?.team?.displayName || 'Home'} vs ${away?.team?.displayName || 'Away'}`;
-            const slug = slugify(title);
+            const homeName = home?.team?.displayName || 'Home';
+            const awayName = away?.team?.displayName || 'Away';
 
             const isLive = comp?.status?.type?.state === 'in';
             const isCompleted = comp?.status?.type?.state === 'post';
             // User requirement: Never ingest completed past matches ("remove those recent results")
             if (isCompleted) continue;
-            const status = isLive ? 'Live' : 'Upcoming';
+
+            // StreamFree keys use the same full team names ("new-york-knicks-vs-toronto-raptors"),
+            // listed away-first or home-first, so offer both orders.
+            const keyA = streamKeyFor(awayName, homeName);
+            const keyB = streamKeyFor(homeName, awayName);
 
             matches.push({
-              id: ev.id ? `espn-nba-${ev.id}` : slug,
-              title,
+              id: ev.id ? `${league.idPrefix}-${ev.id}` : keyA,
+              title: `${awayName} vs ${homeName}`,
               category: 'basketball',
-              competition: 'NBA',
-              league: 'NBA',
-              status,
+              competition: league.label,
+              league: league.label,
+              status: isLive ? 'Live' : 'Upcoming',
               date: ev.date ? new Date(ev.date).getTime() : undefined,
               poster: home?.team?.logo || away?.team?.logo || undefined,
               teams: {
-                home: { name: home?.team?.displayName || 'Home', badge: home?.team?.logo },
-                away: { name: away?.team?.displayName || 'Away', badge: away?.team?.logo },
+                home: { name: homeName, badge: home?.team?.logo },
+                away: { name: awayName, badge: away?.team?.logo },
               },
-              sources: [{ source: 'espn', id: slug, label: 'ESPN Scoreboard' }],
+              sources: [
+                { source: 'strmfree', id: keyA, label: 'StreamFree' },
+                { source: 'strmfree', id: keyB, label: 'StreamFree (alt)' },
+              ],
             });
           }
         }
@@ -84,14 +113,14 @@ export class EspnAdapter implements ProviderAdapter {
           'uefa.champions', // Champions League
           'uefa.europa', // Europa League
           'afc.champions', // AFC Champions League
+          // International windows (club leagues pause, so these are the only fixtures that week)
+          'uefa.nations', // UEFA Nations League
+          'fifa.friendly', // International friendlies
+          'fifa.world', // FIFA World Cup
+          'fifa.worldq.uefa', // World Cup qualifying (UEFA)
         ];
 
-        // Today and tomorrow (UTC). Without a date ESPN returns the last finished matchday only.
-        const dayKey = (offsetDays: number) => {
-          const d = new Date(Date.now() + offsetDays * 86400000);
-          return `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
-        };
-        const dates = [dayKey(0), dayKey(1)];
+        const dates = scoreboardDates();
 
         const leagueFetches = await Promise.allSettled(
           leagues.flatMap((league) =>
