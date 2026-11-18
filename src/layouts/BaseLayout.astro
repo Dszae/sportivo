@@ -14,6 +14,8 @@ interface Props {
   imageType?: string;
   keywords?: string;
   noindex?: boolean;
+  /** Emit the shared Person JSON-LD. Pages that include the Person in their own @graph pass false. */
+  person?: boolean;
 }
 
 const {
@@ -28,6 +30,7 @@ const {
   imageType = 'image/png',
   keywords = 'Dipesh Sapkota, Dipesh Sapkota Sportivo, dszae, Sportivo, Sportivo Nepal, live sports fixtures, football live stream Nepal, cricket schedules NST, basketball fixtures, Nepali software developer',
   noindex = false,
+  person = true,
 } = Astro.props;
 
 const siteUrl = 'https://sportivo.dipeshsapkota7.com.np';
@@ -76,7 +79,7 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     <meta name="publisher" content="Dipesh Sapkota" />
     <link rel="author" href={profiles.website} />
     {sameAs.map((href) => <link rel="me" href={href} />)}
-    <script type="application/ld+json" set:html={JSON.stringify(personJsonLd)} />
+    {person && <script type="application/ld+json" set:html={JSON.stringify(personJsonLd)} />}
     
     <!-- Search Engine Indexing Directives -->
     {noindex ? (

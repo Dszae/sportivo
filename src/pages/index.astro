@@ -5,6 +5,7 @@ import SiteFooter from '../components/SiteFooter.astro';
 import MatchExplorer from '../components/MatchExplorer';
 import HeroShowcase, { type HeroMatch } from '../components/HeroShowcase';
 import { categories, fetchMatches, getMatchTimestamp, slugify, statusOf, titleOf, type Match } from '../lib/sportivo';
+import { person, personRef, profiles, SOURCE_REPO } from '../lib/identity';
 
 Astro.response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
 
@@ -67,10 +68,6 @@ const faqs = [
     question: 'How do I save favorite teams and matches on Sportivo?',
     answer: 'Star any fixture or open the Watchlist page. Saved teams and starred matches are stored in your browser, with no account needed.',
   },
-  {
-    question: 'Who created and maintains Sportivo?',
-    answer: 'Sportivo was designed, developed, and published by Dipesh Sapkota, a software developer and engineering student from Nepal.',
-  },
 ];
 
 const homepageJsonLd = {
@@ -88,26 +85,15 @@ const homepageJsonLd = {
         'contentUrl': 'https://sportivo.dipeshsapkota7.com.np/favicon.svg',
         'caption': 'Sportivo Official Logo',
         'creditText': 'Sportivo by Dipesh Sapkota',
-        'creator': {
-          '@type': 'Person',
-          '@id': 'https://www.dipeshsapkota7.com.np/#person',
-          'name': 'Dipesh Sapkota',
-          'url': 'https://www.dipeshsapkota7.com.np/'
-        },
+        'creator': personRef,
         'copyrightNotice': 'Copyright 2026 Sportivo',
         'license': canonical,
         'acquireLicensePage': canonical
       },
       'description': description,
-      'founder': {
-        '@id': 'https://www.dipeshsapkota7.com.np/#person'
-      },
-      'sameAs': [
-        'https://www.dipeshsapkota7.com.np/',
-        'https://github.com/dszae',
-        'https://www.linkedin.com/in/dipeshsapkota7',
-        'https://www.facebook.com/dsz.ae'
-      ],
+      'founder': personRef,
+      // The organisation's own profiles; the founder's personal profiles belong on the Person.
+      'sameAs': [SOURCE_REPO],
       'knowsAbout': [
         'Sportivo',
         'NPL Live Match',
@@ -127,12 +113,7 @@ const homepageJsonLd = {
       'name': 'Sportivo Sports Fixture Desk Preview',
       'caption': 'Sportivo live sports scores, kickoff schedules, and streams in Nepal Standard Time (NST)',
       'creditText': 'Dipesh Sapkota',
-      'creator': {
-        '@type': 'Person',
-        '@id': 'https://www.dipeshsapkota7.com.np/#person',
-        'name': 'Dipesh Sapkota',
-        'url': 'https://www.dipeshsapkota7.com.np/'
-      },
+      'creator': personRef,
       'copyrightNotice': 'Copyright 2026 Dipesh Sapkota',
       'license': canonical,
       'acquireLicensePage': canonical
@@ -164,12 +145,8 @@ const homepageJsonLd = {
       'primaryImageOfPage': {
         '@id': `${canonical}#primary-image`
       },
-      'publisher': {
-        '@id': 'https://www.dipeshsapkota7.com.np/#person'
-      },
-      'author': {
-        '@id': 'https://www.dipeshsapkota7.com.np/#person'
-      },
+      'publisher': personRef,
+      'author': personRef,
       'potentialAction': {
         '@type': 'SearchAction',
         'target': 'https://sportivo.dipeshsapkota7.com.np/?q={search_term_string}',
@@ -220,43 +197,8 @@ const homepageJsonLd = {
         }
       ]
     },
-    {
-      '@type': 'Person',
-      '@id': 'https://www.dipeshsapkota7.com.np/#person',
-      'name': 'Dipesh Sapkota',
-      'alternateName': ['Dipesh', 'dszae'],
-      'url': 'https://www.dipeshsapkota7.com.np/',
-      'jobTitle': 'Software Developer & Engineering Student',
-      'description': 'Dipesh Sapkota is an engineering student, software developer, and the creator and publisher of Sportivo from Nepal.',
-      'nationality': {
-        '@type': 'Country',
-        'name': 'Nepal'
-      },
-      'image': {
-        '@type': 'ImageObject',
-        '@id': 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/#profile-image',
-        'url': 'https://sportivo.dipeshsapkota7.com.np/dipesh-sapkota-profile.webp',
-        'contentUrl': 'https://sportivo.dipeshsapkota7.com.np/dipesh-sapkota-profile.webp',
-        'name': 'Dipesh Sapkota Profile Photo',
-        'caption': 'Dipesh Sapkota, engineering student, software developer, and the creator and publisher of Sportivo',
-        'creditText': 'Dipesh Sapkota',
-        'creator': {
-          '@type': 'Person',
-          '@id': 'https://www.dipeshsapkota7.com.np/#person',
-          'name': 'Dipesh Sapkota',
-          'url': 'https://www.dipeshsapkota7.com.np/'
-        },
-        'copyrightNotice': 'Copyright 2026 Dipesh Sapkota',
-        'license': 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/',
-        'acquireLicensePage': 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/'
-      },
-      'sameAs': [
-        'https://www.dipeshsapkota7.com.np/',
-        'https://github.com/dszae',
-        'https://www.linkedin.com/in/dipeshsapkota7',
-        'https://www.facebook.com/dsz.ae'
-      ]
-    },
+    // The one full Person definition on this page (shared with every other page).
+    person,
     {
       '@type': 'WebApplication',
       '@id': `${canonical}#app`,
@@ -271,12 +213,8 @@ const homepageJsonLd = {
         'price': '0',
         'priceCurrency': 'USD'
       },
-      'author': {
-        '@id': 'https://www.dipeshsapkota7.com.np/#person'
-      },
-      'creator': {
-        '@id': 'https://www.dipeshsapkota7.com.np/#person'
-      }
+      'author': personRef,
+      'creator': personRef
     },
     {
       '@type': 'BreadcrumbList',
@@ -377,6 +315,7 @@ const homepageJsonLd = {
   description={description}
   canonical={canonical}
   keywords="Sportivo, sportivo, NPL live match, npl live match, npl live streaming, watch npl live, Nepal Premier League 2026, NPL schedule, live sports fixtures, Nepal Standard Time kickoff, football fixtures, cricket schedules, Dipesh Sapkota, dipeshsapkota7.com.np"
+  person={false}
 >
   <Fragment slot="head">
     <script type="application/ld+json" set:html={JSON.stringify(homepageJsonLd)} />
@@ -443,6 +382,32 @@ const homepageJsonLd = {
             <dd class="mt-2 text-sm leading-6 text-fg-2">See which games are on right now and get a notification when one you starred is about to start.</dd>
           </div>
         </dl>
+      </div>
+    </section>
+
+    <section class="border-t border-line py-24" aria-labelledby="homepage-creator-heading">
+      <div class="mx-auto flex max-w-7xl flex-col gap-8 px-4 sm:flex-row sm:items-center sm:px-6 lg:px-8">
+        <img
+          src="/dipesh-sapkota-profile.webp"
+          alt="Dipesh Sapkota"
+          width="96"
+          height="96"
+          loading="lazy"
+          decoding="async"
+          class="h-24 w-24 shrink-0 rounded-2xl border border-line object-cover"
+        />
+        <div class="max-w-2xl">
+          <p class="eyebrow">Creator</p>
+          <h2 id="homepage-creator-heading" class="mt-3 text-3xl font-medium tracking-[-0.01em] text-fg">
+            Built by Dipesh Sapkota
+          </h2>
+          <p class="mt-4 text-base leading-7 text-fg-2">
+            Sportivo is designed, built and maintained by
+            <a href={profiles.website} rel="author" class="text-fg underline underline-offset-4 hover:text-lime">Dipesh Sapkota</a>,
+            a Computer Engineering student at IOE Thapathali Campus in Kathmandu, Nepal.
+            <a href="/about-dipesh-sapkota/" class="text-fg underline underline-offset-4 hover:text-lime">Why he built Sportivo</a>.
+          </p>
+        </div>
       </div>
     </section>
 

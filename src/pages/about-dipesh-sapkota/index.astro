@@ -4,10 +4,10 @@ export const prerender = true;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
-import { profiles } from '../../lib/identity';
+import { person, personRef, profiles } from '../../lib/identity';
 
-const title = 'Dipesh Sapkota | Creator of Sportivo - Software Developer & Student';
-const description = 'Official profile of Dipesh Sapkota, engineering student, software developer, and the creator and publisher of Sportivo sports fixtures desk in Nepal.';
+const title = 'About Sportivo’s Creator, Dipesh Sapkota';
+const description = 'Dipesh Sapkota, a Computer Engineering student at IOE Thapathali Campus in Kathmandu, Nepal, created Sportivo. Why he built it, how it works, and where to find his profiles.';
 const canonical = 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/';
 const profileImageUrl = 'https://sportivo.dipeshsapkota7.com.np/dipesh-sapkota-profile.webp';
 
@@ -18,7 +18,8 @@ const link = (href: string, text: string) =>
 const faqs: { question: string; answer: string; answerHtml?: string }[] = [
   {
     question: 'Who created Sportivo?',
-    answer: 'Sportivo was created and published by Dipesh Sapkota, a software developer and engineering student from Nepal.',
+    answer: 'Sportivo was created and published by Dipesh Sapkota, a Computer Engineering student at IOE Thapathali Campus in Kathmandu, Nepal.',
+    answerHtml: `Sportivo was created and published by ${link(profiles.website, 'Dipesh Sapkota')}, a Computer Engineering student at IOE Thapathali Campus in Kathmandu, Nepal.`,
   },
   {
     question: 'What is Sportivo?',
@@ -26,8 +27,8 @@ const faqs: { question: string; answer: string; answerHtml?: string }[] = [
   },
   {
     question: 'Where can I find the developer profiles and code?',
-    answer: 'You can explore Dipesh’s personal portfolio at dipeshsapkota7.com.np, inspect open-source software on GitHub (@dszae), and connect on LinkedIn and Facebook.',
-    answerHtml: `You can explore Dipesh’s personal portfolio at ${link(profiles.website, 'dipeshsapkota7.com.np')}, inspect open-source software on ${link(profiles.github, 'GitHub (@dszae)')}, and connect on ${link(profiles.linkedin, 'LinkedIn')} and ${link(profiles.facebook, 'Facebook')}.`,
+    answer: 'Dipesh Sapkota’s official website, dipeshsapkota7.com.np, has his full profile and projects. His code is on GitHub (@dszae), his research ID is on ORCID, and you can connect on LinkedIn and Facebook.',
+    answerHtml: `${link(profiles.website, 'Dipesh Sapkota')}’s official website, dipeshsapkota7.com.np, has his full profile and projects. His code is on ${link(profiles.github, 'GitHub (@dszae)')}, his research ID is on ${link(profiles.orcid, 'ORCID')}, and you can connect on ${link(profiles.linkedin, 'LinkedIn')} and ${link(profiles.facebook, 'Facebook')}.`,
   },
   {
     question: 'How are kickoff times and streams provided on Sportivo?',
@@ -35,68 +36,45 @@ const faqs: { question: string; answer: string; answerHtml?: string }[] = [
   },
 ];
 
+const profileLinks = [
+  { href: profiles.website, label: 'Dipesh Sapkota', meta: 'Official website' },
+  { href: profiles.linkedin, label: 'LinkedIn', meta: 'dipeshsapkota7' },
+  { href: profiles.github, label: 'GitHub', meta: '@dszae' },
+  { href: profiles.orcid, label: 'ORCID', meta: '0009-0001-7595-5114' },
+  { href: profiles.wikidata, label: 'Wikidata', meta: 'Q141595522' },
+  { href: profiles.facebook, label: 'Facebook', meta: 'dsz.ae' },
+];
+
+// Bump when the page content changes.
+const DATE_MODIFIED = '2026-11-18';
+const DATE_MODIFIED_LABEL = '18 November 2026';
+
+// This page supports the canonical entity page (the main website): it carries the same
+// Person (shared @id, url and description) as its main entity, defined once.
 const profilePageSchema = {
   '@context': 'https://schema.org',
   '@type': 'ProfilePage',
-  'dateCreated': '2026-01-01T00:00:00.000Z',
-  'dateModified': '2026-10-19T10:45:00.000Z',
+  '@id': `${canonical}#webpage`,
+  'url': canonical,
+  'name': title,
+  'dateCreated': '2026-01-01',
+  'dateModified': DATE_MODIFIED,
+  'isPartOf': { '@type': 'WebSite', '@id': 'https://sportivo.dipeshsapkota7.com.np/#website' },
   'primaryImageOfPage': {
     '@type': 'ImageObject',
-    '@id': `${canonical}#profile-image`
+    '@id': `${canonical}#profile-image`,
+    'url': profileImageUrl,
+    'contentUrl': profileImageUrl,
+    'width': 627,
+    'height': 627,
+    'caption': 'Dipesh Sapkota, creator of Sportivo',
+    'creditText': 'Dipesh Sapkota',
+    'creator': personRef,
+    'copyrightNotice': 'Copyright 2026 Dipesh Sapkota',
+    'license': profiles.website,
+    'acquireLicensePage': profiles.website
   },
-  'mainEntity': {
-    '@type': 'Person',
-    '@id': 'https://www.dipeshsapkota7.com.np/#person',
-    'name': 'Dipesh Sapkota',
-    'alternateName': ['Dipesh', 'dszae'],
-    'identifier': 'dszae',
-    'url': canonical,
-    'image': {
-      '@type': 'ImageObject',
-      '@id': `${canonical}#profile-image`,
-      'url': profileImageUrl,
-      'contentUrl': profileImageUrl,
-      'name': 'Dipesh Sapkota Profile Photo',
-      'caption': 'Dipesh Sapkota, engineering student, software developer, and the creator and publisher of Sportivo',
-      'creditText': 'Dipesh Sapkota',
-      'creator': {
-        '@type': 'Person',
-        '@id': 'https://www.dipeshsapkota7.com.np/#person',
-        'name': 'Dipesh Sapkota',
-        'url': 'https://www.dipeshsapkota7.com.np/'
-      },
-      'copyrightNotice': 'Copyright 2026 Dipesh Sapkota',
-      'license': canonical,
-      'acquireLicensePage': canonical
-    },
-    'description': 'Dipesh Sapkota is the creator and publisher of Sportivo, an engineering student, software developer, and builder from Nepal.',
-    'jobTitle': 'Software Developer & Engineering Student',
-    'nationality': {
-      '@type': 'Country',
-      'name': 'Nepal'
-    },
-    'worksFor': {
-      '@type': 'Organization',
-      'name': 'Sportivo',
-      'url': 'https://sportivo.dipeshsapkota7.com.np/'
-    },
-    'sameAs': [
-      'https://www.dipeshsapkota7.com.np/',
-      'https://github.com/dszae',
-      'https://www.linkedin.com/in/dipeshsapkota7',
-      'https://www.facebook.com/dsz.ae'
-    ],
-    'knowsAbout': [
-      'Sportivo',
-      'Sports Streaming Platforms',
-      'Football Fixtures & Kickoff Times',
-      'Cricket Schedules',
-      'Basketball Schedules',
-      'React & Astro Development',
-      'Web Development',
-      'Machine Learning'
-    ]
-  },
+  'mainEntity': person,
   'breadcrumb': {
     '@type': 'BreadcrumbList',
     'itemListElement': [
@@ -139,6 +117,7 @@ const faqSchema = {
   imageWidth={627}
   imageHeight={627}
   imageType="image/webp"
+  person={false}
   keywords="Dipesh Sapkota, Dipesh, dszae, Sportivo creator, Dipesh Sapkota Nepal, software developer Nepal, engineering student Nepal, Sportivo publisher"
 >
   <Fragment slot="head">
@@ -150,39 +129,14 @@ const faqSchema = {
   <SiteHeader activeCategory="creator" />
 
   <main class="site-shell min-h-screen">
-    <article
-      class="mx-auto max-w-3xl px-4 pb-24 pt-8 sm:px-6 lg:px-8"
-      itemscope
-      itemtype="https://schema.org/Person"
-      itemid="https://www.dipeshsapkota7.com.np/#person"
-    >
+    <article class="mx-auto max-w-3xl px-4 pb-24 pt-8 sm:px-6 lg:px-8">
       <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-sm text-fg-3">
         <a href="/" class="transition-colors duration-fast ease-out hover:text-fg">Home</a>
         <span aria-hidden="true">/</span>
         <span class="text-fg-2" aria-current="page">About</span>
       </nav>
 
-      <figure
-        class="mt-10 flex flex-col items-start gap-6 sm:flex-row sm:items-center"
-        itemprop="image"
-        itemscope
-        itemtype="https://schema.org/ImageObject"
-      >
-        <meta itemprop="name" content="Dipesh Sapkota Profile Photo" />
-        <meta itemprop="caption" content="Dipesh Sapkota, engineering student, software developer, and the creator and publisher of Sportivo" />
-        <meta itemprop="description" content="Official portrait profile photo of Dipesh Sapkota, creator and publisher of Sportivo sports platform." />
-        <meta itemprop="width" content="627" />
-        <meta itemprop="height" content="627" />
-        <meta itemprop="encodingFormat" content="image/webp" />
-        <meta itemprop="license" content={canonical} />
-        <meta itemprop="acquireLicensePage" content={canonical} />
-        <meta itemprop="creditText" content="Dipesh Sapkota" />
-        <meta itemprop="copyrightNotice" content="Copyright 2026 Dipesh Sapkota" />
-        <link itemprop="url" href={profileImageUrl} />
-        <span itemprop="creator" itemscope itemtype="https://schema.org/Person">
-          <meta itemprop="name" content="Dipesh Sapkota" />
-          <link itemprop="url" href="https://www.dipeshsapkota7.com.np/" />
-        </span>
+      <figure class="mt-10 flex flex-col items-start gap-6 sm:flex-row sm:items-center">
         <img
           src="/dipesh-sapkota-profile.webp"
           width="627"
@@ -193,12 +147,12 @@ const faqSchema = {
           loading="eager"
           decoding="async"
           class="h-32 w-32 rounded-2xl border border-line object-cover"
-          itemprop="contentUrl"
         />
         <figcaption>
-          <p class="eyebrow">Creator and publisher</p>
-          <h1 class="mt-2 text-4xl font-medium tracking-[-0.02em] text-fg sm:text-5xl" itemprop="name">Dipesh Sapkota</h1>
-          <p class="mt-2 text-base text-fg-2" itemprop="jobTitle">Software developer and engineering student, Nepal</p>
+          <p class="eyebrow">Creator of Sportivo</p>
+          <h1 class="mt-2 text-4xl font-medium tracking-[-0.02em] text-fg sm:text-5xl">Dipesh Sapkota</h1>
+          <p class="mt-2 text-base text-fg-2">Computer Engineering student, IOE Thapathali Campus, Kathmandu</p>
+          <p class="mt-1 text-xs text-fg-3">Updated <time datetime={DATE_MODIFIED}>{DATE_MODIFIED_LABEL}</time></p>
         </figcaption>
       </figure>
 
@@ -210,10 +164,15 @@ const faqSchema = {
         <a href="/" class="btn btn-secondary shrink-0">Open fixtures</a>
       </section>
 
-      <section class="mt-12 space-y-6 text-base leading-7 text-fg-2" itemprop="description">
+      <section class="mt-12 space-y-6 text-base leading-7 text-fg-2">
         <h2 class="text-2xl font-medium text-fg">About</h2>
         <p>
-          Dipesh Sapkota is a software developer, engineering student and open-source builder based in Nepal. He is the founder, lead engineer and publisher of <strong class="font-medium text-fg">Sportivo</strong>, an independent sports desk built to bridge the gap between global sports schedules and fans in Nepal.
+          <a href={profiles.website} rel="author" class="text-fg underline underline-offset-4 hover:text-lime">Dipesh Sapkota</a>
+          is a Computer Engineering student at IOE Thapathali Campus in Kathmandu, Nepal, exploring artificial intelligence, machine learning, embedded systems and motion design. He founded, built and publishes <strong class="font-medium text-fg">Sportivo</strong>, an independent sports desk that brings global fixtures to fans in Nepal, in their own time zone.
+        </p>
+        <p>
+          This page covers his work on Sportivo. His full profile, other projects and contact details are on
+          <a href={profiles.website} rel="author" class="text-fg underline underline-offset-4 hover:text-lime">Dipesh Sapkota's official website</a>.
         </p>
 
         <h3 class="pt-2 text-xl font-medium text-fg">Why Sportivo exists</h3>
@@ -234,26 +193,21 @@ const faqSchema = {
 
         <h3 class="pt-2 text-xl font-medium text-fg">Elsewhere</h3>
         <p>
-          Beyond Sportivo, Dipesh contributes to open-source software, builds admission guidance portals, and does research in applied machine learning and distributed systems.
+          Beyond Sportivo, Dipesh built IOE Admission Hub and Git Visualizer, and has more than four years of freelance work as a video editor and motion graphics designer. Known online as dszae.
         </p>
       </section>
 
       <section class="mt-12">
         <h2 class="text-2xl font-medium text-fg">Links</h2>
-        <nav aria-label="Creator social and profile links" class="mt-4 flex flex-wrap items-center gap-2">
-          <a href="https://www.dipeshsapkota7.com.np/" rel="me author external" target="_blank" title="Website" aria-label="Website" class="icon-btn" itemprop="sameAs">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z"/></svg>
-          </a>
-          <a href="https://github.com/dszae" rel="me author external" target="_blank" title="GitHub" aria-label="GitHub" class="icon-btn" itemprop="sameAs">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg>
-          </a>
-          <a href="https://www.linkedin.com/in/dipeshsapkota7" rel="me author external" target="_blank" title="LinkedIn" aria-label="LinkedIn" class="icon-btn" itemprop="sameAs">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2zM4 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
-          </a>
-          <a href="https://www.facebook.com/dsz.ae" rel="me author external" target="_blank" title="Facebook" aria-label="Facebook" class="icon-btn" itemprop="sameAs">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-          </a>
-        </nav>
+        <ul class="mt-4 divide-y divide-line" aria-label="Dipesh Sapkota's profiles">
+          {profileLinks.map((p) => (
+            <li>
+              <a href={p.href} rel="me author" target="_blank" class="row -mx-4 h-12 py-0 text-sm text-fg">
+                <span class="flex-1">{p.label}</span><span class="meta">{p.meta}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section class="mt-12">
