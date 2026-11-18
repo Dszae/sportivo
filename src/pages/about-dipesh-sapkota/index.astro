@@ -4,13 +4,18 @@ export const prerender = true;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
+import { profiles } from '../../lib/identity';
 
 const title = 'Dipesh Sapkota | Creator of Sportivo - Software Developer & Student';
 const description = 'Official profile of Dipesh Sapkota, engineering student, software developer, and the creator and publisher of Sportivo sports fixtures desk in Nepal.';
 const canonical = 'https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/';
 const profileImageUrl = 'https://sportivo.dipeshsapkota7.com.np/dipesh-sapkota-profile.webp';
 
-const faqs = [
+const link = (href: string, text: string) =>
+  `<a href="${href}" rel="me author" target="_blank" class="text-fg underline underline-offset-4 hover:text-lime">${text}</a>`;
+
+// `answer` is plain text for the FAQ structured data; `answerHtml`, when set, is what the page shows.
+const faqs: { question: string; answer: string; answerHtml?: string }[] = [
   {
     question: 'Who created Sportivo?',
     answer: 'Sportivo was created and published by Dipesh Sapkota, a software developer and engineering student from Nepal.',
@@ -22,6 +27,7 @@ const faqs = [
   {
     question: 'Where can I find the developer profiles and code?',
     answer: 'You can explore Dipesh’s personal portfolio at dipeshsapkota7.com.np, inspect open-source software on GitHub (@dszae), and connect on LinkedIn and Facebook.',
+    answerHtml: `You can explore Dipesh’s personal portfolio at ${link(profiles.website, 'dipeshsapkota7.com.np')}, inspect open-source software on ${link(profiles.github, 'GitHub (@dszae)')}, and connect on ${link(profiles.linkedin, 'LinkedIn')} and ${link(profiles.facebook, 'Facebook')}.`,
   },
   {
     question: 'How are kickoff times and streams provided on Sportivo?',
@@ -77,8 +83,8 @@ const profilePageSchema = {
     'sameAs': [
       'https://www.dipeshsapkota7.com.np/',
       'https://github.com/dszae',
-      'https://www.linkedin.com/in/dipeshsapkota7/',
-      'https://facebook.com/dsz.ae'
+      'https://www.linkedin.com/in/dipeshsapkota7',
+      'https://www.facebook.com/dsz.ae'
     ],
     'knowsAbout': [
       'Sportivo',
@@ -241,10 +247,10 @@ const faqSchema = {
           <a href="https://github.com/dszae" rel="me author external" target="_blank" title="GitHub" aria-label="GitHub" class="icon-btn" itemprop="sameAs">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg>
           </a>
-          <a href="https://www.linkedin.com/in/dipeshsapkota7/" rel="me author external" target="_blank" title="LinkedIn" aria-label="LinkedIn" class="icon-btn" itemprop="sameAs">
+          <a href="https://www.linkedin.com/in/dipeshsapkota7" rel="me author external" target="_blank" title="LinkedIn" aria-label="LinkedIn" class="icon-btn" itemprop="sameAs">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2zM4 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
           </a>
-          <a href="https://facebook.com/dsz.ae" rel="me author external" target="_blank" title="Facebook" aria-label="Facebook" class="icon-btn" itemprop="sameAs">
+          <a href="https://www.facebook.com/dsz.ae" rel="me author external" target="_blank" title="Facebook" aria-label="Facebook" class="icon-btn" itemprop="sameAs">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
           </a>
         </nav>
@@ -268,7 +274,11 @@ const faqSchema = {
           {faqs.map((faq) => (
             <div class="py-5 first:pt-0 last:pb-0">
               <dt class="text-base font-medium text-fg">{faq.question}</dt>
-              <dd class="mt-2 text-sm leading-6 text-fg-2">{faq.answer}</dd>
+              {faq.answerHtml ? (
+                <dd class="mt-2 text-sm leading-6 text-fg-2" set:html={faq.answerHtml} />
+              ) : (
+                <dd class="mt-2 text-sm leading-6 text-fg-2">{faq.answer}</dd>
+              )}
             </div>
           ))}
         </dl>

@@ -1,5 +1,6 @@
 ---
 import '../index.css';
+import { personJsonLd, profiles, sameAs } from '../lib/identity';
 
 interface Props {
   title: string;
@@ -73,7 +74,9 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     <meta name="author" content="Dipesh Sapkota" />
     <meta name="creator" content="Dipesh Sapkota" />
     <meta name="publisher" content="Dipesh Sapkota" />
-    <link rel="author" href="https://www.dipeshsapkota7.com.np/" />
+    <link rel="author" href={profiles.website} />
+    {sameAs.map((href) => <link rel="me" href={href} />)}
+    <script type="application/ld+json" set:html={JSON.stringify(personJsonLd)} />
     
     <!-- Search Engine Indexing Directives -->
     {noindex ? (
@@ -142,7 +145,7 @@ const absoluteImage = image.startsWith('http') ? image : `${siteUrl}${image}`;
     <meta property="og:image:height" content={String(imageHeight)} />
     <meta property="og:image:type" content={imageType} />
     <meta property="og:locale" content="en_NP" />
-    <meta property="article:author" content="https://www.dipeshsapkota7.com.np/" />
+    <meta property="article:author" content={profiles.website} />
     <meta property="article:publisher" content="https://sportivo.dipeshsapkota7.com.np/about-dipesh-sapkota/" />
     {type === 'profile' && (
       <>

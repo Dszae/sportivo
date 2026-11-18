@@ -1,13 +1,14 @@
 ---
 import { categories } from '../lib/sportivo';
+import { profiles, SOURCE_REPO } from '../lib/identity';
 
 const currentYear = new Date().getFullYear();
 
 const socials = [
-  { href: 'https://www.dipeshsapkota7.com.np/', label: 'Website', path: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z' },
-  { href: 'https://github.com/dszae', label: 'GitHub', path: 'M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21' },
-  { href: 'https://www.linkedin.com/in/dipeshsapkota7/', label: 'LinkedIn', path: 'M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2zM4 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z' },
-  { href: 'https://facebook.com/dsz.ae', label: 'Facebook', path: 'M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z' },
+  { href: profiles.website, label: 'Website', path: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z' },
+  { href: profiles.github, label: 'GitHub', path: 'M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21' },
+  { href: profiles.linkedin, label: 'LinkedIn', path: 'M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2zM4 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z' },
+  { href: profiles.facebook, label: 'Facebook', path: 'M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z' },
 ];
 ---
 <footer class="mt-24 border-t border-line bg-ink-950 text-fg-2" itemscope itemtype="https://schema.org/WPFooter">
@@ -61,6 +62,23 @@ const socials = [
             </a>
           ))}
         </nav>
+        <ul class="mt-4 space-y-2 text-sm">
+          <li>
+            <a href={profiles.website} rel="me author" target="_blank" class="transition-colors duration-fast ease-out hover:text-fg">
+              Dipesh Sapkota's website
+            </a>
+          </li>
+          <li>
+            <a href={profiles.linkedin} rel="me author" target="_blank" class="transition-colors duration-fast ease-out hover:text-fg">
+              Dipesh Sapkota on LinkedIn
+            </a>
+          </li>
+          <li>
+            <a href={SOURCE_REPO} target="_blank" class="transition-colors duration-fast ease-out hover:text-fg">
+              Sportivo source code
+            </a>
+          </li>
+        </ul>
       </div>
     </div>
 
