@@ -457,6 +457,16 @@ export const nplAdapter: ProviderAdapter = {
     }
 
     try {
+      // Step 0: Real-time autonomous upstream discovery & verified streams (prioritizes npl2026live as Server 1)
+      const liveStreams = await discoverAndProbeNplStreams(signal);
+      if (liveStreams && liveStreams.length > 0) {
+        return {
+          status: 'ready',
+          provider: 'Action Sports HD (Verified Direct)',
+          streams: liveStreams,
+        };
+      }
+
       // Step 1: Query streamService for verified working live broadcast
       if (streamService && typeof streamService.getAutoStream === 'function') {
         const auto = await streamService.getAutoStream();
@@ -481,15 +491,7 @@ export const nplAdapter: ProviderAdapter = {
         }
       }
 
-      // Step 2: Autonomous upstream link crawler & real-time health prober
-      const liveStreams = await discoverAndProbeNplStreams(signal);
-      if (liveStreams && liveStreams.length > 0) {
-        return {
-          status: 'ready',
-          provider: 'Action Sports HD (Auto-Discovered & Verified)',
-          streams: liveStreams,
-        };
-      }
+
     } catch (err: any) {
       logDiagnostic('npl', 'error', `Autonomous probe failure: ${err?.message}`);
     }

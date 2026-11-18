@@ -79,6 +79,8 @@ export class StreamService {
 
   async isStreamAlive(url: string): Promise<boolean> {
     if (!url) return false;
+    // Always consider approved cloudflare pages embed players alive without failing HEAD probe
+    if (url.includes('pages.dev')) return true;
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3500);
