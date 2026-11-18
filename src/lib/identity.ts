@@ -11,7 +11,7 @@
  */
 export const MAIN_SITE = 'https://www.dipeshsapkota7.com.np/';
 /** Same @id the main website uses for its Person node. */
-export const PERSON_ID = `${MAIN_SITE}#author`;
+export const PERSON_ID = `${MAIN_SITE}#person`;
 export const SPORTIVO_URL = 'https://sportivo.dipeshsapkota7.com.np/';
 export const SPORTIVO_ORG_ID = `${SPORTIVO_URL}#organization`;
 export const SOURCE_REPO = 'https://github.com/Dszae/sportivo';
