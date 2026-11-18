@@ -43,11 +43,12 @@ function toNormalizedMatch(m: NplMatch): NormalizedMatch {
   const now = Date.now();
   let status: 'Live' | 'Final' | 'Upcoming' = 'Upcoming';
   const hasConcludedSummary = Boolean(m.summary && /won by|tied|no result|abandoned|defeated/i.test(m.summary));
-  const isPast = m.status === 'COMPLETED' || hasConcludedSummary || now > m.timestamp + 3.25 * 60 * 60 * 1000;
+  // Cricket T20 matches (especially play-offs / super overs / innings breaks) take 4.5 to 5 hours
+  const isPast = m.status === 'COMPLETED' || hasConcludedSummary || now > m.timestamp + 5.0 * 60 * 60 * 1000;
   if (isPast) {
     status = 'Final';
   } else {
-    const isMatchWindow = now >= m.timestamp - 15 * 60 * 1000 && now <= m.timestamp + 3.25 * 60 * 60 * 1000;
+    const isMatchWindow = now >= m.timestamp - 30 * 60 * 1000 && now <= m.timestamp + 5.0 * 60 * 60 * 1000;
     if (isMatchWindow) {
       status = 'Live';
     }

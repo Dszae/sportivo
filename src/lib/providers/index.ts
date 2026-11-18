@@ -183,7 +183,7 @@ async function collectMatches(category: Category): Promise<{ data: NormalizedMat
 
       // Drop completed/past results per user requirement
       if (item.status === 'Final') continue;
-      if (typeof item.date === 'number' && item.date > 0 && now - item.date > 3.5 * 60 * 60 * 1000) {
+      if (typeof item.date === 'number' && item.date > 0 && now - item.date > (category === 'cricket' ? 5.5 * 60 * 60 * 1000 : 3.5 * 60 * 60 * 1000)) {
         continue;
       }
 
@@ -291,7 +291,7 @@ async function collectMatches(category: Category): Promise<{ data: NormalizedMat
   // Filter out any past/completed fixtures
   const activeMatches = matches.filter((m) => {
     if (m.status === 'Final') return false;
-    if (typeof m.date === 'number' && m.date > 0 && Date.now() - m.date > 3.5 * 60 * 60 * 1000) {
+    if (typeof m.date === 'number' && m.date > 0 && Date.now() - m.date > (category === 'cricket' ? 5.5 * 60 * 60 * 1000 : 3.5 * 60 * 60 * 1000)) {
       return false;
     }
     return true;
