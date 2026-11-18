@@ -6,6 +6,7 @@ import MatchPlayer from '../../../components/MatchPlayer';
 import StreamFreeMatchFallback from '../../../components/StreamFreeMatchFallback';
 import { getCalibratedNplFixtures } from '../../../lib/data/nplData';
 import { fetchUnifiedMatches, resolveUnifiedPlayback } from '../../../lib/providers';
+import { withTimeout } from '../../../lib/edgeCache';
 import {
   detectFootballLeague,
   getMatchTimestamp,
@@ -153,8 +154,14 @@ if (match?.sources && match.sources.length > 0 && statusOf(match) !== 'Final') {
   const primarySource = match.sources[0];
   if (primarySource?.source && primarySource?.id) {
     try {
-      const resolution = await resolveUnifiedPlayback(primarySource.source, primarySource.id);
-      if (resolution.status === 'ready' && resolution.streams.length > 0) {
+      // Short budget: the player resolves streams in the browser when none arrive with the HTML,
+      // so a slow or blocked upstream must not hold up the whole page.
+      const resolution = await withTimeout(
+        resolveUnifiedPlayback(primarySource.source, primarySource.id),
+        800,
+        null
+      );
+      if (resolution && resolution.status === 'ready' && resolution.streams.length > 0) {
         initialStreams = resolution.streams;
       }
     } catch {}

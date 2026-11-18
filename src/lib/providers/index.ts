@@ -8,6 +8,7 @@ import { DemoAdapter } from './adapters/demo';
 import { nplAdapter } from './adapters/npl';
 import { sanitizeIdentifier } from './allowlist';
 import { logDiagnostic } from './diagnostics';
+import { edgeGet, edgePut, keepAlive, withTimeout } from '../edgeCache';
 
 export * from './types';
 export * from './allowlist';
@@ -42,58 +43,85 @@ function slugify(text: string): string {
  * Fetches and merges matches across active providers with bounded timeouts.
  * Prioritizes live streams, followed by chronological upcoming fixtures.
  */
-// In-memory & KV cache with fallback
-const memoryCache: Record<string, { data: NormalizedMatch[]; timestamp: number }> = {};
-const CACHE_TTL_MS = 60 * 1000; // 60 seconds TTL
+// Two-level cache, served stale-while-revalidate:
+//  1. per-isolate memory (instant, but lost whenever Cloudflare starts a new isolate)
+//  2. colo-wide Cache API shared by all isolates (a few ms)
+// Pages never wait on upstream providers unless both levels are empty.
+type CacheEntry = { data: NormalizedMatch[]; at: number; freshFor: number };
+const memoryCache: Partial<Record<Category, CacheEntry>> = {};
+const inflight: Partial<Record<Category, Promise<NormalizedMatch[]>>> = {};
 
-async function getFromCache(category: Category): Promise<NormalizedMatch[] | null> {
-  // 1. Check in-memory cache first (empty results are cached too, so an empty
-  //    upstream state does not make every request hit every provider again)
-  const entry = memoryCache[category];
-  if (entry && Date.now() - entry.timestamp < CACHE_TTL_MS) {
-    return entry.data;
+const FRESH_MS = 60 * 1000;
+/** Freshness when a provider missed its deadline, so its late data is picked up soon. */
+const DEGRADED_FRESH_MS = 10 * 1000;
+/** Stale data older than this is not served; the request waits for a refresh instead. */
+const STALE_MAX_MS = 15 * 60 * 1000;
+/**
+ * How long a page waits for any single provider. Upstreams blocked from Cloudflare
+ * (PPV, StreamFree) otherwise hold every cold page load for their full timeout.
+ * Slow providers keep running in the background and fill their own caches.
+ */
+const PROVIDER_DEADLINE_MS = 2500;
+
+async function readCache(category: Category): Promise<CacheEntry | null> {
+  const mem = memoryCache[category];
+  if (mem && Date.now() - mem.at < mem.freshFor) return mem;
+  const edge = await edgeGet<CacheEntry>(`matches/${category}`);
+  if (edge && Array.isArray(edge.data) && (!mem || edge.at > mem.at)) {
+    memoryCache[category] = edge;
+    return edge;
   }
-  // 2. Check Cloudflare KV (SESSION namespace if bound to global/env)
-  try {
-    const kv = (globalThis as any).SESSION;
-    if (kv && typeof kv.get === 'function') {
-      const raw = await kv.get(`matches:${category}`);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          memoryCache[category] = { data: parsed, timestamp: Date.now() };
-          return parsed;
-        }
-      }
-    }
-  } catch {}
-  return null;
+  return mem ?? null;
 }
 
-async function saveToCache(category: Category, data: NormalizedMatch[]): Promise<void> {
-  if (!Array.isArray(data)) return;
-  memoryCache[category] = { data, timestamp: Date.now() };
-  if (data.length === 0) return; // KV only stores non-empty results
-  try {
-    const kv = (globalThis as any).SESSION;
-    if (kv && typeof kv.put === 'function') {
-      await kv.put(`matches:${category}`, JSON.stringify(data), { expirationTtl: 60 });
-    }
-  } catch {}
+function refreshMatches(category: Category): Promise<NormalizedMatch[]> {
+  let pending = inflight[category];
+  if (!pending) {
+    pending = collectMatches(category)
+      .then(async ({ data, degraded }) => {
+        const entry: CacheEntry = { data, at: Date.now(), freshFor: degraded ? DEGRADED_FRESH_MS : FRESH_MS };
+        memoryCache[category] = entry;
+        await edgePut(`matches/${category}`, entry, STALE_MAX_MS / 1000);
+        return data;
+      })
+      .finally(() => {
+        delete inflight[category];
+      });
+    inflight[category] = pending;
+  }
+  // Every request that triggers or joins the refresh keeps it alive past its own response.
+  keepAlive(pending);
+  return pending;
 }
 
 export async function fetchUnifiedMatches(category: Category, signal?: AbortSignal): Promise<NormalizedMatch[]> {
-  // Check cached response before calling external APIs
-  const cached = await getFromCache(category);
-  if (cached) {
-    return cached;
+  const entry = await readCache(category);
+  if (entry) {
+    const age = Date.now() - entry.at;
+    if (age < entry.freshFor) return entry.data;
+    if (age < STALE_MAX_MS) {
+      refreshMatches(category).catch(() => {});
+      return entry.data;
+    }
   }
+  const pending = refreshMatches(category);
+  if (!signal) return pending;
+  if (signal.aborted) return entry?.data ?? [];
+  return new Promise<NormalizedMatch[]>((resolve) => {
+    signal.addEventListener('abort', () => resolve(entry?.data ?? []), { once: true });
+    pending.then(resolve, () => resolve(entry?.data ?? []));
+  });
+}
 
-  // Overall budget for provider fetches. Must exceed the PPV upstream's typical ~3 s response,
-  // otherwise every slow provider is aborted and the football list comes back empty.
-  const timeoutSignal = AbortSignal.timeout(8000);
-  const effectiveSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
-
+async function collectMatches(category: Category): Promise<{ data: NormalizedMatch[]; degraded: boolean }> {
+  // Hard budget for provider requests. Callers stop waiting after PROVIDER_DEADLINE_MS,
+  // but requests may run until this to fill provider-level caches in the background.
+  const effectiveSignal = AbortSignal.timeout(8000);
+  let degraded = false;
+  const deadline = <T,>(promise: Promise<T>, fallback: T) =>
+    withTimeout(promise, PROVIDER_DEADLINE_MS, fallback, () => {
+      degraded = true;
+    });
 
   const ppv = adapters.ppv;
   const strmfree = adapters.strmfree;
@@ -102,15 +130,15 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
   // Ingest PPV, NPL, StrmFree, and ESPN
   const promises: Promise<any>[] = [
     // PPV is not used for football (its upstream blocks Cloudflare; StreamFree covers football)
-    category === 'football' ? Promise.resolve([]) : ppv.fetchMatches(category, effectiveSignal),
+    category === 'football' ? Promise.resolve([]) : deadline(ppv.fetchMatches(category, effectiveSignal), []),
     // DaddyLive channels are not listed: their players refuse our domain ("Not allowed to stream.
     // Contact admin." on dembed.st, a blank page on thedaddy.pk). Re-enable once they allow the site.
     Promise.resolve([]),
-    strmfree.fetchMatches(category, effectiveSignal),
-    espn.fetchMatches(category, effectiveSignal),
+    deadline(strmfree.fetchMatches(category, effectiveSignal), []),
+    deadline(espn.fetchMatches(category, effectiveSignal), []),
   ];
   if (category === 'cricket') {
-    promises.push(npl.fetchMatches(category, effectiveSignal));
+    promises.push(deadline(npl.fetchMatches(category, effectiveSignal), []));
   }
 
   const [ppvResults, daddyResults, strmfreeResults, espnResults, nplResults] = await Promise.allSettled(promises);
@@ -281,8 +309,7 @@ export async function fetchUnifiedMatches(category: Category, signal?: AbortSign
     if (bTime === 0 && aTime > 0) return -1;
     return aTime - bTime;
   });
-  await saveToCache(category, sorted);
-  return sorted;
+  return { data: sorted, degraded };
 }
 
 /**
