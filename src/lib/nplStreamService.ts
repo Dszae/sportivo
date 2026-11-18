@@ -146,10 +146,20 @@ export class StreamService {
       licenseUrl: 'https://widevine-dash.ezdrm.com/proxy?pX=196792&user_id=M2ZhNWI0YzAtNzgxNy00MjRlLWFlODMtZWFmYWJmNDRmMjU1&CustomData=eyJyZXNlbGxlcl9pZCI6IjEwNyIsInN1YnNjcmliZXJfaWQiOiIxMDc3NDk3NiIsInNlcmlhbCI6ImdsXzExMTUwMTQwMDk4MTM0NDk0MDcxMi0xMDciLCJtYXRjaF9rZXkiOiJhLXJ6LS1jcmlja2V0LS1wODIxMDMxNjQ3MDA5NzA4NzY5NzYiLCJleHAiOjE3OTQ0Njg5OTYsInNpZCI6IjQ1YWY0YzVjMjBlMzQ5YjM4NjhiNDRkMTI4ZmExNWI0IiwicGxhdGZvcm0iOiJ3ZWIiLCJlbnRpdGxlZF91bnRpbCI6MTc5NDQ4MjQ5NiwibWF4X2NvbmN1cnJlbnQiOjEsInN1YnNjcmliZXJfc3RiX2lkIjoiMTM3Mzg1NTAiLCJ1YmJfZ3VpZCI6IjNmYTViNGMwLTc4MTctNDI0ZS1hZTgzLWVhZmFiZjQ0ZjI1NSJ9.n7NqnaBiWmVS1wxGCrCFKCQvXji_sEnP3PWXahlsBzQ',
     });
 
+    // 0. NPL 2026 Live Player - Primary Direct Embed
+    feeds.push({
+      id: 'NPL2026-LIVE-PLAYER',
+      name: 'Action Sports HD (NPL 2026 Live Player)',
+      url: 'https://npl2026live.pages.dev/mdpplyrr?manifest=https://ott-edge-mtdc.nettv.com.np/npl/live_match3/index.mpd&keyid=b4d7fc89103597185058cc4c81a1800d&key=17062472ba2a3f1db709d3bb7761c936',
+      type: 'embed',
+      isEmbed: true,
+      priority: 0,
+    });
+
     // 5. Universal Multi-Device Stream (YonoTV Action Sports Live)
     feeds.push({
       id: 'ACTIONSPORTS-UNIVERSAL',
-      name: 'Action Sports HD (Universal Web Stream)',
+      name: 'Action Sports HD (Universal Web Stream Backup)',
       url: 'https://yonotv.pages.dev/wtvplyrrr?manifest=https://a96aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/8wxsmuwvra/out/v1/06f2368f16e8470b8593cb77dcad31fe/cenc.mpd&keyid=f638f10e9bee65a698926a527722e332&key=a9f519367caf419607f6705e3d767935',
       type: 'embed',
       isEmbed: true,
