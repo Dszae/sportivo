@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "node scripts/generate-sitemap.mjs && astro check && astro build",
-    "test": "npx tsx tests/providers.test.mjs",
+    "test": "tsx tests/providers.test.mjs",
     "lint": "oxlint",
     "check": "astro check",
     "monitor": "node scripts/monitor.mjs",
@@ -40,6 +40,7 @@
     "playwright": "^1.64.0",
     "postcss": "^8.5.28",
     "tailwindcss": "^3.4.19",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vite": "^8.3.0"
   },
